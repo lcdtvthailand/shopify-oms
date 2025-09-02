@@ -20,6 +20,24 @@ interface FormData {
   subBranchCode?: string
 }
 
+// Minimal shape for order data we show on screen
+type OrderData = {
+  name: string
+  customer?: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    defaultAddress?: {
+      address1?: string
+      address2?: string
+      city?: string
+      zip?: string
+      province?: string
+      country?: string
+    }
+  }
+}
+
 export default function TaxInvoiceForm() {
   const router = useRouter()
   const [formData, setFormData] = useState<FormData>({
@@ -41,6 +59,12 @@ export default function TaxInvoiceForm() {
   const [provinces, setProvinces] = useState<Array<{ code: number; nameTh: string; nameEn: string }>>([])
   const [districts, setDistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string }>>([])
   const [subdistricts, setSubdistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>>([])
+
+  // Shopify order lookup states
+  const [orderId, setOrderId] = useState('')
+  const [orderData, setOrderData] = useState<OrderData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Load provinces on mount
   useEffect(() => {
@@ -202,6 +226,102 @@ export default function TaxInvoiceForm() {
 
   // options are now driven by dataset above
 
+  // Fetch order details from our Next.js API route (Shopify proxy)
+  const handleFetchOrder = async () => {
+    if (!orderId) {
+      alert('กรุณาใส่ Order ID')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setOrderData(null)
+
+    // ค้นหาออเดอร์จากเลข Order Number (ชื่อออเดอร์ เช่น #1111)
+    const GET_ORDER_DETAILS = `
+      query getOrderByName($query: String!) {
+        orders(first: 1, query: $query) {
+          edges {
+            node {
+              id
+              name
+              fullyPaid
+              displayFinancialStatus
+              customer {
+                firstName
+                lastName
+                email
+                defaultAddress {
+                  address1
+                  address2
+                  city
+                  zip
+                  province
+                  country
+                }
+              }
+              lineItems(first: 10) {
+                edges {
+                  node {
+                    title
+                    quantity
+                    variant { price }
+                  }
+                }
+              }
+              totalPriceSet { shopMoney { amount currencyCode } }
+            }
+          }
+        }
+      }
+    `
+
+    try {
+      const response = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: GET_ORDER_DETAILS,
+          // Shopify ค้นหาตามชื่อด้วยรูปแบบ name:#<number>
+          variables: { query: `name:#${orderId}` },
+        }),
+      })
+
+      let result: any
+      try {
+        result = await response.json()
+      } catch (_) {
+        result = null
+      }
+
+      if (!response.ok) {
+        const message = result?.error || 'Failed to fetch order data'
+        const details = typeof result?.details === 'string' ? result.details : JSON.stringify(result?.details || {})
+        throw new Error(`${message}${details ? `: ${details}` : ''}`)
+      }
+
+      if (result?.errors) {
+        throw new Error(result.errors[0]?.message || 'GraphQL error')
+      }
+
+      const node = result?.data?.orders?.edges?.[0]?.node
+      if (!node) {
+        setOrderData(null)
+        setError('ไม่พบออเดอร์ตามเลขที่ระบุ')
+        return
+      }
+
+      setOrderData({
+        name: node.name,
+        customer: node.customer,
+      })
+    } catch (err: any) {
+      setError(err?.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลออเดอร์')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
       <div className="flex justify-center mb-4">
@@ -215,6 +335,38 @@ export default function TaxInvoiceForm() {
         >
           ย้อนกลับ
         </button>
+      </div>
+
+      {/* Shopify Order Lookup */}
+      <div className="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+        <h2 className="text-lg font-medium text-gray-800 mb-3">ค้นหาข้อมูลออเดอร์จาก Shopify</h2>
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <input
+            type="text"
+            placeholder="ใส่ Order ID (เฉพาะตัวเลข)"
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            onClick={handleFetchOrder}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2 px-4 rounded-md"
+          >
+            {loading ? 'กำลังดึงข้อมูล...' : 'ดึงข้อมูลออเดอร์'}
+          </button>
+        </div>
+        {error && <p className="mt-2 text-red-600">Error: {error}</p>}
+        {orderData && (
+          <div className="mt-4 text-sm text-gray-800">
+            <h3 className="font-semibold">ข้อมูลออเดอร์: {orderData.name}</h3>
+            <p>
+              ลูกค้า: {orderData.customer?.firstName} {orderData.customer?.lastName}
+            </p>
+            <p>อีเมล: {orderData.customer?.email}</p>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
