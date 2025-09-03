@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 
 interface FormData {
@@ -60,21 +60,48 @@ export default function TaxInvoiceForm() {
   const [districts, setDistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string }>>([])
   const [subdistricts, setSubdistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>>([])
 
-  // Shopify order lookup states
+  // URL parameter validation states
   const [orderId, setOrderId] = useState('')
+  const [email, setEmail] = useState('')
   const [orderData, setOrderData] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showValidationPopup, setShowValidationPopup] = useState(false)
+  const [validationMessage, setValidationMessage] = useState('')
+  const [isValidated, setIsValidated] = useState(false)
+  
+  const searchParams = useSearchParams()
 
-  // Load provinces on mount
+  // Load provinces and auto-validate URL parameters on mount
   useEffect(() => {
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
       setProvinces(geo.getProvinces())
     })
+    
+    // Auto-validate URL parameters
+    const urlOrderId = searchParams.get('order')
+    const urlEmail = searchParams.get('email')
+    
+    if (urlOrderId && urlEmail) {
+      setOrderId(urlOrderId)
+      setEmail(urlEmail)
+      // Auto-validate immediately
+      setTimeout(() => {
+        if (mounted) {
+          validateParameters(urlOrderId, urlEmail)
+        }
+      }, 100)
+    } else if (urlOrderId || urlEmail) {
+      // Missing one parameter
+      setValidationMessage('กรุณาระบุทั้ง Order ID และ Email ใน URL')
+      setShowValidationPopup(true)
+      setIsValidated(false)
+    }
+    
     return () => { mounted = false }
-  }, [])
+  }, [searchParams])
 
   // When province changes, load districts
   useEffect(() => {
@@ -226,10 +253,15 @@ export default function TaxInvoiceForm() {
 
   // options are now driven by dataset above
 
-  // Fetch order details from our Next.js API route (Shopify proxy)
-  const handleFetchOrder = async () => {
-    if (!orderId) {
-      alert('กรุณาใส่ Order ID')
+  // Validate order and email parameters (can be called directly or from UI)
+  const validateParameters = async (orderIdParam?: string, emailParam?: string) => {
+    const checkOrderId = orderIdParam || orderId
+    const checkEmail = emailParam || email
+    
+    if (!checkOrderId || !checkEmail) {
+      setValidationMessage('กรุณาระบุทั้ง Order ID และ Email ใน URL')
+      setShowValidationPopup(true)
+      setIsValidated(false)
       return
     }
 
@@ -237,7 +269,7 @@ export default function TaxInvoiceForm() {
     setError(null)
     setOrderData(null)
 
-    // ค้นหาออเดอร์จากเลข Order Number (ชื่อออเดอร์ เช่น #1111)
+    // ค้นหาออเดอร์จากเลข Order Number และตรวจสอบ email
     const GET_ORDER_DETAILS = `
       query getOrderByName($query: String!) {
         orders(first: 1, query: $query) {
@@ -282,8 +314,7 @@ export default function TaxInvoiceForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: GET_ORDER_DETAILS,
-          // Shopify ค้นหาตามชื่อด้วยรูปแบบ name:#<number>
-          variables: { query: `name:#${orderId}` },
+          variables: { query: `name:#${checkOrderId}` },
         }),
       })
 
@@ -306,17 +337,33 @@ export default function TaxInvoiceForm() {
 
       const node = result?.data?.orders?.edges?.[0]?.node
       if (!node) {
-        setOrderData(null)
-        setError('ไม่พบออเดอร์ตามเลขที่ระบุ')
+        setValidationMessage('ไม่พบออเดอร์ตามเลขที่ระบุ กรุณาตรวจสอบ Order ID')
+        setShowValidationPopup(true)
+        setIsValidated(false)
         return
       }
 
+      // ตรวจสอบว่า email ตรงกันหรือไม่
+      if (node.customer?.email?.toLowerCase() !== checkEmail.toLowerCase()) {
+        setValidationMessage('ข้อมูล Order ID และ Email ไม่ตรงกัน กรุณาตรวจสอบข้อมูลอีกครั้ง')
+        setShowValidationPopup(true)
+        setIsValidated(false)
+        return
+      }
+
+      // ข้อมูลตรงกัน - อนุญาตให้กรอกฟอร์ม
       setOrderData({
         name: node.name,
         customer: node.customer,
       })
+      setIsValidated(true)
+      setValidationMessage('ตรวจสอบข้อมูลสำเร็จ! สามารถกรอกฟอร์มได้')
+      setShowValidationPopup(true)
+      
     } catch (err: any) {
-      setError(err?.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลออเดอร์')
+      setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
+      setShowValidationPopup(true)
+      setIsValidated(false)
     } finally {
       setLoading(false)
     }
@@ -337,39 +384,42 @@ export default function TaxInvoiceForm() {
         </button>
       </div>
 
-      {/* Shopify Order Lookup */}
-      <div className="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
-        <h2 className="text-lg font-medium text-gray-800 mb-3">ค้นหาข้อมูลออเดอร์จาก Shopify</h2>
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
-          <input
-            type="text"
-            placeholder="ใส่ Order ID (เฉพาะตัวเลข)"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={handleFetchOrder}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2 px-4 rounded-md"
-          >
-            {loading ? 'กำลังดึงข้อมูล...' : 'ดึงข้อมูลออเดอร์'}
-          </button>
-        </div>
-        {error && <p className="mt-2 text-red-600">Error: {error}</p>}
-        {orderData && (
-          <div className="mt-4 text-sm text-gray-800">
-            <h3 className="font-semibold">ข้อมูลออเดอร์: {orderData.name}</h3>
-            <p>
-              ลูกค้า: {orderData.customer?.firstName} {orderData.customer?.lastName}
-            </p>
-            <p>อีเมล: {orderData.customer?.email}</p>
+      {/* Validation Popup */}
+      {showValidationPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                isValidated ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {isValidated ? (
+                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <h3 className={`text-lg font-semibold ${
+                isValidated ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {isValidated ? 'ตรวจสอบสำเร็จ' : 'ข้อผิดพลาด'}
+              </h3>
+            </div>
+            <p className="text-gray-700 mb-4">{validationMessage}</p>
+            <button
+              onClick={() => setShowValidationPopup(false)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
+            >
+              ตกลง
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className={`space-y-6 ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Document Type Radio Buttons */}
         <div className="space-y-4">
           <div className="flex items-center space-x-6">
@@ -611,10 +661,16 @@ export default function TaxInvoiceForm() {
         <div className="pt-4">
           <button
             type="submit"
-            className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-8 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            disabled={!isValidated}
+            className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             บันทึก
           </button>
+          {!isValidated && (
+            <p className="mt-2 text-sm text-gray-500">
+              กรุณาเข้าถึงหน้านี้ผ่าน URL ที่มี Order ID และ Email ที่ถูกต้อง
+            </p>
+          )}
         </div>
       </form>
     </div>
