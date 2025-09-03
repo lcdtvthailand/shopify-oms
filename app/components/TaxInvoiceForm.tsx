@@ -69,6 +69,7 @@ export default function TaxInvoiceForm() {
   const [showValidationPopup, setShowValidationPopup] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [isValidated, setIsValidated] = useState(false)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
   
   const searchParams = useSearchParams()
 
@@ -345,7 +346,7 @@ export default function TaxInvoiceForm() {
 
       // ตรวจสอบว่า email ตรงกันหรือไม่
       if (node.customer?.email?.toLowerCase() !== checkEmail.toLowerCase()) {
-        setValidationMessage('ข้อมูล Order ID และ Email ไม่ตรงกัน กรุณาตรวจสอบข้อมูลอีกครั้ง')
+        setValidationMessage('ไม่มีคำสั่งซื้อหรือผู้ใช้นี้ในระบบ')
         setShowValidationPopup(true)
         setIsValidated(false)
         return
@@ -358,7 +359,10 @@ export default function TaxInvoiceForm() {
       })
       setIsValidated(true)
       setValidationMessage('ตรวจสอบข้อมูลสำเร็จ! สามารถกรอกฟอร์มได้')
-      setShowValidationPopup(true)
+      // Show success toast and auto-hide, no popup on success
+      setShowValidationPopup(false)
+      setShowSuccessToast(true)
+      setTimeout(() => setShowSuccessToast(false), 3000)
       
     } catch (err: any) {
       setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
@@ -408,13 +412,26 @@ export default function TaxInvoiceForm() {
                 {isValidated ? 'ตรวจสอบสำเร็จ' : 'ข้อผิดพลาด'}
               </h3>
             </div>
-            <p className="text-gray-700 mb-4">{validationMessage}</p>
+            <p className="text-gray-700 mb-4 text-center">{validationMessage}</p>
             <button
               onClick={() => setShowValidationPopup(false)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md"
             >
               ตกลง
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="flex items-center space-x-3 bg-green-600 text-white px-4 py-3 rounded-md shadow-lg">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
+            <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
           </div>
         </div>
       )}
