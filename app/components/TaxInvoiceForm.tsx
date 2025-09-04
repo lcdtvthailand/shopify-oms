@@ -41,6 +41,7 @@ type OrderData = {
 
 export default function TaxInvoiceForm() {
   const router = useRouter()
+  const [referrerUrl, setReferrerUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     documentType: 'tax',
     documentNumber: '',
@@ -75,15 +76,19 @@ export default function TaxInvoiceForm() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [saveError, setSaveError] = useState('')
-  // Debug info for API responses
-  const [debugOpen, setDebugOpen] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  // After-save popup
+  const [showSavePopup, setShowSavePopup] = useState(false)
   
   const searchParams = useSearchParams()
 
   // Load provinces and auto-validate URL parameters on mount
   useEffect(() => {
     let mounted = true
+    // Remember the URL before arriving here
+    if (typeof window !== 'undefined') {
+      const ref = document.referrer || ''
+      setReferrerUrl(ref || null)
+    }
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
       setProvinces(geo.getProvinces())
@@ -257,6 +262,17 @@ export default function TaxInvoiceForm() {
   }
 
   const handleGoBack = () => {
+    if (referrerUrl) {
+      // If the referrer is an absolute URL (may be external), redirect directly
+      if (/^https?:\/\//i.test(referrerUrl)) {
+        window.location.href = referrerUrl
+        return
+      }
+      // Otherwise, treat it as an internal path
+      router.push(referrerUrl)
+      return
+    }
+    // Fallback: browser history back
     router.back()
   }
 
@@ -482,7 +498,6 @@ export default function TaxInvoiceForm() {
       })
 
       const result: any = await response.json()
-      setDebugInfo({ step: 'metafieldsSet', request: { variables }, response: result })
 
       if (!response.ok || result?.errors || (result?.data?.metafieldsSet?.userErrors?.length > 0)) {
         const ue = result?.data?.metafieldsSet?.userErrors?.[0]
@@ -508,10 +523,8 @@ export default function TaxInvoiceForm() {
       })
       const confirmJson: any = await confirmRes.json()
       const nodes = confirmJson?.data?.order?.metafields?.nodes || []
-      // Log for debugging in browser
-      console.debug('Saved metafields:', nodes)
-      setDebugInfo((prev: any) => ({ ...prev, confirm: confirmJson, confirmedNodes: nodes }))
-      setSaveMessage(`บันทึกสำเร็จ (${nodes.length} รายการใน namespace custom)`) 
+      setSaveMessage('บันทึกข้อมูลใบกำกับภาษีสำเร็จ!')
+      setShowSavePopup(true)
     } catch (err: any) {
       setSaveError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
     } finally {
@@ -578,6 +591,31 @@ export default function TaxInvoiceForm() {
             </svg>
             <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
             <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
+          </div>
+        </div>
+      )}
+
+      {/* Save Success Popup */}
+      {showSavePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-green-100">
+                <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-green-800">บันทึกสำเร็จ</h3>
+            </div>
+            <p className="text-gray-700 mb-4 text-center">บันทึกข้อมูลใบกำกับภาษีเรียบร้อยแล้ว</p>
+            <div className="flex justify-center">
+              <button
+                onClick={handleGoBack}
+                className="min-w-[200px] bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md"
+              >
+                กลับไปหน้าก่อนหน้า
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -839,20 +877,6 @@ export default function TaxInvoiceForm() {
           {saveError && (
             <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>
           )}
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setDebugOpen((v) => !v)}
-              className="text-xs text-gray-600 underline"
-            >
-              {debugOpen ? 'ซ่อนข้อมูลดีบัก' : 'แสดงข้อมูลดีบัก'}
-            </button>
-            {debugOpen && (
-              <pre className="mt-2 max-h-64 overflow-auto text-xs bg-gray-50 border border-gray-200 rounded p-2 text-gray-800">
-                {JSON.stringify(debugInfo, null, 2)}
-              </pre>
-            )}
-          </div>
         </div>
       </form>
     </div>
