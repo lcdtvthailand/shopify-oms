@@ -22,6 +22,7 @@ interface FormData {
 
 // Minimal shape for order data we show on screen
 type OrderData = {
+  id: string
   name: string
   customer?: {
     firstName?: string
@@ -70,6 +71,13 @@ export default function TaxInvoiceForm() {
   const [validationMessage, setValidationMessage] = useState('')
   const [isValidated, setIsValidated] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+  // Saving states for Shopify metafields
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
+  const [saveError, setSaveError] = useState('')
+  // Debug info for API responses
+  const [debugOpen, setDebugOpen] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   
   const searchParams = useSearchParams()
 
@@ -352,8 +360,9 @@ export default function TaxInvoiceForm() {
         return
       }
 
-      // ข้อมูลตรงกัน - อนุญาตให้กรอกฟอร์ม
+      // ข้อมูลตรงกัน - อนุญาตให้กรอกฟอร์ม และเก็บ Order GID เพื่อนำไปอัปเดต
       setOrderData({
+        id: node.id,
         name: node.name,
         customer: node.customer,
       })
@@ -370,6 +379,143 @@ export default function TaxInvoiceForm() {
       setIsValidated(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // ส่งข้อมูลไปบันทึกเป็น Metafields ที่ออเดอร์ใน Shopify
+  const handleSaveTaxInfo = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!isValidated || !orderData?.id) {
+      setShowValidationPopup(true)
+      setValidationMessage('กรุณาตรวจสอบ Order ID และ Email ให้ถูกต้องก่อนบันทึก')
+      return
+    }
+
+    setIsSaving(true)
+    setSaveMessage('')
+    setSaveError('')
+
+    // Map ชื่อจังหวัด/อำเภอ/ตำบลจาก code ที่เลือก
+    const provinceName = provinces.find(p => p.code === formData.provinceCode)?.nameTh || ''
+    const districtName = districts.find(d => d.code === formData.districtCode)?.nameTh || ''
+    const subdistrictName = subdistricts.find(s => s.code === formData.subdistrictCode)?.nameTh || ''
+
+    // แปลงค่าจาก UI เดิมให้ตรงกับฟิลด์ที่ต้องการบันทึก
+    const customerType = formData.documentType === 'receipt' ? 'นิติบุคคล' : 'บุคคลธรรมดา'
+    const companyName = formData.documentNumber || ''
+    const branchTypeTh = formData.documentType === 'receipt'
+      ? (formData.branchType === 'branch' ? 'สาขาย่อย' : 'สำนักงานใหญ่')
+      : ''
+    // Validate branch number when "สาขาย่อย"
+    if (formData.documentType === 'receipt' && formData.branchType === 'branch' && !(formData.branchNumber || '').trim()) {
+      setIsSaving(false)
+      setSaveError('กรุณากรอกรหัสสาขาย่อย')
+      return
+    }
+
+    const branchCode = formData.branchType === 'branch' ? (formData.branchNumber || '') : ''
+
+    // Normalize and validate 13-digit tax ID
+    const taxIdDigits = (formData.branchCode || '').replace(/\D/g, '')
+    if (taxIdDigits && taxIdDigits.length !== 13) {
+      setIsSaving(false)
+      setSaveError('หมายเลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก')
+      return
+    }
+    const taxId = taxIdDigits
+    const phoneNumber = formData.companyName || ''
+    const altPhoneNumber = formData.companyNameEng || ''
+    const province = provinceName
+    const district = districtName
+    const subDistrict = subdistrictName
+    const postalCode = formData.postalCode || ''
+    const fullAddress = formData.address || ''
+
+    const METAFIELDS_SET = `
+      mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) {
+          metafields { id key namespace }
+          userErrors { field message code }
+        }
+      }
+    `
+
+    // Build inputs with two key variants for compatibility with Admin definitions
+    const baseFields = [
+      { key: 'customer_type', value: customerType, type: 'single_line_text_field' },
+      { key: 'company_name', value: companyName, type: 'single_line_text_field' },
+      { key: 'branch_type', value: branchTypeTh, type: 'single_line_text_field' },
+      { key: 'branch_code', value: branchCode, type: 'single_line_text_field' },
+      { key: 'tax_id', value: taxId, type: 'single_line_text_field' },
+      { key: 'phone_number', value: phoneNumber, type: 'single_line_text_field' },
+      { key: 'alt_phone_number', value: altPhoneNumber, type: 'single_line_text_field' },
+      { key: 'province', value: province, type: 'single_line_text_field' },
+      { key: 'district', value: district, type: 'single_line_text_field' },
+      { key: 'sub_district', value: subDistrict, type: 'single_line_text_field' },
+      { key: 'postal_code', value: postalCode, type: 'single_line_text_field' },
+      { key: 'full_address', value: fullAddress, type: 'single_line_text_field' },
+    ]
+
+    const metafieldsToSave = baseFields
+      .flatMap((f) => ([
+        { namespace: 'custom', key: f.key, value: f.value, type: f.type },
+        { namespace: 'custom', key: `custom_${f.key}`, value: f.value, type: f.type },
+      ]))
+      .filter(m => (m.value ?? '') !== '')
+
+    const variables = {
+      metafields: metafieldsToSave.map(m => ({
+        ownerId: orderData.id,
+        namespace: m.namespace,
+        key: m.key,
+        type: m.type,
+        value: m.value,
+      })),
+    }
+
+    try {
+      const response = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: METAFIELDS_SET, variables }),
+      })
+
+      const result: any = await response.json()
+      setDebugInfo({ step: 'metafieldsSet', request: { variables }, response: result })
+
+      if (!response.ok || result?.errors || (result?.data?.metafieldsSet?.userErrors?.length > 0)) {
+        const ue = result?.data?.metafieldsSet?.userErrors?.[0]
+        const errMsg = result?.errors?.[0]?.message || (ue ? `${ue.message}${ue.code ? ` (${ue.code})` : ''}${ue.field ? ` [${ue.field}]` : ''}` : 'Failed to save metafields')
+        throw new Error(errMsg)
+      }
+
+      // Confirm by reading back the saved metafields
+      const GET_ORDER_METAFIELDS = `
+        query getOrderMetafields($id: ID!) {
+          order(id: $id) {
+            id
+            metafields(first: 20, namespace: "custom") {
+              nodes { key value type }
+            }
+          }
+        }
+      `
+      const confirmRes = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderData.id } }),
+      })
+      const confirmJson: any = await confirmRes.json()
+      const nodes = confirmJson?.data?.order?.metafields?.nodes || []
+      // Log for debugging in browser
+      console.debug('Saved metafields:', nodes)
+      setDebugInfo((prev: any) => ({ ...prev, confirm: confirmJson, confirmedNodes: nodes }))
+      setSaveMessage(`บันทึกสำเร็จ (${nodes.length} รายการใน namespace custom)`) 
+    } catch (err: any) {
+      setSaveError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -436,7 +582,7 @@ export default function TaxInvoiceForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className={`space-y-6 ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
+      <form onSubmit={handleSaveTaxInfo} className={`space-y-6 ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Document Type Radio Buttons */}
         <div className="space-y-4">
           <div className="flex items-center space-x-6">
@@ -546,7 +692,6 @@ export default function TaxInvoiceForm() {
             placeholder="หมายเลขประจำตัวผู้เสียภาษี"
             inputMode="numeric"
             maxLength={13}
-            pattern="\\d{13}"
             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -678,16 +823,36 @@ export default function TaxInvoiceForm() {
         <div className="pt-4">
           <button
             type="submit"
-            disabled={!isValidated}
+            disabled={!isValidated || isSaving}
             className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
-            บันทึก
+            {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
           {!isValidated && (
             <p className="mt-2 text-sm text-gray-500">
               กรุณาเข้าถึงหน้านี้ผ่าน URL ที่มี Order ID และ Email ที่ถูกต้อง
             </p>
           )}
+          {saveMessage && (
+            <p className="mt-2 text-sm text-green-600">{saveMessage}</p>
+          )}
+          {saveError && (
+            <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>
+          )}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setDebugOpen((v) => !v)}
+              className="text-xs text-gray-600 underline"
+            >
+              {debugOpen ? 'ซ่อนข้อมูลดีบัก' : 'แสดงข้อมูลดีบัก'}
+            </button>
+            {debugOpen && (
+              <pre className="mt-2 max-h-64 overflow-auto text-xs bg-gray-50 border border-gray-200 rounded p-2 text-gray-800">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            )}
+          </div>
         </div>
       </form>
     </div>
