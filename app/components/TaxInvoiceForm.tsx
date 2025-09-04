@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 
@@ -41,6 +41,8 @@ type OrderData = {
 
 export default function TaxInvoiceForm() {
   const router = useRouter()
+  // Guard to prevent cascading resets when we are pre-filling from metafields
+  const prefillGuard = useRef(false)
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     documentType: 'tax',
@@ -129,9 +131,11 @@ export default function TaxInvoiceForm() {
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
       setDistricts(geo.getDistrictsByProvince(formData.provinceCode!))
-      // reset lower levels
-      setSubdistricts([])
-      setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
+      // reset lower levels only when not pre-filling
+      if (!prefillGuard.current) {
+        setSubdistricts([])
+        setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
+      }
     })
     return () => { mounted = false }
   }, [formData.provinceCode])
@@ -140,14 +144,18 @@ export default function TaxInvoiceForm() {
   useEffect(() => {
     if (formData.districtCode == null) {
       setSubdistricts([])
-      setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
+      if (!prefillGuard.current) {
+        setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
+      }
       return
     }
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
       setSubdistricts(geo.getSubdistrictsByDistrict(formData.districtCode!))
-      setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
+      if (!prefillGuard.current) {
+        setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
+      }
     })
     return () => { mounted = false }
   }, [formData.districtCode])
@@ -278,6 +286,233 @@ export default function TaxInvoiceForm() {
 
   // options are now driven by dataset above
 
+  // Load existing metafields for the order and populate form
+  const loadExistingMetafields = async (orderGid: string) => {
+    try {
+      const GET_ORDER_METAFIELDS = `
+        query getOrderMetafields($id: ID!) {
+          order(id: $id) {
+            id
+            metafields(first: 100, namespace: "custom") {
+              nodes { key value }
+            }
+          }
+        }
+      `
+      
+      const response = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderGid } }),
+      })
+      
+      const result: any = await response.json()
+      const nodes = result?.data?.order?.metafields?.nodes || []
+      
+      if (nodes.length > 0) {
+        // Create a map of metafield keys to values
+        const metaMap: Record<string, string> = {}
+        nodes.forEach((node: any) => {
+          metaMap[node.key] = node.value || ''
+        })
+        
+        // Debug: Log all retrieved metafields
+        console.log('Retrieved metafields:', metaMap)
+        
+        // Map metafields back to form data
+        const customerType = metaMap['customer_type'] || metaMap['custom_customer_type'] || ''
+        const companyName = metaMap['company_name'] || metaMap['custom_company_name'] || ''
+        const branchType = metaMap['branch_type'] || metaMap['custom_branch_type'] || ''
+        const branchCode = metaMap['branch_code'] || metaMap['custom_branch_code'] || ''
+        const taxId = metaMap['tax_id'] || metaMap['custom_tax_id'] || ''
+        const phoneNumber = metaMap['phone_number'] || metaMap['custom_phone_number'] || ''
+        const altPhoneNumber = metaMap['alt_phone_number'] || metaMap['custom_alt_phone_number'] || ''
+        const province = metaMap['province'] || metaMap['custom_province'] || (orderData?.customer?.defaultAddress?.province ?? '')
+        const district = (
+          metaMap['district'] ||
+          metaMap['custom_district'] ||
+          metaMap['custom_custom_district'] ||
+          metaMap['district_th'] ||
+          metaMap['amphoe'] ||
+          metaMap['amphur'] ||
+          (orderData?.customer?.defaultAddress?.city ?? '')
+        )
+        const subDistrict = (
+          metaMap['sub_district'] ||
+          metaMap['custom_sub_district'] ||
+          metaMap['custom_custom_district2'] ||
+          metaMap['tambon'] ||
+          metaMap['khwaeng'] ||
+          ''
+        )
+        const postalCode = (
+          metaMap['postal_code'] ||
+          metaMap['custom_postal_code'] ||
+          metaMap['postcode'] ||
+          metaMap['post_code'] ||
+          metaMap['zip'] ||
+          metaMap['custom_zip'] ||
+          (orderData?.customer?.defaultAddress?.zip ?? '')
+        )
+        const fullAddress = metaMap['full_address'] || metaMap['custom_full_address'] || ''
+        
+        // Debug: Log extracted values
+        console.log('Extracted values for geo matching:', {
+          province, district, subDistrict, postalCode
+        })
+        
+        // Update form data with existing values
+        setFormData(prev => ({
+          ...prev,
+          documentType: customerType === 'นิติบุคคล' ? 'receipt' : 'tax',
+          documentNumber: companyName,
+          branchCode: taxId,
+          companyName: phoneNumber,
+          companyNameEng: altPhoneNumber,
+          address: fullAddress,
+          postalCode: postalCode,
+          branchType: branchType === 'สาขาย่อย' ? 'branch' : (branchType === 'สำนักงานใหญ่' ? 'head' : null),
+          branchNumber: branchCode,
+        }))
+        
+        // Load geography data and set codes based on names
+        import('@/lib/geography/thailand').then((geo) => {
+          // prevent cascading effects from wiping our prefilled values
+          prefillGuard.current = true
+          console.log('Prefill start')
+          const normalize = (s: string) => (s || '')
+            .replace(/^\s*(จังหวัด|จ\.|อำเภอ|อ\.|เขต|ตำบล|ต\.|แขวง)\s*/,'')
+            .replace(/[()]/g,'')
+            .trim()
+            .toLowerCase()
+          
+          if (province) {
+            const provinceData = geo.getProvinces().find(p =>
+              normalize(p.nameTh) === normalize(province) ||
+              normalize(p.nameEn) === normalize(province) ||
+              p.nameTh === province || p.nameEn === province
+            )
+            if (provinceData) {
+              setFormData(prev => ({ ...prev, provinceCode: provinceData.code }))
+              
+              const districts = geo.getDistrictsByProvince(provinceData.code)
+              let districtData = null as any
+              if (district) {
+                districtData = districts.find(d =>
+                  normalize(d.nameTh) === normalize(district) ||
+                  normalize(d.nameEn) === normalize(district) ||
+                  d.nameTh === district || d.nameEn === district
+                ) || null
+              }
+              // Fallback: try to find by postal code via subdistricts
+              if (!districtData && postalCode && String(postalCode).length >= 5) {
+                for (const d of districts) {
+                  const subs = geo.getSubdistrictsByDistrict(d.code)
+                  if (subs.some(s => String(s.postalCode).startsWith(String(postalCode)))) {
+                    districtData = d
+                    break
+                  }
+                }
+              }
+              // Fallback 2: resolve by subdistrict name across all districts in province
+              if (!districtData && subDistrict) {
+                const normSub = normalize(subDistrict)
+                for (const d of districts) {
+                  const subs = geo.getSubdistrictsByDistrict(d.code)
+                  const hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                  if (hit) {
+                    districtData = d
+                    break
+                  }
+                }
+              }
+              if (districtData) {
+                setFormData(prev => ({ ...prev, districtCode: districtData.code }))
+                const subdistricts = geo.getSubdistrictsByDistrict(districtData.code)
+                let subdistrictData = null as any
+                if (subDistrict) {
+                  subdistrictData = subdistricts.find(s =>
+                    normalize(s.nameTh) === normalize(subDistrict) ||
+                    normalize(s.nameEn) === normalize(subDistrict) ||
+                    s.nameTh === subDistrict || s.nameEn === subDistrict
+                  ) || null
+                }
+                if (!subdistrictData && postalCode && String(postalCode).length >= 5) {
+                  subdistrictData = subdistricts.find(s => String(s.postalCode) === String(postalCode)) || null
+                }
+                // Fallback 3: if still not found, try first subdistrict that matches by name across province (already tried), or leave empty
+                if (subdistrictData) {
+                  setFormData(prev => ({ ...prev, subdistrictCode: subdistrictData.code, postalCode: String(subdistrictData.postalCode || postalCode) }))
+                }
+              } else {
+                // Final fallback: try to locate subdistrict anywhere in province by name/postal then infer its district
+                let found: { dCode: number, sCode: number, sPostal: number } | null = null
+                const normSub = normalize(subDistrict || '')
+                for (const d of districts) {
+                  const subs = geo.getSubdistrictsByDistrict(d.code)
+                  let hit = null as any
+                  if (normSub) {
+                    hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                  }
+                  if (!hit && postalCode && String(postalCode).length >= 5) {
+                    hit = subs.find(s => String(s.postalCode) === String(postalCode))
+                  }
+                  if (hit) {
+                    found = { dCode: d.code, sCode: hit.code, sPostal: hit.postalCode }
+                    break
+                  }
+                }
+                if (found) {
+                  setFormData(prev => ({ ...prev, districtCode: found.dCode, subdistrictCode: found.sCode, postalCode: String(found.sPostal || postalCode) }))
+                }
+                // Global fallback: search across all provinces if still nothing
+                if (!found && (subDistrict || (postalCode && String(postalCode).length >= 5))) {
+                  const provincesAll = geo.getProvinces()
+                  let g: { pCode: number, dCode: number, sCode: number, sPostal: number } | null = null
+                  const normSub = normalize(subDistrict || '')
+                  for (const p of provincesAll) {
+                    const ds = geo.getDistrictsByProvince(p.code)
+                    for (const d of ds) {
+                      const subs = geo.getSubdistrictsByDistrict(d.code)
+                      let hit = null as any
+                      if (normSub) {
+                        hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                      }
+                      if (!hit && postalCode && String(postalCode).length >= 5) {
+                        hit = subs.find(s => String(s.postalCode) === String(postalCode))
+                      }
+                      if (hit) {
+                        g = { pCode: p.code, dCode: d.code, sCode: hit.code, sPostal: hit.postalCode }
+                        break
+                      }
+                    }
+                    if (g) break
+                  }
+                  if (g) {
+                    setFormData(prev => ({ ...prev, provinceCode: g.pCode, districtCode: g.dCode, subdistrictCode: g.sCode, postalCode: String(g.sPostal || postalCode) }))
+                    console.debug('Global geo fallback matched', g)
+                  }
+                }
+              }
+              // Debug diagnostics
+              console.log('Prefill geo resolution', {
+                saved: { province, district, subDistrict, postalCode },
+                matchedProvince: provinceData?.nameTh,
+                matchedDistrict: districtData?.nameTh,
+              })
+              // allow effects to run normally after a short tick
+              setTimeout(() => { prefillGuard.current = false }, 0)
+              console.log('Prefill finish')
+            }
+          }
+        })
+      }
+    } catch (err) {
+      console.warn('Failed to load existing metafields:', err)
+      // Don't show error to user, just continue with empty form
+    }
+  }
+
   // Validate order and email parameters (can be called directly or from UI)
   const validateParameters = async (orderIdParam?: string, emailParam?: string) => {
     const checkOrderId = orderIdParam || orderId
@@ -389,6 +624,9 @@ export default function TaxInvoiceForm() {
       setShowSuccessToast(true)
       setTimeout(() => setShowSuccessToast(false), 3000)
       
+      // Load existing metafields for this order to pre-populate form
+      await loadExistingMetafields(node.id)
+      
     } catch (err: any) {
       setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
       setShowValidationPopup(true)
@@ -477,6 +715,10 @@ export default function TaxInvoiceForm() {
       .flatMap((f) => ([
         { namespace: 'custom', key: f.key, value: f.value, type: f.type },
         { namespace: 'custom', key: `custom_${f.key}`, value: f.value, type: f.type },
+        // Special additional key for sub-district per requirement
+        ...(f.key === 'sub_district'
+          ? [{ namespace: 'custom', key: 'custom_custom_district2', value: f.value, type: f.type }]
+          : []),
       ]))
       .filter(m => (m.value ?? '') !== '')
 
