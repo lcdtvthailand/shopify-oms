@@ -1003,7 +1003,7 @@ export default function TaxInvoiceForm() {
                 className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
               />
               <span className={`${formData.documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}>
-                บุกคลธรรมดา
+               บุคคลธรรมดา
               </span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
