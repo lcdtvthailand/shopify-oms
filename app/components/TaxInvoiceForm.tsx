@@ -83,6 +83,44 @@ export default function TaxInvoiceForm() {
   
   const searchParams = useSearchParams()
 
+  // Helper: Find the latest order number (name without leading #) by customer email
+  const findLatestOrderNumberByEmail = async (customerEmail: string): Promise<string | null> => {
+    const FIND_BY_EMAIL = `
+      query findOrdersByEmail($query: String!) {
+        orders(first: 1, query: $query, sortKey: CREATED_AT, reverse: true) {
+          edges {
+            node {
+              id
+              name
+              customer { email }
+            }
+          }
+        }
+      }
+    `
+    try {
+      const response = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: FIND_BY_EMAIL,
+          variables: { query: `email:${customerEmail}` },
+        }),
+      })
+      const result: any = await response.json()
+      const node = result?.data?.orders?.edges?.[0]?.node
+      if (!node) return null
+      const emailMatches = (node.customer?.email || '').toLowerCase() === customerEmail.toLowerCase()
+      if (!emailMatches) return null
+      const name: string = node.name || ''
+      // Shopify names begin with '#', strip it for our internal orderId usage
+      return name.replace(/^#/, '') || null
+    } catch (e) {
+      console.warn('findLatestOrderNumberByEmail failed', e)
+      return null
+    }
+  }
+
   // Load provinces and auto-validate URL parameters on mount
   useEffect(() => {
     let mounted = true
@@ -109,8 +147,43 @@ export default function TaxInvoiceForm() {
           validateParameters(urlOrderId, urlEmail)
         }
       }, 100)
+    } else if (urlEmail && !urlOrderId) {
+      // If email exists but order is missing, try to auto-detect the latest order for this email
+      (async () => {
+        try {
+          setLoading(true)
+          setError(null)
+          setEmail(urlEmail)
+          const found = await findLatestOrderNumberByEmail(urlEmail)
+          if (found) {
+            setOrderId(found)
+            // Update the URL query to include the order id and then auto-validate
+            if (typeof window !== 'undefined') {
+              const u = new URL(window.location.href)
+              u.searchParams.set('order', found)
+              u.searchParams.set('email', urlEmail)
+              // Update the URL without full reload
+              router.replace(`${u.pathname}?${u.searchParams.toString()}`)
+            }
+            // Small delay to ensure state/url settled
+            setTimeout(() => {
+              if (mounted) validateParameters(found, urlEmail)
+            }, 100)
+          } else {
+            setValidationMessage('ไม่พบออเดอร์ล่าสุดของอีเมลนี้ กรุณาระบุ Order ID ด้วยตนเอง')
+            setShowValidationPopup(true)
+            setIsValidated(false)
+          }
+        } catch (_) {
+          setValidationMessage('ไม่สามารถค้นหาออเดอร์จากอีเมลได้ กรุณาระบุ Order ID และ Email ใน URL')
+          setShowValidationPopup(true)
+          setIsValidated(false)
+        } finally {
+          setLoading(false)
+        }
+      })()
     } else if (urlOrderId || urlEmail) {
-      // Missing one parameter
+      // Missing one parameter and we cannot auto-detect
       setValidationMessage('กรุณาระบุทั้ง Order ID และ Email ใน URL')
       setShowValidationPopup(true)
       setIsValidated(false)
