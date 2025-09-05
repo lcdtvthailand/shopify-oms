@@ -903,9 +903,6 @@ export default function TaxInvoiceForm() {
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-      <div className="flex justify-center mb-4">
-        <Image src="/LOGO LCDTVTHAILAND SHOP Official 1.png" alt="Logo" width={240} height={80} priority />
-      </div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h1>
         <button 

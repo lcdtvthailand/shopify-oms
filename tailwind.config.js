@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'thai': ['Sarabun', 'sans-serif'],
+        'thai': ['Anuphan', 'sans-serif'],
       },
     },
   },
