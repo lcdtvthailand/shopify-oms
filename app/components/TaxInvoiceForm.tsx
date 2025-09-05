@@ -357,6 +357,13 @@ export default function TaxInvoiceForm() {
     router.back()
   }
 
+  // Explicit redirect to Shopify storefront
+  const handleGoToShop = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = 'https://lcdtvthailand.myshopify.com/'
+    }
+  }
+
   // options are now driven by dataset above
 
   // Load existing metafields for the order and populate form
@@ -925,7 +932,7 @@ export default function TaxInvoiceForm() {
             <p className="text-gray-700 mb-4 text-center">บันทึกข้อมูลใบกำกับภาษีเรียบร้อยแล้ว</p>
             <div className="flex justify-center">
               <button
-                onClick={handleGoBack}
+                onClick={handleGoToShop}
                 className="min-w-[200px] bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md"
               >
                 กลับไปหน้าก่อนหน้า
