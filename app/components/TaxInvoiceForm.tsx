@@ -44,6 +44,8 @@ export default function TaxInvoiceForm() {
   // Guard to prevent cascading resets when we are pre-filling from metafields
   const prefillGuard = useRef(false)
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null)
+  // Timestamp to help detect orders created after landing on this page
+  const arrivalAtRef = useRef<string>(new Date().toISOString())
   const [formData, setFormData] = useState<FormData>({
     documentType: 'tax',
     documentNumber: '',
@@ -83,8 +85,8 @@ export default function TaxInvoiceForm() {
   
   const searchParams = useSearchParams()
 
-  // Helper: Find the latest order number (name without leading #) by customer email
-  const findLatestOrderNumberByEmail = async (customerEmail: string): Promise<string | null> => {
+  // Helper: Fetch latest order by email with createdAt for recency checks
+  const fetchLatestOrderByEmail = async (customerEmail: string): Promise<{ orderNumber: string; createdAt: string } | null> => {
     const FIND_BY_EMAIL = `
       query findOrdersByEmail($query: String!) {
         orders(first: 1, query: $query, sortKey: CREATED_AT, reverse: true) {
@@ -92,33 +94,78 @@ export default function TaxInvoiceForm() {
             node {
               id
               name
+              createdAt
               customer { email }
             }
           }
         }
       }
     `
-    try {
+    const runSearch = async (queryString: string) => {
       const response = await fetch('/api/shopify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: FIND_BY_EMAIL,
-          variables: { query: `email:${customerEmail}` },
-        }),
+        body: JSON.stringify({ query: FIND_BY_EMAIL, variables: { query: queryString } }),
       })
-      const result: any = await response.json()
+      let result: any
+      try { result = await response.json() } catch { result = null }
       const node = result?.data?.orders?.edges?.[0]?.node
       if (!node) return null
-      const emailMatches = (node.customer?.email || '').toLowerCase() === customerEmail.toLowerCase()
-      if (!emailMatches) return null
-      const name: string = node.name || ''
-      // Shopify names begin with '#', strip it for our internal orderId usage
-      return name.replace(/^#/, '') || null
+      if ((node.customer?.email || '').toLowerCase() !== customerEmail.toLowerCase()) return null
+      const orderNumber = String((node.name || '').replace(/^#/, ''))
+      const createdAt = String(node.createdAt || '')
+      if (!orderNumber || !createdAt) return null
+      return { orderNumber, createdAt }
+    }
+
+    try {
+      // Important: quote the email to avoid parsing issues with '@'
+      // Also constrain by created_at to only pick orders created after arrival (minus skew)
+      const skewMs = 60000
+      const sinceIso = new Date(new Date(arrivalAtRef.current).getTime() - skewMs).toISOString()
+      const primaryQueries = [
+        `email:"${customerEmail}" created_at:>=${sinceIso}`,
+        `customer_email:"${customerEmail}" created_at:>=${sinceIso}`,
+      ]
+      for (const q of primaryQueries) {
+        const res = await runSearch(q)
+        if (res) return res
+      }
+      // Fallback: if none found after arrival (index lag), try without created_at but still return something
+      const fallbackQueries = [
+        `email:"${customerEmail}"`,
+        `customer_email:"${customerEmail}"`,
+      ]
+      for (const q of fallbackQueries) {
+        const res = await runSearch(q)
+        if (res) return res
+      }
+      return null
     } catch (e) {
-      console.warn('findLatestOrderNumberByEmail failed', e)
+      console.warn('fetchLatestOrderByEmail failed', e)
       return null
     }
+  }
+
+  // Poll until a newly created order (>= arrival time minus a small skew) appears
+  const waitForNewestOrderAfter = async (customerEmail: string, timeoutMs = 60000, intervalMs = 1500): Promise<string | null> => {
+    const skewMs = 60000 // 1 minute clock/indexing skew tolerance
+    const deadline = Date.now() + timeoutMs
+    const arrival = new Date(arrivalAtRef.current).getTime()
+    let lastSeen: { orderNumber: string; createdAt: string } | null = null
+    while (Date.now() < deadline) {
+      const latest = await fetchLatestOrderByEmail(customerEmail)
+      if (latest) {
+        lastSeen = latest
+        const createdTs = new Date(latest.createdAt).getTime()
+        if (!isNaN(createdTs) && createdTs >= (arrival - skewMs)) {
+          return latest.orderNumber
+        }
+      }
+      await new Promise(r => setTimeout(r, intervalMs))
+    }
+    // Fallback: return whatever we last saw (may be previous order)
+    return lastSeen?.orderNumber ?? null
   }
 
   // Load provinces and auto-validate URL parameters on mount
@@ -154,7 +201,7 @@ export default function TaxInvoiceForm() {
           setLoading(true)
           setError(null)
           setEmail(urlEmail)
-          const found = await findLatestOrderNumberByEmail(urlEmail)
+          const found = await waitForNewestOrderAfter(urlEmail)
           if (found) {
             setOrderId(found)
             // Update the URL query to include the order id and then auto-validate
