@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\components\\\\TaxInvoiceForm.tsx -> @/lib/geography/thailand\":{\"id\":\"app\\\\components\\\\TaxInvoiceForm.tsx -> @/lib/geography/thailand\",\"files\":[\"static/chunks/_app-pages-browser_lib_geography_thailand_ts.js\"]}}"
