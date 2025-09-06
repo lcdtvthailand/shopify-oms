@@ -1136,9 +1136,15 @@ export default function TaxInvoiceForm() {
             name="documentNumber"
             value={formData.documentNumber}
             onChange={handleInputChange}
+            onInvalid={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
+            }}
+            onInput={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('')
+            }}
             placeholder={formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
@@ -1185,10 +1191,16 @@ export default function TaxInvoiceForm() {
                   name="branchNumber"
                   value={formData.branchNumber || ''}
                   onChange={handleInputChange}
+                  onInvalid={(e) => {
+                    (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
+                  }}
+                  onInput={(e) => {
+                    (e.target as HTMLInputElement).setCustomValidity('')
+                  }}
                   placeholder="รหัสสาขาย่อย"
                   inputMode="numeric"
                   required={formData.branchType === 'branch'}
-                  className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
             )}
@@ -1203,6 +1215,12 @@ export default function TaxInvoiceForm() {
             name="branchCode"
             value={formData.branchCode}
             onChange={handleInputChange}
+            onInvalid={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
+            }}
+            onInput={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('')
+            }}
             placeholder="1-2345-67890-12-3"
             inputMode="tel"
             maxLength={17}
@@ -1214,7 +1232,7 @@ export default function TaxInvoiceForm() {
               setFormData(prev => ({ ...prev, branchCode: dashed }))
             }}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
@@ -1227,11 +1245,17 @@ export default function TaxInvoiceForm() {
               name="companyName"
               value={formData.companyName}
               onChange={handleInputChange}
+              onInvalid={(e) => {
+                (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
+              }}
+              onInput={(e) => {
+                (e.target as HTMLInputElement).setCustomValidity('')
+              }}
               placeholder="หมายเลขโทรศัพท์"
               inputMode="tel"
               maxLength={12}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
           <div className="space-y-2">
@@ -1244,7 +1268,7 @@ export default function TaxInvoiceForm() {
               placeholder="หมายเลขโทรศัพท์สำรอง"
               inputMode="tel"
               maxLength={12}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -1258,8 +1282,14 @@ export default function TaxInvoiceForm() {
                 name="provinceCode"
                 value={formData.provinceCode ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, provinceCode: e.target.value ? Number(e.target.value) : null }))}
+                onInvalid={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
+                }}
+                onInput={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('')
+                }}
                 required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
               >
                 <option value="">เลือกจังหวัด</option>
                 {provinces.map((p) => (
@@ -1280,9 +1310,15 @@ export default function TaxInvoiceForm() {
                 name="districtCode"
                 value={formData.districtCode ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, districtCode: e.target.value ? Number(e.target.value) : null }))}
+                onInvalid={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
+                }}
+                onInput={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('')
+                }}
                 disabled={!formData.provinceCode}
                 required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
               >
                 <option value="">เลือกอำเภอ/เขต</option>
                 {districts.map((d) => (
@@ -1307,9 +1343,15 @@ export default function TaxInvoiceForm() {
                 name="subdistrictCode"
                 value={formData.subdistrictCode ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, subdistrictCode: e.target.value ? Number(e.target.value) : null }))}
+                onInvalid={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
+                }}
+                onInput={(e) => {
+                  (e.target as HTMLSelectElement).setCustomValidity('')
+                }}
                 disabled={!formData.districtCode}
                 required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
               >
                 <option value="">เลือกตำบล/แขวง</option>
                 {subdistricts.map((s) => (
@@ -1334,7 +1376,7 @@ export default function TaxInvoiceForm() {
               inputMode="numeric"
               maxLength={5}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -1346,10 +1388,16 @@ export default function TaxInvoiceForm() {
             name="address"
             value={formData.address}
             onChange={handleInputChange}
+            onInvalid={(e) => {
+              (e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
+            }}
+            onInput={(e) => {
+              (e.target as HTMLTextAreaElement).setCustomValidity('')
+            }}
             placeholder="ที่อยู่"
             rows={3}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
           />
         </div>
 
