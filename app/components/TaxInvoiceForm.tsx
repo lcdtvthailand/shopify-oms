@@ -1221,7 +1221,7 @@ export default function TaxInvoiceForm() {
             onInput={(e) => {
               (e.target as HTMLInputElement).setCustomValidity('')
             }}
-            placeholder="1-2345-67890-12-3"
+            placeholder="หมายเลขประจำตัวผู้เสียภาษี"
             inputMode="tel"
             maxLength={17}
             onBlur={(e) => {
