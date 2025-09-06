@@ -31,8 +31,7 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Force a consistent light theme for native form controls across all devices */
+html {
+  color-scheme: light;
 }
