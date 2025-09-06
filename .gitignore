@@ -1,5 +1,8 @@
 node_modules
 
+# Next.js build output
+.next
+
 # Env files (do not commit secrets)
 .env
 .env.local
