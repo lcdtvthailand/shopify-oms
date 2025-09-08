@@ -8,7 +8,7 @@ This project follows Next.js App Router best practices with a clean, organized f
 shopify-oms/
 ├── app/                      # Next.js App Router
 │   ├── api/                  # API routes
-│   │   └── shopify/         
+│   │   └── shopify/
 │   │       └── route.ts      # Shopify GraphQL API endpoint
 │   ├── components/           # React components
 │   │   ├── forms/           # Form components
