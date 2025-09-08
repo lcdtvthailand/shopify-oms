@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
+
 ```bash
 pnpm dev      # Start development server at http://localhost:3000
 pnpm build    # Build production bundle
@@ -13,6 +14,7 @@ pnpm lint     # Run ESLint
 ```
 
 ### Package Management
+
 This project uses **pnpm** as the package manager. Always use pnpm commands for installing dependencies and running scripts.
 
 ## Architecture Overview
@@ -31,7 +33,8 @@ This is a **Shopify OMS Thai Tax Invoice** application built with Next.js 15 App
 3. **State Management**: Uses local React state with URL parameters for initial values. No global state management needed for this focused application.
 
 4. **Data Flow**:
-   ```
+
+   ```text
    URL Parameters → Auto-validation → Shopify API → Form Pre-fill → User Input → Save to Shopify
    ```
 
@@ -55,12 +58,14 @@ This is a **Shopify OMS Thai Tax Invoice** application built with Next.js 15 App
 ### Environment Variables
 
 Required for Shopify integration:
+
 - `SHOPIFY_API_ACCESS_TOKEN`
 - `SHOPIFY_DOMAIN`
 
 ### Styling
 
 Uses Tailwind CSS v4 with:
+
 - Custom Thai font (Anuphan)
 - Red brand colors (#FF0000, #CC0000)
 - Mobile-responsive design
