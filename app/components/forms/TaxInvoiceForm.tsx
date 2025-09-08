@@ -101,6 +101,9 @@ export default function TaxInvoiceForm() {
   // Order status validation
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null)
   const [showAdminContact, setShowAdminContact] = useState(false)
+  // Overlay form states
+  const [showFormOverlay, setShowFormOverlay] = useState(false)
+  const [validationInProgress, setValidationInProgress] = useState(false)
 
   const searchParams = useSearchParams()
 
@@ -849,6 +852,8 @@ export default function TaxInvoiceForm() {
     setLoading(true)
     setError(null)
     setOrderData(null)
+    setValidationInProgress(true)
+    setShowFormOverlay(false)
 
     // ค้นหาออเดอร์จากเลข Order Number และตรวจสอบ email
     const GET_ORDER_DETAILS = `
@@ -987,12 +992,19 @@ export default function TaxInvoiceForm() {
 
       // Load existing metafields for this order to pre-populate form
       await loadExistingMetafields(node.id)
+
+      // Show form overlay after a short delay
+      setTimeout(() => {
+        setShowFormOverlay(true)
+        setValidationInProgress(false)
+      }, 500)
     } catch (err: any) {
       setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
       setShowValidationPopup(true)
       setIsValidated(false)
     } finally {
       setLoading(false)
+      setValidationInProgress(false)
     }
   }
 
@@ -1220,19 +1232,612 @@ export default function TaxInvoiceForm() {
   }
 
   return (
-    <div className="tax-form max-w-6xl mx-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-8 md:p-10 m-4 md:m-6">
-      <div className="flex justify-between items-center mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
-          เพิ่มข้อมูลสำหรับออกใบกำกับภาษี
-        </h1>
-        <button
-          type="button"
-          onClick={handleGoBack}
-          className="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-200"
-        >
-          ย้อนกลับ
-        </button>
-      </div>
+    <>
+      {/* Initial validation screen */}
+      {validationInProgress && !showFormOverlay && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">กำลังตรวจสอบข้อมูล</h3>
+            <p className="text-gray-600">กรุณารอสักครู่...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Form Overlay - shows after successful validation */}
+      {showFormOverlay && isValidated && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto z-40">
+          <div className="min-h-screen px-4 text-center">
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+
+            <div className="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFormOverlay(false)
+                    handleGoBack()
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Order Status Alert */}
+              {orderStatus && !validateOrderStatus(orderStatus).isEligible && orderData && (
+                <OrderStatusAlert
+                  status={orderStatus}
+                  message={validateOrderStatus(orderStatus).message}
+                  orderNumber={orderData.name}
+                />
+              )}
+
+              {/* Admin Contact Modal */}
+              {showAdminContact && orderStatus && orderData && (
+                <AdminContactModal
+                  isOpen={showAdminContact}
+                  onClose={() => setShowAdminContact(false)}
+                  orderNumber={orderData.name}
+                  orderStatus={orderStatus}
+                  customerEmail={email}
+                />
+              )}
+
+              {/* Validation Popup */}
+              {showValidationPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <div className="flex items-center mb-4">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                          isValidated ? 'bg-green-100' : 'bg-red-100'
+                        }`}
+                      >
+                        {isValidated ? (
+                          <svg
+                            className="w-4 h-4 text-green-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4 text-red-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <h3
+                        className={`text-lg font-semibold ${
+                          isValidated ? 'text-green-800' : 'text-red-800'
+                        }`}
+                      >
+                        {isValidated ? 'ตรวจสอบสำเร็จ' : 'ข้อผิดพลาด'}
+                      </h3>
+                    </div>
+                    <p className="text-gray-700 mb-4 text-center">{validationMessage}</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowValidationPopup(false)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md"
+                    >
+                      ตกลง
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Toast */}
+              {showSuccessToast && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+                  <div className="flex items-center space-x-3 bg-green-600 text-white px-4 py-3 rounded-md shadow-lg">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
+                    <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Save Success Popup */}
+              {showSavePopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-green-100">
+                        <svg
+                          className="w-4 h-4 text-green-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-green-800">บันทึกสำเร็จ</h3>
+                    </div>
+                    <p className="text-gray-700 mb-4 text-center">บันทึกข้อมูลใบกำกับภาษีเรียบร้อยแล้ว</p>
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={handleGoToShop}
+                        className="min-w-[200px] bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md"
+                      >
+                        กลับไปหน้าก่อนหน้า
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveTaxInfo} className="space-y-6">
+                {/* Document Type Radio Buttons */}
+                <div className="space-y-3">
+                  <div className="radio-group flex flex-wrap items-center gap-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="documentType"
+                        value="tax"
+                        checked={formData.documentType === 'tax'}
+                        onChange={() => handleRadioChange('tax')}
+                        className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <span
+                        className={`${formData.documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                      >
+                        บุคคลธรรมดา
+                      </span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="documentType"
+                        value="receipt"
+                        checked={formData.documentType === 'receipt'}
+                        onChange={() => handleRadioChange('receipt')}
+                        className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <span
+                        className={`${formData.documentType === 'receipt' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                      >
+                        นิติบุคคล
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Name or Company Name - Full Width */}
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">
+                    {formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
+                  </label>
+                  <input
+                    type="text"
+                    name="documentNumber"
+                    value={formData.documentNumber}
+                    onChange={handleInputChange}
+                    onInvalid={(e) => {
+                      ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
+                    }}
+                    onInput={(e) => {
+                      ;(e.target as HTMLInputElement).setCustomValidity('')
+                    }}
+                    placeholder={formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Head office / Branch for juristic person */}
+                {formData.documentType === 'receipt' && (
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">สาขา</label>
+                    <div className="flex items-center space-x-6 gap-4">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="branchType"
+                          value="head"
+                          checked={formData.branchType === 'head'}
+                          onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
+                          required={formData.documentType === 'receipt' && !formData.branchType}
+                          className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                        />
+                        <span
+                          className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                        >
+                          สำนักงานใหญ่
+                        </span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="branchType"
+                          value="branch"
+                          checked={formData.branchType === 'branch'}
+                          onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
+                          className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                        />
+                        <span
+                          className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                        >
+                          สาขาย่อย
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Sub-branch code input */}
+                    {formData.branchType === 'branch' && (
+                      <div className="space-y-2 pt-2">
+                        <label className="block text-gray-700">รหัสสาขาย่อย</label>
+                        <input
+                          type="text"
+                          name="branchNumber"
+                          value={formData.branchNumber || ''}
+                          onChange={handleInputChange}
+                          onInvalid={(e) => {
+                            ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
+                          }}
+                          onInput={(e) => {
+                            ;(e.target as HTMLInputElement).setCustomValidity('')
+                          }}
+                          placeholder="รหัสสาขาย่อย"
+                          inputMode="numeric"
+                          required={formData.branchType === 'branch'}
+                          className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tax Identification Number - Full Width */}
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">หมายเลขประจำตัวผู้เสียภาษี</label>
+                  <input
+                    type="text"
+                    name="branchCode"
+                    value={formData.branchCode}
+                    onChange={handleInputChange}
+                    onInvalid={(e) => {
+                      ;(e.target as HTMLInputElement).setCustomValidity(
+                        'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี'
+                      )
+                    }}
+                    onInput={(e) => {
+                      ;(e.target as HTMLInputElement).setCustomValidity('')
+                    }}
+                    placeholder="หมายเลขประจำตัวผู้เสียภาษี"
+                    inputMode="tel"
+                    maxLength={17}
+                    onBlur={(e) => {
+                      const d = String(e.target.value || '')
+                        .replace(/\D/g, '')
+                        .slice(0, 13)
+                      if (!d) {
+                        return
+                      }
+                      const p1 = d.slice(0, 1),
+                        p2 = d.slice(1, 5),
+                        p3 = d.slice(5, 10),
+                        p4 = d.slice(10, 12),
+                        p5 = d.slice(12, 13)
+                      const dashed = [p1, p2, p3, p4, p5].filter(Boolean).join('-')
+                      setFormData((prev) => ({ ...prev, branchCode: dashed }))
+                    }}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Phone Numbers Row - Two Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">หมายเลขโทรศัพท์</label>
+                    <input
+                      type="text"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleInputChange}
+                      onInvalid={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
+                      }}
+                      onInput={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('')
+                      }}
+                      placeholder="หมายเลขโทรศัพท์"
+                      inputMode="tel"
+                      maxLength={12}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">
+                      หมายเลขโทรศัพท์สำรอง (ถ้ามี)
+                    </label>
+                    <input
+                      type="text"
+                      name="companyNameEng"
+                      value={formData.companyNameEng}
+                      onChange={handleInputChange}
+                      placeholder="หมายเลขโทรศัพท์สำรอง"
+                      inputMode="tel"
+                      maxLength={12}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Province and District Row - Two Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">จังหวัด</label>
+                    <div className="relative">
+                      <select
+                        name="provinceCode"
+                        value={formData.provinceCode ?? ''}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            provinceCode: e.target.value ? Number(e.target.value) : null,
+                          }))
+                        }
+                        onInvalid={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
+                        }}
+                        onInput={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('')
+                        }}
+                        required
+                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                      >
+                        <option value="">เลือกจังหวัด</option>
+                        {provinces.map((p) => (
+                          <option key={p.code} value={p.code}>
+                            {p.nameTh}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">อำเภอ/ เขต</label>
+                    <div className="relative">
+                      <select
+                        name="districtCode"
+                        value={formData.districtCode ?? ''}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            districtCode: e.target.value ? Number(e.target.value) : null,
+                          }))
+                        }
+                        onInvalid={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
+                        }}
+                        onInput={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('')
+                        }}
+                        disabled={!formData.provinceCode}
+                        required
+                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">เลือกอำเภอ/เขต</option>
+                        {districts.map((d) => (
+                          <option key={d.code} value={d.code}>
+                            {d.nameTh}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subdistrict and Postal Code Row - Two Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">ตำบล/ แขวง</label>
+                    <div className="relative">
+                      <select
+                        name="subdistrictCode"
+                        value={formData.subdistrictCode ?? ''}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            subdistrictCode: e.target.value ? Number(e.target.value) : null,
+                          }))
+                        }
+                        onInvalid={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
+                        }}
+                        onInput={(e) => {
+                          ;(e.target as HTMLSelectElement).setCustomValidity('')
+                        }}
+                        disabled={!formData.districtCode}
+                        required
+                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">เลือกตำบล/แขวง</option>
+                        {subdistricts.map((s) => (
+                          <option key={s.code} value={s.code}>
+                            {s.nameTh}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">รหัสไปรษณีย์</label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={formData.postalCode}
+                      onChange={handleInputChange}
+                      placeholder="รหัสไปรษณีย์"
+                      inputMode="numeric"
+                      maxLength={5}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Address - Full Width */}
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">ที่อยู่</label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    onInvalid={(e) => {
+                      ;(e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
+                    }}
+                    onInput={(e) => {
+                      ;(e.target as HTMLTextAreaElement).setCustomValidity('')
+                    }}
+                    placeholder="ที่อยู่"
+                    rows={3}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium px-4 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </button>
+                  {!isValidated && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      กรุณาเข้าถึงหน้านี้ผ่าน URL ที่มี Order ID และ Email ที่ถูกต้อง
+                    </p>
+                  )}
+                  {saveMessage && <p className="mt-2 text-sm text-green-600">{saveMessage}</p>}
+                  {saveError && <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Original content for non-overlay mode */}
+      {!showFormOverlay && (
+        <div className="tax-form max-w-6xl mx-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-8 md:p-10 m-4 md:m-6">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+              เพิ่มข้อมูลสำหรับออกใบกำกับภาษี
+            </h1>
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-200"
+            >
+              ย้อนกลับ
+            </button>
+          </div>
+
+          {!isValidated && (
+            <div className="text-center py-12">
+              <svg
+                className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+              <p className="text-gray-600 text-lg">กรุณารอการตรวจสอบข้อมูล</p>
+              <p className="text-gray-500 mt-2">ระบบกำลังตรวจสอบ Order ID และ Email จาก URL</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Order Status Alert */}
       {orderStatus && !validateOrderStatus(orderStatus).isEligible && orderData && (
@@ -1348,400 +1953,6 @@ export default function TaxInvoiceForm() {
           </div>
         </div>
       )}
-
-      <form
-        onSubmit={handleSaveTaxInfo}
-        className={`space-y-8  ${isValidated ? '' : 'opacity-50 pointer-events-none'}`}
-      >
-        {/* Document Type Radio Buttons */}
-        <div className="space-y-3">
-          <div className="radio-group flex flex-wrap items-center gap-4">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name="documentType"
-                value="tax"
-                checked={formData.documentType === 'tax'}
-                onChange={() => handleRadioChange('tax')}
-                className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-              />
-              <span
-                className={`${formData.documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-              >
-                บุคคลธรรมดา
-              </span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name="documentType"
-                value="receipt"
-                checked={formData.documentType === 'receipt'}
-                onChange={() => handleRadioChange('receipt')}
-                className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-              />
-              <span
-                className={`${formData.documentType === 'receipt' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-              >
-                นิติบุคคล
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Name or Company Name - Full Width */}
-        <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">
-            {formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
-          </label>
-          <input
-            type="text"
-            name="documentNumber"
-            value={formData.documentNumber}
-            onChange={handleInputChange}
-            onInvalid={(e) => {
-              ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
-            }}
-            onInput={(e) => {
-              ;(e.target as HTMLInputElement).setCustomValidity('')
-            }}
-            placeholder={formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Head office / Branch for juristic person */}
-        {formData.documentType === 'receipt' && (
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">สาขา</label>
-            <div className="flex items-center space-x-6 gap-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="branchType"
-                  value="head"
-                  checked={formData.branchType === 'head'}
-                  onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
-                  required={formData.documentType === 'receipt' && !formData.branchType}
-                  className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-                />
-                <span
-                  className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-                >
-                  สำนักงานใหญ่
-                </span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="branchType"
-                  value="branch"
-                  checked={formData.branchType === 'branch'}
-                  onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
-                  className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-                />
-                <span
-                  className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-                >
-                  สาขาย่อย
-                </span>
-              </label>
-            </div>
-
-            {/* Sub-branch code input */}
-            {formData.branchType === 'branch' && (
-              <div className="space-y-2 pt-2">
-                <label className="block text-gray-700">รหัสสาขาย่อย</label>
-                <input
-                  type="text"
-                  name="branchNumber"
-                  value={formData.branchNumber || ''}
-                  onChange={handleInputChange}
-                  onInvalid={(e) => {
-                    ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
-                  }}
-                  onInput={(e) => {
-                    ;(e.target as HTMLInputElement).setCustomValidity('')
-                  }}
-                  placeholder="รหัสสาขาย่อย"
-                  inputMode="numeric"
-                  required={formData.branchType === 'branch'}
-                  className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tax Identification Number - Full Width */}
-        <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">หมายเลขประจำตัวผู้เสียภาษี</label>
-          <input
-            type="text"
-            name="branchCode"
-            value={formData.branchCode}
-            onChange={handleInputChange}
-            onInvalid={(e) => {
-              ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
-            }}
-            onInput={(e) => {
-              ;(e.target as HTMLInputElement).setCustomValidity('')
-            }}
-            placeholder="หมายเลขประจำตัวผู้เสียภาษี"
-            inputMode="tel"
-            maxLength={17}
-            onBlur={(e) => {
-              const d = String(e.target.value || '')
-                .replace(/\D/g, '')
-                .slice(0, 13)
-              if (!d) {
-                return
-              }
-              const p1 = d.slice(0, 1),
-                p2 = d.slice(1, 5),
-                p3 = d.slice(5, 10),
-                p4 = d.slice(10, 12),
-                p5 = d.slice(12, 13)
-              const dashed = [p1, p2, p3, p4, p5].filter(Boolean).join('-')
-              setFormData((prev) => ({ ...prev, branchCode: dashed }))
-            }}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Phone Numbers Row - Two Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">หมายเลขโทรศัพท์</label>
-            <input
-              type="text"
-              name="companyName"
-              value={formData.companyName}
-              onChange={handleInputChange}
-              onInvalid={(e) => {
-                ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
-              }}
-              onInput={(e) => {
-                ;(e.target as HTMLInputElement).setCustomValidity('')
-              }}
-              placeholder="หมายเลขโทรศัพท์"
-              inputMode="tel"
-              maxLength={12}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">หมายเลขโทรศัพท์สำรอง (ถ้ามี)</label>
-            <input
-              type="text"
-              name="companyNameEng"
-              value={formData.companyNameEng}
-              onChange={handleInputChange}
-              placeholder="หมายเลขโทรศัพท์สำรอง"
-              inputMode="tel"
-              maxLength={12}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Province and District Row - Two Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">จังหวัด</label>
-            <div className="relative">
-              <select
-                name="provinceCode"
-                value={formData.provinceCode ?? ''}
-                onChange={(e) =>
-                  setFormData((p) => ({
-                    ...p,
-                    provinceCode: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-                onInvalid={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
-                }}
-                onInput={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('')
-                }}
-                required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
-              >
-                <option value="">เลือกจังหวัด</option>
-                {provinces.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.nameTh}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">อำเภอ/ เขต</label>
-            <div className="relative">
-              <select
-                name="districtCode"
-                value={formData.districtCode ?? ''}
-                onChange={(e) =>
-                  setFormData((p) => ({
-                    ...p,
-                    districtCode: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-                onInvalid={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
-                }}
-                onInput={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('')
-                }}
-                disabled={!formData.provinceCode}
-                required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
-              >
-                <option value="">เลือกอำเภอ/เขต</option>
-                {districts.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.nameTh}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Subdistrict and Postal Code Row - Two Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">ตำบล/ แขวง</label>
-            <div className="relative">
-              <select
-                name="subdistrictCode"
-                value={formData.subdistrictCode ?? ''}
-                onChange={(e) =>
-                  setFormData((p) => ({
-                    ...p,
-                    subdistrictCode: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-                onInvalid={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
-                }}
-                onInput={(e) => {
-                  ;(e.target as HTMLSelectElement).setCustomValidity('')
-                }}
-                disabled={!formData.districtCode}
-                required
-                className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
-              >
-                <option value="">เลือกตำบล/แขวง</option>
-                {subdistricts.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.nameTh}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">รหัสไปรษณีย์</label>
-            <input
-              type="text"
-              name="postalCode"
-              value={formData.postalCode}
-              onChange={handleInputChange}
-              placeholder="รหัสไปรษณีย์"
-              inputMode="numeric"
-              maxLength={5}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Address - Full Width */}
-        <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">ที่อยู่</label>
-          <textarea
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            onInvalid={(e) => {
-              ;(e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
-            }}
-            onInput={(e) => {
-              ;(e.target as HTMLTextAreaElement).setCustomValidity('')
-            }}
-            placeholder="ที่อยู่"
-            rows={3}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={!isValidated || isSaving}
-            className="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium px-4 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
-          </button>
-          {!isValidated && (
-            <p className="mt-2 text-sm text-gray-500">
-              กรุณาเข้าถึงหน้านี้ผ่าน URL ที่มี Order ID และ Email ที่ถูกต้อง
-            </p>
-          )}
-          {saveMessage && <p className="mt-2 text-sm text-green-600">{saveMessage}</p>}
-          {saveError && <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>}
-        </div>
-      </form>
-    </div>
+    </>
   )
 }
