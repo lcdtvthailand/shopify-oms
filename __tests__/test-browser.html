@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Status Test Links</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        h1 { color: #333; }
+        .test-link { display: block; margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; text-decoration: none; color: #0066cc; }
+        .test-link:hover { background: #e8e8e8; }
+        .description { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Order Status Validation Test Links</h1>
+    
+    <h2>Test Status Page</h2>
+    <a href="http://localhost:3000/test-status" target="_blank" class="test-link">
+        <div class="status">View Test Status Page</div>
+        <div class="description">Shows all test scenarios with visual components</div>
+    </a>
+    
+    <h2>Main Form Test Scenarios</h2>
+    
+    <a href="http://localhost:3000?order=CANCELLED-001&email=test@example.com" target="_blank" class="test-link">
+        <div class="status">❌ Cancelled Order Test</div>
+        <div class="description">Should show: "คำสั่งซื้อนี้ถูกยกเลิกแล้ว" with admin contact</div>
+    </a>
+    
+    <a href="http://localhost:3000?order=FULFILLED-001&email=test@example.com" target="_blank" class="test-link">
+        <div class="status">📦 Fulfilled Order Test</div>
+        <div class="description">Should show: "คำสั่งซื้อนี้ได้ออกใบกำกับภาษีแล้ว"</div>
+    </a>
+    
+    <a href="http://localhost:3000?order=REFUNDED-001&email=test@example.com" target="_blank" class="test-link">
+        <div class="status">💸 Refunded Order Test</div>
+        <div class="description">Should show: "คำสั่งซื้อนี้ได้รับการคืนเงินแล้ว"</div>
+    </a>
+    
+    <a href="http://localhost:3000?order=VALID-001&email=test@example.com" target="_blank" class="test-link">
+        <div class="status">✅ Valid Order Test</div>
+        <div class="description">Should show: Normal form (eligible for tax invoice)</div>
+    </a>
+    
+    <h2>Admin Contact Information</h2>
+    <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin-top: 20px;">
+        <p><strong>Email:</strong> admin@lcdtvthailand.com</p>
+        <p><strong>Phone:</strong> 02-123-4567</p>
+        <p><strong>LINE:</strong> @lcdtvthailand</p>
+        <p><strong>Hours:</strong> จันทร์-ศุกร์ 9:00-18:00</p>
+    </div>
+</body>
+</html>

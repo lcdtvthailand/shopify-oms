@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import './globals.css'
-import TopMenu from './components/TopMenu'
-import TopBar from './components/TopBar'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import TopMenu from './components/layout/TopMenu'
+import TopBar from './components/layout/TopBar'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'ใบกำกับภาษี - Tax Invoice Form',

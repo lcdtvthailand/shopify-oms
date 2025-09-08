@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { graphqlQuerySchema, env } from '@/lib/validation'
-import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/errors'
+import { graphqlQuerySchema, env } from '@/lib/utils/validation'
+import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors'
 
 // CORS headers configuration
 const corsHeaders = {

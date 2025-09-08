@@ -3,6 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import { OrderStatus, OrderFinancialStatus, OrderFulfillmentStatus, validateOrderStatus } from '@/lib/services/order-status'
+import { OrderStatusAlert } from '@/app/components/ui/OrderStatusAlert'
+import { AdminContactModal } from '@/app/components/modals/AdminContactModal'
+import { logger } from '@/lib/utils/errors'
+
+// Define types for geography data
+type Province = { code: number; nameTh: string; nameEn: string }
+type District = { code: number; nameTh: string; nameEn: string }
+type Subdistrict = { code: number; nameTh: string; nameEn: string; postalCode: number }
 
 interface FormData {
   documentType: 'tax' | 'receipt'
@@ -82,6 +91,9 @@ export default function TaxInvoiceForm() {
   const [saveError, setSaveError] = useState('')
   // After-save popup
   const [showSavePopup, setShowSavePopup] = useState(false)
+  // Order status validation
+  const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null)
+  const [showAdminContact, setShowAdminContact] = useState(false)
   
   const searchParams = useSearchParams()
 
@@ -736,6 +748,8 @@ export default function TaxInvoiceForm() {
               name
               fullyPaid
               displayFinancialStatus
+              displayFulfillmentStatus
+              cancelledAt
               customer {
                 firstName
                 lastName
@@ -801,10 +815,42 @@ export default function TaxInvoiceForm() {
       }
 
       // ตรวจสอบว่า email ตรงกันหรือไม่
-      if (node.customer?.email?.toLowerCase() !== checkEmail.toLowerCase()) {
+      // For anonymous orders, customer might be null - skip email validation if anonymous email pattern
+      const isAnonymousEmail = checkEmail.includes('anonymous-') && checkEmail.includes('@example.com')
+      const customerEmail = node.customer?.email?.toLowerCase()
+      
+      if (!isAnonymousEmail && customerEmail !== checkEmail.toLowerCase()) {
         setValidationMessage('ไม่มีคำสั่งซื้อหรือผู้ใช้นี้ในระบบ')
         setShowValidationPopup(true)
         setIsValidated(false)
+        return
+      }
+
+      // Check order status for eligibility
+      const status: OrderStatus = {
+        financialStatus: node.displayFinancialStatus?.toLowerCase() as OrderFinancialStatus || 'pending',
+        fulfillmentStatus: node.displayFulfillmentStatus?.toLowerCase() as OrderFulfillmentStatus || null,
+        cancelledAt: node.cancelledAt,
+        displayFinancialStatus: node.displayFinancialStatus,
+        displayFulfillmentStatus: node.displayFulfillmentStatus
+      }
+      
+      setOrderStatus(status)
+      
+      const validation = validateOrderStatus(status)
+      if (!validation.isEligible) {
+        // Log blocked attempt
+        logger.warn('Tax invoice creation blocked', {
+          orderNumber: node.name,
+          email: checkEmail,
+          reason: validation.reason,
+          status: status
+        })
+        
+        setValidationMessage(validation.message)
+        setShowValidationPopup(true)
+        setIsValidated(false)
+        setShowAdminContact(true)
         return
       }
 
@@ -1040,6 +1086,26 @@ export default function TaxInvoiceForm() {
           ย้อนกลับ
         </button>
       </div>
+
+      {/* Order Status Alert */}
+      {orderStatus && !validateOrderStatus(orderStatus).isEligible && orderData && (
+        <OrderStatusAlert
+          status={orderStatus}
+          message={validateOrderStatus(orderStatus).message}
+          orderNumber={orderData.name}
+        />
+      )}
+
+      {/* Admin Contact Modal */}
+      {showAdminContact && orderStatus && orderData && (
+        <AdminContactModal
+          isOpen={showAdminContact}
+          onClose={() => setShowAdminContact(false)}
+          orderNumber={orderData.name}
+          orderStatus={orderStatus}
+          customerEmail={email}
+        />
+      )}
 
       {/* Validation Popup */}
       {showValidationPopup && (
