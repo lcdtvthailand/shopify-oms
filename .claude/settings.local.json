@@ -3,7 +3,10 @@
     "allow": [
       "Bash(rm:*)",
       "Bash(pnpm dev:*)",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

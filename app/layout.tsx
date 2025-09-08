@@ -3,6 +3,7 @@ import Image from 'next/image'
 import './globals.css'
 import TopMenu from './components/TopMenu'
 import TopBar from './components/TopBar'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'ใบกำกับภาษี - Tax Invoice Form',
@@ -31,7 +32,7 @@ export default function RootLayout({
         </header>
         <TopMenu />
         <main>
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </body>
     </html>
