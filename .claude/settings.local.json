@@ -19,7 +19,9 @@
       "Bash(git add:*)",
       "Bash(rg:*)",
       "Bash(npx @biomejs/biome init:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
     ],
     "deny": []
   }
