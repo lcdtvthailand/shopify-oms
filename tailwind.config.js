@@ -3,7 +3,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'thai': ['Anuphan', 'sans-serif'],
+        thai: ['Anuphan', 'sans-serif'],
       },
     },
   },

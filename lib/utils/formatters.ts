@@ -7,7 +7,7 @@ import DOMPurify from 'isomorphic-dompurify'
 export const formatThaiPhone = (raw: string): string => {
   const digits = raw.replace(/\D/g, '').slice(0, 10)
   if (!digits) return ''
-  
+
   // Bangkok numbers (02-xxx-xxxx)
   if (digits.startsWith('02')) {
     if (digits.length <= 2) return digits
@@ -15,7 +15,7 @@ export const formatThaiPhone = (raw: string): string => {
     if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
     return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5, 9)}`
   }
-  
+
   // Mobile numbers (xxx-xxx-xxxx)
   if (digits.length <= 3) return digits
   if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
@@ -28,15 +28,15 @@ export const formatThaiPhone = (raw: string): string => {
 export const formatThaiTaxId = (raw: string): string => {
   const digits = raw.replace(/\D/g, '').slice(0, 13)
   if (!digits) return ''
-  
+
   const parts = [
     digits.slice(0, 1),
     digits.slice(1, 5),
     digits.slice(5, 10),
     digits.slice(10, 12),
-    digits.slice(12, 13)
+    digits.slice(12, 13),
   ].filter(Boolean)
-  
+
   return parts.join('-')
 }
 
@@ -60,9 +60,9 @@ export const validateThaiPhone = (phone: string): boolean => {
  * Sanitize input to prevent XSS attacks
  */
 export const sanitizeInput = (input: string): string => {
-  return DOMPurify.sanitize(input, { 
+  return DOMPurify.sanitize(input, {
     ALLOWED_TAGS: [],
-    ALLOWED_ATTR: []
+    ALLOWED_ATTR: [],
   })
 }
 

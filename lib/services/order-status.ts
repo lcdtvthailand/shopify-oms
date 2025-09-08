@@ -2,17 +2,22 @@
  * Order status validation utilities for tax invoice eligibility
  */
 
-import type { 
+import type { AdminContact } from '@/types/admin'
+import type {
   OrderFinancialStatus,
   OrderFulfillmentStatus,
-  OrderStatus, 
-  OrderStatusValidation
+  OrderStatus,
+  OrderStatusValidation,
 } from '@/types/order'
 
-import type { AdminContact } from '@/types/admin'
-
 // Re-export types for backward compatibility
-export type { AdminContact, OrderFinancialStatus, OrderFulfillmentStatus, OrderStatus, OrderStatusValidation }
+export type {
+  AdminContact,
+  OrderFinancialStatus,
+  OrderFulfillmentStatus,
+  OrderStatus,
+  OrderStatusValidation,
+}
 
 /**
  * Check if an order is eligible for tax invoice creation
@@ -23,7 +28,7 @@ export function validateOrderStatus(status: OrderStatus): OrderStatusValidation 
     return {
       isEligible: false,
       reason: 'cancelled',
-      message: 'คำสั่งซื้อนี้ถูกยกเลิกแล้ว กรุณาติดต่อเจ้าหน้าที่เพื่อขอความช่วยเหลือ'
+      message: 'คำสั่งซื้อนี้ถูกยกเลิกแล้ว กรุณาติดต่อเจ้าหน้าที่เพื่อขอความช่วยเหลือ',
     }
   }
 
@@ -32,7 +37,7 @@ export function validateOrderStatus(status: OrderStatus): OrderStatusValidation 
     return {
       isEligible: false,
       reason: 'refunded',
-      message: 'คำสั่งซื้อนี้ได้รับการคืนเงินแล้ว ไม่สามารถออกใบกำกับภาษีได้'
+      message: 'คำสั่งซื้อนี้ได้รับการคืนเงินแล้ว ไม่สามารถออกใบกำกับภาษีได้',
     }
   }
 
@@ -41,7 +46,7 @@ export function validateOrderStatus(status: OrderStatus): OrderStatusValidation 
     return {
       isEligible: false,
       reason: 'fulfilled',
-      message: 'คำสั่งซื้อนี้ได้ออกใบกำกับภาษีแล้ว หากต้องการสำเนา กรุณาติดต่อเจ้าหน้าที่'
+      message: 'คำสั่งซื้อนี้ได้ออกใบกำกับภาษีแล้ว หากต้องการสำเนา กรุณาติดต่อเจ้าหน้าที่',
     }
   }
 
@@ -50,14 +55,14 @@ export function validateOrderStatus(status: OrderStatus): OrderStatusValidation 
     return {
       isEligible: false,
       reason: 'unpaid',
-      message: 'คำสั่งซื้อนี้ยังไม่ได้ชำระเงิน กรุณาชำระเงินก่อนขอใบกำกับภาษี'
+      message: 'คำสั่งซื้อนี้ยังไม่ได้ชำระเงิน กรุณาชำระเงินก่อนขอใบกำกับภาษี',
     }
   }
 
   // Order is eligible (paid or partially paid, and not fulfilled)
   return {
     isEligible: true,
-    message: 'คำสั่งซื้อนี้สามารถออกใบกำกับภาษีได้'
+    message: 'คำสั่งซื้อนี้สามารถออกใบกำกับภาษีได้',
   }
 }
 
@@ -76,18 +81,18 @@ export function getOrderStatusDisplay(status: OrderStatus): {
     partially_paid: 'ชำระเงินบางส่วน',
     refunded: 'คืนเงินแล้ว',
     partially_refunded: 'คืนเงินบางส่วน',
-    voided: 'ยกเลิกการชำระเงิน'
+    voided: 'ยกเลิกการชำระเงิน',
   }
 
   // Fulfillment status mapping
   const fulfillmentStatusMap: Record<NonNullable<OrderFulfillmentStatus>, string> = {
     fulfilled: 'จัดส่งแล้ว',
     partial: 'จัดส่งบางส่วน',
-    unfulfilled: 'ยังไม่จัดส่ง'
+    unfulfilled: 'ยังไม่จัดส่ง',
   }
 
   const financial = financialStatusMap[status.financialStatus] || status.financialStatus
-  const fulfillment = status.fulfillmentStatus 
+  const fulfillment = status.fulfillmentStatus
     ? fulfillmentStatusMap[status.fulfillmentStatus] || status.fulfillmentStatus
     : 'ยังไม่จัดส่ง'
 
@@ -102,7 +107,6 @@ export function getOrderStatusDisplay(status: OrderStatus): {
   return { financial, fulfillment, overall }
 }
 
-
 /**
  * Get admin contact information from environment variables
  */
@@ -111,7 +115,7 @@ export function getAdminContact(): AdminContact {
     email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@lcdtvthailand.com',
     phone: process.env.NEXT_PUBLIC_ADMIN_PHONE || '02-000-0000',
     lineId: process.env.NEXT_PUBLIC_ADMIN_LINE_ID || '@lcdtvthailand',
-    officeHours: process.env.NEXT_PUBLIC_ADMIN_OFFICE_HOURS || 'จันทร์-ศุกร์ 9:00-18:00'
+    officeHours: process.env.NEXT_PUBLIC_ADMIN_OFFICE_HOURS || 'จันทร์-ศุกร์ 9:00-18:00',
   }
 }
 
@@ -124,7 +128,7 @@ export function generateContactTemplate(
   customerEmail: string
 ): string {
   const statusDisplay = getOrderStatusDisplay(status)
-  
+
   return `Subject: ขอความช่วยเหลือ - ใบกำกับภาษี คำสั่งซื้อ #${orderNumber}
 
 เรียน ฝ่ายบริการลูกค้า

@@ -21,36 +21,36 @@ export const ErrorCodes = {
   BAD_REQUEST: 'BAD_REQUEST',
 } as const
 
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes]
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes]
 
 export const handleApiError = (error: unknown): NextResponse => {
   console.error('[API Error]:', error)
-  
+
   if (error instanceof AppError) {
     return NextResponse.json(
-      { 
-        error: error.message, 
-        code: error.code 
+      {
+        error: error.message,
+        code: error.code,
       },
       { status: error.statusCode }
     )
   }
-  
+
   if (error instanceof Error) {
     return NextResponse.json(
-      { 
-        error: 'Internal server error', 
+      {
+        error: 'Internal server error',
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: 500 }
     )
   }
-  
+
   return NextResponse.json(
-    { 
-      error: 'Unknown error occurred', 
-      code: ErrorCodes.INTERNAL_SERVER_ERROR 
+    {
+      error: 'Unknown error occurred',
+      code: ErrorCodes.INTERNAL_SERVER_ERROR,
     },
     { status: 500 }
   )
@@ -62,17 +62,17 @@ export const logger = {
     console.error(`[ERROR] ${timestamp} - ${message}`, {
       error,
       metadata,
-      stack: error?.stack
+      stack: error?.stack,
     })
   },
-  
+
   info: (message: string, metadata?: Record<string, any>) => {
     const timestamp = new Date().toISOString()
     console.log(`[INFO] ${timestamp} - ${message}`, metadata)
   },
-  
+
   warn: (message: string, metadata?: Record<string, any>) => {
     const timestamp = new Date().toISOString()
     console.warn(`[WARN] ${timestamp} - ${message}`, metadata)
-  }
+  },
 }

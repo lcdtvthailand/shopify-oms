@@ -1,4 +1,4 @@
-export type OrderFinancialStatus = 
+export type OrderFinancialStatus =
   | 'pending'
   | 'paid'
   | 'partially_paid'
@@ -6,11 +6,7 @@ export type OrderFinancialStatus =
   | 'partially_refunded'
   | 'voided'
 
-export type OrderFulfillmentStatus = 
-  | 'fulfilled'
-  | 'partial'
-  | 'unfulfilled'
-  | null
+export type OrderFulfillmentStatus = 'fulfilled' | 'partial' | 'unfulfilled' | null
 
 export interface OrderStatus {
   financialStatus: OrderFinancialStatus

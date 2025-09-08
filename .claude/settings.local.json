@@ -16,7 +16,9 @@
       "Bash(mv:*)",
       "Bash(true)",
       "Bash(node:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(rg:*)",
+      "Bash(npx @biomejs/biome init:*)"
     ],
     "deny": []
   }

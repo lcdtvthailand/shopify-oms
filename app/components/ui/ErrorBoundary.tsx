@@ -1,6 +1,6 @@
 'use client'
 
-import { Component, ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error caught by boundary:', error, errorInfo)
     }
-    
+
     // In production, you would send this to a monitoring service
     // Example: Sentry.captureException(error, { contexts: { react: errorInfo } })
   }
@@ -42,13 +42,10 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex h-screen items-center justify-center bg-gray-50">
           <div className="mx-auto max-w-md px-4 py-8 text-center">
             <h1 className="mb-4 text-6xl font-bold text-red-600">เกิดข้อผิดพลาด</h1>
-            <p className="mb-4 text-lg text-gray-600">
-              ขออภัย เกิดข้อผิดพลาดในการแสดงผลหน้านี้
-            </p>
-            <p className="mb-8 text-sm text-gray-500">
-              กรุณารีเฟรชหน้าเว็บ หรือลองใหม่อีกครั้ง
-            </p>
+            <p className="mb-4 text-lg text-gray-600">ขออภัย เกิดข้อผิดพลาดในการแสดงผลหน้านี้</p>
+            <p className="mb-8 text-sm text-gray-500">กรุณารีเฟรชหน้าเว็บ หรือลองใหม่อีกครั้ง</p>
             <button
+              type="button"
               onClick={() => window.location.reload()}
               className="rounded-md bg-red-600 px-6 py-3 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >

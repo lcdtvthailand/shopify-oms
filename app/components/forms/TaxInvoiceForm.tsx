@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Image from 'next/image'
-import { OrderStatus, OrderFinancialStatus, OrderFulfillmentStatus, validateOrderStatus } from '@/lib/services/order-status'
-import { OrderStatusAlert } from '@/app/components/ui/OrderStatusAlert'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AdminContactModal } from '@/app/components/modals/AdminContactModal'
+import { OrderStatusAlert } from '@/app/components/ui/OrderStatusAlert'
+import {
+  type OrderFinancialStatus,
+  type OrderFulfillmentStatus,
+  type OrderStatus,
+  validateOrderStatus,
+} from '@/lib/services/order-status'
 import { logger } from '@/lib/utils/errors'
 
-// Define types for geography data
-type Province = { code: number; nameTh: string; nameEn: string }
-type District = { code: number; nameTh: string; nameEn: string }
-type Subdistrict = { code: number; nameTh: string; nameEn: string; postalCode: number }
+// Geography types are imported from thailand.ts
 
 interface FormData {
   documentType: 'tax' | 'receipt'
@@ -67,20 +68,26 @@ export default function TaxInvoiceForm() {
     postalCode: '',
     address: '',
     branchType: null,
-    branchNumber: ''
+    branchNumber: '',
   })
 
   // Cascading options loaded from lib/geography/thailand.ts via dynamic import
-  const [provinces, setProvinces] = useState<Array<{ code: number; nameTh: string; nameEn: string }>>([])
-  const [districts, setDistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string }>>([])
-  const [subdistricts, setSubdistricts] = useState<Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>>([])
+  const [provinces, setProvinces] = useState<
+    Array<{ code: number; nameTh: string; nameEn: string }>
+  >([])
+  const [districts, setDistricts] = useState<
+    Array<{ code: number; nameTh: string; nameEn: string }>
+  >([])
+  const [subdistricts, setSubdistricts] = useState<
+    Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>
+  >([])
 
   // URL parameter validation states
   const [orderId, setOrderId] = useState('')
   const [email, setEmail] = useState('')
   const [orderData, setOrderData] = useState<OrderData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [_loading, setLoading] = useState(false)
+  const [_error, setError] = useState<string | null>(null)
   const [showValidationPopup, setShowValidationPopup] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [isValidated, setIsValidated] = useState(false)
@@ -94,12 +101,18 @@ export default function TaxInvoiceForm() {
   // Order status validation
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null)
   const [showAdminContact, setShowAdminContact] = useState(false)
-  
+
   const searchParams = useSearchParams()
 
+  // Forward declarations for functions used in useEffect
+  const validateParametersRef =
+    useRef<(orderIdParam?: string, emailParam?: string) => Promise<void>>()
+  const loadExistingMetafieldsRef = useRef<(orderGid: string) => Promise<void>>()
+
   // Helper: Fetch latest order by email with createdAt for recency checks
-  const fetchLatestOrderByEmail = async (customerEmail: string): Promise<{ orderNumber: string; createdAt: string } | null> => {
-    const FIND_BY_EMAIL = `
+  const fetchLatestOrderByEmail = useCallback(
+    async (customerEmail: string): Promise<{ orderNumber: string; createdAt: string } | null> => {
+      const FIND_BY_EMAIL = `
       query findOrdersByEmail($query: String!) {
         orders(first: 1, query: $query, sortKey: CREATED_AT, reverse: true) {
           edges {
@@ -113,72 +126,88 @@ export default function TaxInvoiceForm() {
         }
       }
     `
-    const runSearch = async (queryString: string) => {
-      const response = await fetch('/api/shopify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: FIND_BY_EMAIL, variables: { query: queryString } }),
-      })
-      let result: any
-      try { result = await response.json() } catch { result = null }
-      const node = result?.data?.orders?.edges?.[0]?.node
-      if (!node) return null
-      if ((node.customer?.email || '').toLowerCase() !== customerEmail.toLowerCase()) return null
-      const orderNumber = String((node.name || '').replace(/^#/, ''))
-      const createdAt = String(node.createdAt || '')
-      if (!orderNumber || !createdAt) return null
-      return { orderNumber, createdAt }
-    }
+      const runSearch = async (queryString: string) => {
+        const response = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: FIND_BY_EMAIL, variables: { query: queryString } }),
+        })
+        let result: any
+        try {
+          result = await response.json()
+        } catch {
+          result = null
+        }
+        const node = result?.data?.orders?.edges?.[0]?.node
+        if (!node) {
+          return null
+        }
+        if ((node.customer?.email || '').toLowerCase() !== customerEmail.toLowerCase()) {
+          return null
+        }
+        const orderNumber = String((node.name || '').replace(/^#/, ''))
+        const createdAt = String(node.createdAt || '')
+        if (!orderNumber || !createdAt) {
+          return null
+        }
+        return { orderNumber, createdAt }
+      }
 
-    try {
-      // Important: quote the email to avoid parsing issues with '@'
-      // Also constrain by created_at to only pick orders created after arrival (minus skew)
-      const skewMs = 60000
-      const sinceIso = new Date(new Date(arrivalAtRef.current).getTime() - skewMs).toISOString()
-      const primaryQueries = [
-        `email:"${customerEmail}" created_at:>=${sinceIso}`,
-        `customer_email:"${customerEmail}" created_at:>=${sinceIso}`,
-      ]
-      for (const q of primaryQueries) {
-        const res = await runSearch(q)
-        if (res) return res
+      try {
+        // Important: quote the email to avoid parsing issues with '@'
+        // Also constrain by created_at to only pick orders created after arrival (minus skew)
+        const skewMs = 60000
+        const sinceIso = new Date(new Date(arrivalAtRef.current).getTime() - skewMs).toISOString()
+        const primaryQueries = [
+          `email:"${customerEmail}" created_at:>=${sinceIso}`,
+          `customer_email:"${customerEmail}" created_at:>=${sinceIso}`,
+        ]
+        for (const q of primaryQueries) {
+          const res = await runSearch(q)
+          if (res) {
+            return res
+          }
+        }
+        // Fallback: if none found after arrival (index lag), try without created_at but still return something
+        const fallbackQueries = [`email:"${customerEmail}"`, `customer_email:"${customerEmail}"`]
+        for (const q of fallbackQueries) {
+          const res = await runSearch(q)
+          if (res) {
+            return res
+          }
+        }
+        return null
+      } catch (_e) {
+        // fetchLatestOrderByEmail failed
+        return null
       }
-      // Fallback: if none found after arrival (index lag), try without created_at but still return something
-      const fallbackQueries = [
-        `email:"${customerEmail}"`,
-        `customer_email:"${customerEmail}"`,
-      ]
-      for (const q of fallbackQueries) {
-        const res = await runSearch(q)
-        if (res) return res
-      }
-      return null
-    } catch (e) {
-      console.warn('fetchLatestOrderByEmail failed', e)
-      return null
-    }
-  }
+    },
+    []
+  )
 
   // Poll until a newly created order (>= arrival time minus a small skew) appears
-  const waitForNewestOrderAfter = async (customerEmail: string, timeoutMs = 60000, intervalMs = 1500): Promise<string | null> => {
-    const skewMs = 60000 // 1 minute clock/indexing skew tolerance
-    const deadline = Date.now() + timeoutMs
-    const arrival = new Date(arrivalAtRef.current).getTime()
-    let lastSeen: { orderNumber: string; createdAt: string } | null = null
-    while (Date.now() < deadline) {
-      const latest = await fetchLatestOrderByEmail(customerEmail)
-      if (latest) {
-        lastSeen = latest
-        const createdTs = new Date(latest.createdAt).getTime()
-        if (!isNaN(createdTs) && createdTs >= (arrival - skewMs)) {
-          return latest.orderNumber
+  const waitForNewestOrderAfter = useCallback(
+    async (customerEmail: string, timeoutMs = 60000, intervalMs = 1500): Promise<string | null> => {
+      const skewMs = 60000 // 1 minute clock/indexing skew tolerance
+      const deadline = Date.now() + timeoutMs
+      const arrival = new Date(arrivalAtRef.current).getTime()
+      let lastSeen: { orderNumber: string; createdAt: string } | null = null
+      while (Date.now() < deadline) {
+        const latest = await fetchLatestOrderByEmail(customerEmail)
+        if (latest) {
+          lastSeen = latest
+          const createdTs = new Date(latest.createdAt).getTime()
+          if (!Number.isNaN(createdTs) && createdTs >= arrival - skewMs) {
+            return latest.orderNumber
+          }
         }
+        await new Promise((r) => setTimeout(r, intervalMs))
       }
-      await new Promise(r => setTimeout(r, intervalMs))
-    }
-    // Fallback: return whatever we last saw (may be previous order)
-    return lastSeen?.orderNumber ?? null
-  }
+      // Fallback: return whatever we last saw (may be previous order)
+      return lastSeen?.orderNumber ?? null
+    },
+    [fetchLatestOrderByEmail]
+  )
 
   // Load provinces and auto-validate URL parameters on mount
   useEffect(() => {
@@ -189,26 +218,28 @@ export default function TaxInvoiceForm() {
       setReferrerUrl(ref || null)
     }
     import('@/lib/geography/thailand').then((geo) => {
-      if (!mounted) return
+      if (!mounted) {
+        return
+      }
       setProvinces(geo.getProvinces())
     })
-    
+
     // Auto-validate URL parameters
     const urlOrderId = searchParams.get('order')
     const urlEmail = searchParams.get('email')
-    
+
     if (urlOrderId && urlEmail) {
       setOrderId(urlOrderId)
       setEmail(urlEmail)
       // Auto-validate immediately
       setTimeout(() => {
-        if (mounted) {
-          validateParameters(urlOrderId, urlEmail)
+        if (mounted && validateParametersRef.current) {
+          validateParametersRef.current(urlOrderId, urlEmail)
         }
       }, 100)
     } else if (urlEmail && !urlOrderId) {
       // If email exists but order is missing, try to auto-detect the latest order for this email
-      (async () => {
+      ;(async () => {
         try {
           setLoading(true)
           setError(null)
@@ -226,7 +257,9 @@ export default function TaxInvoiceForm() {
             }
             // Small delay to ensure state/url settled
             setTimeout(() => {
-              if (mounted) validateParameters(found, urlEmail)
+              if (mounted && validateParametersRef.current) {
+                validateParametersRef.current(found, urlEmail)
+              }
             }, 100)
           } else {
             setValidationMessage('ไม่พบออเดอร์ล่าสุดของอีเมลนี้ กรุณาระบุ Order ID ด้วยตนเอง')
@@ -247,9 +280,11 @@ export default function TaxInvoiceForm() {
       setShowValidationPopup(true)
       setIsValidated(false)
     }
-    
-    return () => { mounted = false }
-  }, [searchParams])
+
+    return () => {
+      mounted = false
+    }
+  }, [searchParams, router, waitForNewestOrderAfter])
 
   // When province changes, load districts
   useEffect(() => {
@@ -264,23 +299,27 @@ export default function TaxInvoiceForm() {
     }
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
-      if (!mounted) return
+      if (!mounted) {
+        return
+      }
       const districtList = geo.getDistrictsByProvince(formData.provinceCode!)
       setDistricts(districtList)
       // reset lower levels only when not pre-filling
-      if (!prefillGuard.current) {
-        setSubdistricts([])
-        setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
-      } else {
+      if (prefillGuard.current) {
         // When prefilling, ensure district options are loaded for the current district selection
         if (formData.districtCode) {
           const subdistrictList = geo.getSubdistrictsByDistrict(formData.districtCode)
           setSubdistricts(subdistrictList)
         }
+      } else {
+        setSubdistricts([])
+        setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
       }
     })
-    return () => { mounted = false }
-  }, [formData.provinceCode])
+    return () => {
+      mounted = false
+    }
+  }, [formData.provinceCode, formData.districtCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -293,19 +332,25 @@ export default function TaxInvoiceForm() {
     }
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
-      if (!mounted) return
+      if (!mounted) {
+        return
+      }
       const subdistrictList = geo.getSubdistrictsByDistrict(formData.districtCode!)
       setSubdistricts(subdistrictList)
       if (!prefillGuard.current) {
         setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
       }
     })
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [formData.districtCode])
 
   // When subdistrict changes, auto-fill postal code (only if not already set from saved data)
   useEffect(() => {
-    if (formData.subdistrictCode == null) return
+    if (formData.subdistrictCode == null) {
+      return
+    }
     import('@/lib/geography/thailand').then((geo) => {
       const item = geo.findBySubdistrictCode(formData.subdistrictCode!)
       if (item) {
@@ -325,86 +370,108 @@ export default function TaxInvoiceForm() {
     // Helper: format Thai phone number with dashes as user types
     const formatThaiPhone = (raw: string) => {
       const digits = raw.replace(/\D/g, '').slice(0, 10)
-      if (!digits) return ''
+      if (!digits) {
+        return ''
+      }
       // Bangkok landline starts with 02 -> format 02-XXX-XXXX
       if (digits.startsWith('02')) {
-        if (digits.length <= 2) return digits
-        if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`
-        if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
+        if (digits.length <= 2) {
+          return digits
+        }
+        if (digits.length <= 5) {
+          return `${digits.slice(0, 2)}-${digits.slice(2)}`
+        }
+        if (digits.length <= 9) {
+          return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
+        }
         return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5, 9)}${digits.length > 9 ? digits.slice(9) : ''}`
       }
       // Mobile and other numbers -> format 0xx-xxx-xxxx
-      if (digits.length <= 3) return digits
-      if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+      if (digits.length <= 3) {
+        return digits
+      }
+      if (digits.length <= 6) {
+        return `${digits.slice(0, 3)}-${digits.slice(3)}`
+      }
       return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`
     }
 
     if (name === 'companyName' || name === 'companyNameEng') {
-      setFormData(prev => ({ ...prev, [name]: formatThaiPhone(value) }))
+      setFormData((prev) => ({ ...prev, [name]: formatThaiPhone(value) }))
       return
     }
     // Helper: format 13-digit Thai ID/Tax ID -> 1-2345-67890-12-3
     const formatThaiId13 = (raw: string) => {
       const d = raw.replace(/\D/g, '').slice(0, 13)
-      if (!d) return ''
+      if (!d) {
+        return ''
+      }
       const p1 = d.slice(0, 1)
       const p2 = d.slice(1, 5)
       const p3 = d.slice(5, 10)
       const p4 = d.slice(10, 12)
       const p5 = d.slice(12, 13)
       let out = p1
-      if (p2) out += '-' + p2
-      if (p3) out += '-' + p3
-      if (p4) out += '-' + p4
-      if (p5) out += '-' + p5
+      if (p2) {
+        out += `-${p2}`
+      }
+      if (p3) {
+        out += `-${p3}`
+      }
+      if (p4) {
+        out += `-${p4}`
+      }
+      if (p5) {
+        out += `-${p5}`
+      }
       return out
     }
     if (name === 'branchCode') {
-      setFormData(prev => ({ ...prev, [name]: formatThaiId13(value) }))
+      setFormData((prev) => ({ ...prev, [name]: formatThaiId13(value) }))
       return
     }
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const _handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Basic validation
     if (!formData.documentNumber.trim()) {
       alert('กรุณากรอกชื่อ-นามสกุล')
       return
     }
-    
+
     if (!formData.branchCode.trim()) {
       alert('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
       return
     }
-    
+
     if (formData.branchCode.length !== 13) {
       alert('หมายเลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก')
       return
     }
-    
+
     if (!formData.companyName.trim()) {
       alert('กรุณากรอกหมายเลขโทรศัพท์')
       return
     }
-    
+
     if (!formData.provinceCode) {
       alert('กรุณาเลือกจังหวัด')
       return
     }
-    
+
     if (!formData.districtCode) {
       alert('กรุณาเลือกอำเภอ/เขต')
       return
     }
-    
+
     if (!formData.subdistrictCode) {
       alert('กรุณาเลือกตำบล/แขวง')
       return
     }
-    
+
     if (!formData.address.trim()) {
       alert('กรุณากรอกที่อยู่')
       return
@@ -416,20 +483,20 @@ export default function TaxInvoiceForm() {
         return
       }
     }
-    
+
     // Save to localStorage
     const savedData = {
       ...formData,
       savedAt: new Date().toISOString(),
-      id: Date.now().toString()
+      id: Date.now().toString(),
     }
-    
+
     const existingData = JSON.parse(localStorage.getItem('taxInvoiceData') || '[]')
     existingData.push(savedData)
     localStorage.setItem('taxInvoiceData', JSON.stringify(existingData))
-    
+
     alert('บันทึกข้อมูลเรียบร้อยแล้ว!')
-    
+
     // Reset form
     setFormData({
       documentType: 'tax',
@@ -443,21 +510,21 @@ export default function TaxInvoiceForm() {
       postalCode: '',
       address: '',
       branchType: null,
-      branchNumber: ''
+      branchNumber: '',
     })
-    
+
     setProvinces([])
     setDistricts([])
     setSubdistricts([])
   }
 
   const handleRadioChange = (value: 'tax' | 'receipt') => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       documentType: value,
       // reset branch type when switching to บุคคลธรรมดา
       branchType: value === 'receipt' ? (prev.branchType ?? 'head') : null,
-      branchNumber: value === 'receipt' ? prev.branchNumber : ''
+      branchNumber: value === 'receipt' ? prev.branchNumber : '',
     }))
   }
 
@@ -498,78 +565,83 @@ export default function TaxInvoiceForm() {
           }
         }
       `
-      
+
       const response = await fetch('/api/shopify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderGid } }),
       })
-      
+
       const result: any = await response.json()
       const nodes = result?.data?.order?.metafields?.nodes || []
-      
+
       if (nodes.length > 0) {
         // Create a map of metafield keys to values
         const metaMap: Record<string, string> = {}
         nodes.forEach((node: any) => {
           metaMap[node.key] = node.value || ''
         })
-        
+
         // Debug: Log all retrieved metafields
-        console.log('Retrieved metafields:', metaMap)
-        
+        // Metafields retrieved successfully
+
         // Map metafields back to form data
-        const customerType = metaMap['customer_type'] || metaMap['custom_customer_type'] || ''
-        const companyName = metaMap['company_name'] || metaMap['custom_company_name'] || ''
-        const branchType = metaMap['branch_type'] || metaMap['custom_branch_type'] || ''
-        const branchCode = metaMap['branch_code'] || metaMap['custom_branch_code'] || ''
-        const taxId = metaMap['tax_id'] || metaMap['custom_tax_id'] || ''
-        const phoneNumber = metaMap['phone_number'] || metaMap['custom_phone_number'] || ''
-        const altPhoneNumber = metaMap['alt_phone_number'] || metaMap['custom_alt_phone_number'] || ''
-        const province = metaMap['province'] || metaMap['custom_province'] || (orderData?.customer?.defaultAddress?.province ?? '')
-        const district = (
-          metaMap['district'] ||
-          metaMap['custom_district'] ||
-          metaMap['custom_custom_district'] ||
-          metaMap['district_th'] ||
-          metaMap['amphoe'] ||
-          metaMap['amphur'] ||
+        const customerType = metaMap.customer_type || metaMap.custom_customer_type || ''
+        const companyName = metaMap.company_name || metaMap.custom_company_name || ''
+        const branchType = metaMap.branch_type || metaMap.custom_branch_type || ''
+        const branchCode = metaMap.branch_code || metaMap.custom_branch_code || ''
+        const taxId = metaMap.tax_id || metaMap.custom_tax_id || ''
+        const phoneNumber = metaMap.phone_number || metaMap.custom_phone_number || ''
+        const altPhoneNumber = metaMap.alt_phone_number || metaMap.custom_alt_phone_number || ''
+        const province =
+          metaMap.province ||
+          metaMap.custom_province ||
+          (orderData?.customer?.defaultAddress?.province ?? '')
+        const district =
+          metaMap.district ||
+          metaMap.custom_district ||
+          metaMap.custom_custom_district ||
+          metaMap.district_th ||
+          metaMap.amphoe ||
+          metaMap.amphur ||
           (orderData?.customer?.defaultAddress?.city ?? '')
-        )
-        const subDistrict = (
-          metaMap['sub_district'] ||
-          metaMap['custom_sub_district'] ||
-          metaMap['custom_custom_district2'] ||
-          metaMap['tambon'] ||
-          metaMap['khwaeng'] ||
+        const subDistrict =
+          metaMap.sub_district ||
+          metaMap.custom_sub_district ||
+          metaMap.custom_custom_district2 ||
+          metaMap.tambon ||
+          metaMap.khwaeng ||
           ''
-        )
-        const postalCode = (
-          metaMap['postal_code'] ||
-          metaMap['custom_postal_code'] ||
-          metaMap['postcode'] ||
-          metaMap['post_code'] ||
-          metaMap['zip'] ||
-          metaMap['custom_zip'] ||
+        const postalCode =
+          metaMap.postal_code ||
+          metaMap.custom_postal_code ||
+          metaMap.postcode ||
+          metaMap.post_code ||
+          metaMap.zip ||
+          metaMap.custom_zip ||
           (orderData?.customer?.defaultAddress?.zip ?? '')
-        )
-        const fullAddress = metaMap['full_address'] || metaMap['custom_full_address'] || ''
-        
-        // Debug: Log extracted values
-        console.log('Extracted values for geo matching:', {
-          province, district, subDistrict, postalCode
-        })
-        
+        const fullAddress = metaMap.full_address || metaMap.custom_full_address || ''
+
+        // Extracted values for geo matching
+
         // Helper to format 13-digit tax ID for display
         const fmtId = (raw: string) => {
-          const d = String(raw || '').replace(/\D/g, '').slice(0,13)
-          if (!d) return ''
-          const p1 = d.slice(0,1), p2 = d.slice(1,5), p3 = d.slice(5,10), p4 = d.slice(10,12), p5 = d.slice(12,13)
+          const d = String(raw || '')
+            .replace(/\D/g, '')
+            .slice(0, 13)
+          if (!d) {
+            return ''
+          }
+          const p1 = d.slice(0, 1),
+            p2 = d.slice(1, 5),
+            p3 = d.slice(5, 10),
+            p4 = d.slice(10, 12),
+            p5 = d.slice(12, 13)
           return [p1, p2, p3, p4, p5].filter(Boolean).join('-')
         }
 
         // Update form data with existing values
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           documentType: customerType === 'นิติบุคคล' ? 'receipt' : 'tax',
           documentNumber: companyName,
@@ -578,44 +650,53 @@ export default function TaxInvoiceForm() {
           companyNameEng: altPhoneNumber,
           address: fullAddress,
           postalCode: postalCode,
-          branchType: branchType === 'สาขาย่อย' ? 'branch' : (branchType === 'สำนักงานใหญ่' ? 'head' : null),
+          branchType:
+            branchType === 'สาขาย่อย' ? 'branch' : branchType === 'สำนักงานใหญ่' ? 'head' : null,
           branchNumber: branchCode,
         }))
-        
+
         // Load geography data and set codes based on names
         import('@/lib/geography/thailand').then((geo) => {
           // prevent cascading effects from wiping our prefilled values
           prefillGuard.current = true
-          console.log('Prefill start')
-          const normalize = (s: string) => (s || '')
-            .replace(/^\s*(จังหวัด|จ\.|อำเภอ|อ\.|เขต|ตำบล|ต\.|แขวง)\s*/,'')
-            .replace(/[()]/g,'')
-            .trim()
-            .toLowerCase()
-          
+          // Start prefilling form data
+          const normalize = (s: string) =>
+            (s || '')
+              .replace(/^\s*(จังหวัด|จ\.|อำเภอ|อ\.|เขต|ตำบล|ต\.|แขวง)\s*/, '')
+              .replace(/[()]/g, '')
+              .trim()
+              .toLowerCase()
+
           if (province) {
-            const provinceData = geo.getProvinces().find(p =>
-              normalize(p.nameTh) === normalize(province) ||
-              normalize(p.nameEn) === normalize(province) ||
-              p.nameTh === province || p.nameEn === province
-            )
+            const provinceData = geo
+              .getProvinces()
+              .find(
+                (p) =>
+                  normalize(p.nameTh) === normalize(province) ||
+                  normalize(p.nameEn) === normalize(province) ||
+                  p.nameTh === province ||
+                  p.nameEn === province
+              )
             if (provinceData) {
-              setFormData(prev => ({ ...prev, provinceCode: provinceData.code }))
-              
+              setFormData((prev) => ({ ...prev, provinceCode: provinceData.code }))
+
               const districts = geo.getDistrictsByProvince(provinceData.code)
               let districtData = null as any
               if (district) {
-                districtData = districts.find(d =>
-                  normalize(d.nameTh) === normalize(district) ||
-                  normalize(d.nameEn) === normalize(district) ||
-                  d.nameTh === district || d.nameEn === district
-                ) || null
+                districtData =
+                  districts.find(
+                    (d) =>
+                      normalize(d.nameTh) === normalize(district) ||
+                      normalize(d.nameEn) === normalize(district) ||
+                      d.nameTh === district ||
+                      d.nameEn === district
+                  ) || null
               }
               // Fallback: try to find by postal code via subdistricts
               if (!districtData && postalCode && String(postalCode).length >= 5) {
                 for (const d of districts) {
                   const subs = geo.getSubdistrictsByDistrict(d.code)
-                  if (subs.some(s => String(s.postalCode).startsWith(String(postalCode)))) {
+                  if (subs.some((s) => String(s.postalCode).startsWith(String(postalCode)))) {
                     districtData = d
                     break
                   }
@@ -626,7 +707,9 @@ export default function TaxInvoiceForm() {
                 const normSub = normalize(subDistrict)
                 for (const d of districts) {
                   const subs = geo.getSubdistrictsByDistrict(d.code)
-                  const hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                  const hit = subs.find(
+                    (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
+                  )
                   if (hit) {
                     districtData = d
                     break
@@ -634,35 +717,45 @@ export default function TaxInvoiceForm() {
                 }
               }
               if (districtData) {
-                setFormData(prev => ({ ...prev, districtCode: districtData.code }))
+                setFormData((prev) => ({ ...prev, districtCode: districtData.code }))
                 const subdistricts = geo.getSubdistrictsByDistrict(districtData.code)
                 let subdistrictData = null as any
                 if (subDistrict) {
-                  subdistrictData = subdistricts.find(s =>
-                    normalize(s.nameTh) === normalize(subDistrict) ||
-                    normalize(s.nameEn) === normalize(subDistrict) ||
-                    s.nameTh === subDistrict || s.nameEn === subDistrict
-                  ) || null
+                  subdistrictData =
+                    subdistricts.find(
+                      (s) =>
+                        normalize(s.nameTh) === normalize(subDistrict) ||
+                        normalize(s.nameEn) === normalize(subDistrict) ||
+                        s.nameTh === subDistrict ||
+                        s.nameEn === subDistrict
+                    ) || null
                 }
                 if (!subdistrictData && postalCode && String(postalCode).length >= 5) {
-                  subdistrictData = subdistricts.find(s => String(s.postalCode) === String(postalCode)) || null
+                  subdistrictData =
+                    subdistricts.find((s) => String(s.postalCode) === String(postalCode)) || null
                 }
                 // Fallback 3: if still not found, try first subdistrict that matches by name across province (already tried), or leave empty
                 if (subdistrictData) {
-                  setFormData(prev => ({ ...prev, subdistrictCode: subdistrictData.code, postalCode: String(subdistrictData.postalCode || postalCode) }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    subdistrictCode: subdistrictData.code,
+                    postalCode: String(subdistrictData.postalCode || postalCode),
+                  }))
                 }
               } else {
                 // Final fallback: try to locate subdistrict anywhere in province by name/postal then infer its district
-                let found: { dCode: number, sCode: number, sPostal: number } | null = null
+                let found: { dCode: number; sCode: number; sPostal: number } | null = null
                 const normSub = normalize(subDistrict || '')
                 for (const d of districts) {
                   const subs = geo.getSubdistrictsByDistrict(d.code)
                   let hit = null as any
                   if (normSub) {
-                    hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                    hit = subs.find(
+                      (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
+                    )
                   }
                   if (!hit && postalCode && String(postalCode).length >= 5) {
-                    hit = subs.find(s => String(s.postalCode) === String(postalCode))
+                    hit = subs.find((s) => String(s.postalCode) === String(postalCode))
                   }
                   if (hit) {
                     found = { dCode: d.code, sCode: hit.code, sPostal: hit.postalCode }
@@ -670,12 +763,18 @@ export default function TaxInvoiceForm() {
                   }
                 }
                 if (found) {
-                  setFormData(prev => ({ ...prev, districtCode: found.dCode, subdistrictCode: found.sCode, postalCode: String(found.sPostal || postalCode) }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    districtCode: found.dCode,
+                    subdistrictCode: found.sCode,
+                    postalCode: String(found.sPostal || postalCode),
+                  }))
                 }
                 // Global fallback: search across all provinces if still nothing
                 if (!found && (subDistrict || (postalCode && String(postalCode).length >= 5))) {
                   const provincesAll = geo.getProvinces()
-                  let g: { pCode: number, dCode: number, sCode: number, sPostal: number } | null = null
+                  let g: { pCode: number; dCode: number; sCode: number; sPostal: number } | null =
+                    null
                   const normSub = normalize(subDistrict || '')
                   for (const p of provincesAll) {
                     const ds = geo.getDistrictsByProvince(p.code)
@@ -683,50 +782,63 @@ export default function TaxInvoiceForm() {
                       const subs = geo.getSubdistrictsByDistrict(d.code)
                       let hit = null as any
                       if (normSub) {
-                        hit = subs.find(s => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub)
+                        hit = subs.find(
+                          (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
+                        )
                       }
                       if (!hit && postalCode && String(postalCode).length >= 5) {
-                        hit = subs.find(s => String(s.postalCode) === String(postalCode))
+                        hit = subs.find((s) => String(s.postalCode) === String(postalCode))
                       }
                       if (hit) {
-                        g = { pCode: p.code, dCode: d.code, sCode: hit.code, sPostal: hit.postalCode }
+                        g = {
+                          pCode: p.code,
+                          dCode: d.code,
+                          sCode: hit.code,
+                          sPostal: hit.postalCode,
+                        }
                         break
                       }
                     }
-                    if (g) break
+                    if (g) {
+                      break
+                    }
                   }
                   if (g) {
-                    setFormData(prev => ({ ...prev, provinceCode: g.pCode, districtCode: g.dCode, subdistrictCode: g.sCode, postalCode: String(g.sPostal || postalCode) }))
-                    console.debug('Global geo fallback matched', g)
+                    setFormData((prev) => ({
+                      ...prev,
+                      provinceCode: g.pCode,
+                      districtCode: g.dCode,
+                      subdistrictCode: g.sCode,
+                      postalCode: String(g.sPostal || postalCode),
+                    }))
+                    // Global geo fallback matched
                   }
                 }
               }
-              // Debug diagnostics
-              console.log('Prefill geo resolution', {
-                saved: { province, district, subDistrict, postalCode },
-                matchedProvince: provinceData?.nameTh,
-                matchedDistrict: districtData?.nameTh,
-              })
+              // Geo resolution completed
               // allow effects to run normally after a longer delay to ensure all data is loaded
-              setTimeout(() => { 
+              setTimeout(() => {
                 prefillGuard.current = false
-                console.log('Prefill finish')
+                // Prefilling completed
               }, 100)
             }
           }
         })
       }
-    } catch (err) {
-      console.warn('Failed to load existing metafields:', err)
+    } catch (_err) {
+      // Failed to load existing metafields
       // Don't show error to user, just continue with empty form
     }
   }
+
+  // Assign ref for useEffect
+  loadExistingMetafieldsRef.current = loadExistingMetafields
 
   // Validate order and email parameters (can be called directly or from UI)
   const validateParameters = async (orderIdParam?: string, emailParam?: string) => {
     const checkOrderId = orderIdParam || orderId
     const checkEmail = emailParam || email
-    
+
     if (!checkOrderId || !checkEmail) {
       setValidationMessage('กรุณาระบุทั้ง Order ID และ Email ใน URL')
       setShowValidationPopup(true)
@@ -798,7 +910,10 @@ export default function TaxInvoiceForm() {
 
       if (!response.ok) {
         const message = result?.error || 'Failed to fetch order data'
-        const details = typeof result?.details === 'string' ? result.details : JSON.stringify(result?.details || {})
+        const details =
+          typeof result?.details === 'string'
+            ? result.details
+            : JSON.stringify(result?.details || {})
         throw new Error(`${message}${details ? `: ${details}` : ''}`)
       }
 
@@ -816,9 +931,10 @@ export default function TaxInvoiceForm() {
 
       // ตรวจสอบว่า email ตรงกันหรือไม่
       // For anonymous orders, customer might be null - skip email validation if anonymous email pattern
-      const isAnonymousEmail = checkEmail.includes('anonymous-') && checkEmail.includes('@example.com')
+      const isAnonymousEmail =
+        checkEmail.includes('anonymous-') && checkEmail.includes('@example.com')
       const customerEmail = node.customer?.email?.toLowerCase()
-      
+
       if (!isAnonymousEmail && customerEmail !== checkEmail.toLowerCase()) {
         setValidationMessage('ไม่มีคำสั่งซื้อหรือผู้ใช้นี้ในระบบ')
         setShowValidationPopup(true)
@@ -828,15 +944,17 @@ export default function TaxInvoiceForm() {
 
       // Check order status for eligibility
       const status: OrderStatus = {
-        financialStatus: node.displayFinancialStatus?.toLowerCase() as OrderFinancialStatus || 'pending',
-        fulfillmentStatus: node.displayFulfillmentStatus?.toLowerCase() as OrderFulfillmentStatus || null,
+        financialStatus:
+          (node.displayFinancialStatus?.toLowerCase() as OrderFinancialStatus) || 'pending',
+        fulfillmentStatus:
+          (node.displayFulfillmentStatus?.toLowerCase() as OrderFulfillmentStatus) || null,
         cancelledAt: node.cancelledAt,
         displayFinancialStatus: node.displayFinancialStatus,
-        displayFulfillmentStatus: node.displayFulfillmentStatus
+        displayFulfillmentStatus: node.displayFulfillmentStatus,
       }
-      
+
       setOrderStatus(status)
-      
+
       const validation = validateOrderStatus(status)
       if (!validation.isEligible) {
         // Log blocked attempt
@@ -844,9 +962,9 @@ export default function TaxInvoiceForm() {
           orderNumber: node.name,
           email: checkEmail,
           reason: validation.reason,
-          status: status
+          status: status,
         })
-        
+
         setValidationMessage(validation.message)
         setShowValidationPopup(true)
         setIsValidated(false)
@@ -866,10 +984,9 @@ export default function TaxInvoiceForm() {
       setShowValidationPopup(false)
       setShowSuccessToast(true)
       setTimeout(() => setShowSuccessToast(false), 3000)
-      
+
       // Load existing metafields for this order to pre-populate form
       await loadExistingMetafields(node.id)
-      
     } catch (err: any) {
       setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
       setShowValidationPopup(true)
@@ -878,6 +995,9 @@ export default function TaxInvoiceForm() {
       setLoading(false)
     }
   }
+
+  // Assign ref for useEffect
+  validateParametersRef.current = validateParameters
 
   // ส่งข้อมูลไปบันทึกเป็น Metafields ที่ออเดอร์ใน Shopify
   const handleSaveTaxInfo = async (e: React.FormEvent) => {
@@ -931,24 +1051,32 @@ export default function TaxInvoiceForm() {
     }
 
     // Map ชื่อจังหวัด/อำเภอ/ตำบลจาก code ที่เลือก
-    const provinceName = provinces.find(p => p.code === formData.provinceCode)?.nameTh || ''
-    const districtName = districts.find(d => d.code === formData.districtCode)?.nameTh || ''
-    const subdistrictName = subdistricts.find(s => s.code === formData.subdistrictCode)?.nameTh || ''
+    const provinceName = provinces.find((p) => p.code === formData.provinceCode)?.nameTh || ''
+    const districtName = districts.find((d) => d.code === formData.districtCode)?.nameTh || ''
+    const subdistrictName =
+      subdistricts.find((s) => s.code === formData.subdistrictCode)?.nameTh || ''
 
     // แปลงค่าจาก UI เดิมให้ตรงกับฟิลด์ที่ต้องการบันทึก
     const customerType = formData.documentType === 'receipt' ? 'นิติบุคคล' : 'บุคคลธรรมดา'
     const companyName = formData.documentNumber || ''
-    const branchTypeTh = formData.documentType === 'receipt'
-      ? (formData.branchType === 'branch' ? 'สาขาย่อย' : 'สำนักงานใหญ่')
-      : ''
+    const branchTypeTh =
+      formData.documentType === 'receipt'
+        ? formData.branchType === 'branch'
+          ? 'สาขาย่อย'
+          : 'สำนักงานใหญ่'
+        : ''
     // Validate branch number when "สาขาย่อย"
-    if (formData.documentType === 'receipt' && formData.branchType === 'branch' && !(formData.branchNumber || '').trim()) {
+    if (
+      formData.documentType === 'receipt' &&
+      formData.branchType === 'branch' &&
+      !(formData.branchNumber || '').trim()
+    ) {
       setIsSaving(false)
       setSaveError('กรุณากรอกรหัสสาขาย่อย')
       return
     }
 
-    const branchCode = formData.branchType === 'branch' ? (formData.branchNumber || '') : ''
+    const branchCode = formData.branchType === 'branch' ? formData.branchNumber || '' : ''
 
     // Normalize and validate 13-digit tax ID (required for all)
     const taxIdDigits = (formData.branchCode || '').replace(/\D/g, '')
@@ -963,12 +1091,16 @@ export default function TaxInvoiceForm() {
       setSaveError('กรุณาเลือกประเภทสาขา')
       return
     }
-    const taxId = taxIdDigits
+    const _taxId = taxIdDigits
     // build dashed variant for display in metafields panel
     const taxIdFormatted = (() => {
       const d = taxIdDigits
-      const p1 = d.slice(0,1), p2 = d.slice(1,5), p3 = d.slice(5,10), p4 = d.slice(10,12), p5 = d.slice(12,13)
-      return [p1,p2,p3,p4,p5].join('-')
+      const p1 = d.slice(0, 1),
+        p2 = d.slice(1, 5),
+        p3 = d.slice(5, 10),
+        p4 = d.slice(10, 12),
+        p5 = d.slice(12, 13)
+      return [p1, p2, p3, p4, p5].join('-')
     })()
     const phoneNumber = formData.companyName || ''
     const altPhoneNumber = formData.companyNameEng || ''
@@ -1005,18 +1137,18 @@ export default function TaxInvoiceForm() {
     ]
 
     const metafieldsToSave = baseFields
-      .flatMap((f) => ([
+      .flatMap((f) => [
         { namespace: 'custom', key: f.key, value: f.value, type: f.type },
         { namespace: 'custom', key: `custom_${f.key}`, value: f.value, type: f.type },
         // Special additional key for sub-district per requirement
         ...(f.key === 'sub_district'
           ? [{ namespace: 'custom', key: 'custom_custom_district2', value: f.value, type: f.type }]
           : []),
-      ]))
-      .filter(m => (m.value ?? '') !== '')
+      ])
+      .filter((m) => (m.value ?? '') !== '')
 
     const variables = {
-      metafields: metafieldsToSave.map(m => ({
+      metafields: metafieldsToSave.map((m) => ({
         ownerId: orderData.id,
         namespace: m.namespace,
         key: m.key,
@@ -1034,9 +1166,13 @@ export default function TaxInvoiceForm() {
 
       const result: any = await response.json()
 
-      if (!response.ok || result?.errors || (result?.data?.metafieldsSet?.userErrors?.length > 0)) {
+      if (!response.ok || result?.errors || result?.data?.metafieldsSet?.userErrors?.length > 0) {
         const ue = result?.data?.metafieldsSet?.userErrors?.[0]
-        const errMsg = result?.errors?.[0]?.message || (ue ? `${ue.message}${ue.code ? ` (${ue.code})` : ''}${ue.field ? ` [${ue.field}]` : ''}` : 'Failed to save metafields')
+        const errMsg =
+          result?.errors?.[0]?.message ||
+          (ue
+            ? `${ue.message}${ue.code ? ` (${ue.code})` : ''}${ue.field ? ` [${ue.field}]` : ''}`
+            : 'Failed to save metafields')
         throw new Error(errMsg)
       }
 
@@ -1057,17 +1193,25 @@ export default function TaxInvoiceForm() {
         body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderData.id } }),
       })
       const confirmJson: any = await confirmRes.json()
-      const nodes = confirmJson?.data?.order?.metafields?.nodes || []
+      const _nodes = confirmJson?.data?.order?.metafields?.nodes || []
       setSaveMessage('บันทึกข้อมูลใบกำกับภาษีสำเร็จ!')
       setShowSavePopup(true)
       // Reformat Tax ID in UI to dashed form after save
       const fmtId = (raw: string) => {
-        const d = String(raw || '').replace(/\D/g, '').slice(0,13)
-        if (!d) return ''
-        const p1 = d.slice(0,1), p2 = d.slice(1,5), p3 = d.slice(5,10), p4 = d.slice(10,12), p5 = d.slice(12,13)
+        const d = String(raw || '')
+          .replace(/\D/g, '')
+          .slice(0, 13)
+        if (!d) {
+          return ''
+        }
+        const p1 = d.slice(0, 1),
+          p2 = d.slice(1, 5),
+          p3 = d.slice(5, 10),
+          p4 = d.slice(10, 12),
+          p5 = d.slice(12, 13)
         return [p1, p2, p3, p4, p5].filter(Boolean).join('-')
       }
-      setFormData(prev => ({ ...prev, branchCode: fmtId(prev.branchCode) }))
+      setFormData((prev) => ({ ...prev, branchCode: fmtId(prev.branchCode) }))
     } catch (err: any) {
       setSaveError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
     } finally {
@@ -1078,8 +1222,11 @@ export default function TaxInvoiceForm() {
   return (
     <div className="tax-form max-w-6xl mx-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-8 md:p-10 m-4 md:m-6">
       <div className="flex justify-between items-center mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h1>
-        <button 
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+          เพิ่มข้อมูลสำหรับออกใบกำกับภาษี
+        </h1>
+        <button
+          type="button"
           onClick={handleGoBack}
           className="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-200"
         >
@@ -1112,27 +1259,40 @@ export default function TaxInvoiceForm() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
-                isValidated ? 'bg-green-100' : 'bg-red-100'
-              }`}>
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                  isValidated ? 'bg-green-100' : 'bg-red-100'
+                }`}
+              >
                 {isValidated ? (
                   <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 ) : (
                   <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 )}
               </div>
-              <h3 className={`text-lg font-semibold ${
-                isValidated ? 'text-green-800' : 'text-red-800'
-              }`}>
+              <h3
+                className={`text-lg font-semibold ${
+                  isValidated ? 'text-green-800' : 'text-red-800'
+                }`}
+              >
                 {isValidated ? 'ตรวจสอบสำเร็จ' : 'ข้อผิดพลาด'}
               </h3>
             </div>
             <p className="text-gray-700 mb-4 text-center">{validationMessage}</p>
             <button
+              type="button"
               onClick={() => setShowValidationPopup(false)}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md"
             >
@@ -1147,7 +1307,11 @@ export default function TaxInvoiceForm() {
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
           <div className="flex items-center space-x-3 bg-green-600 text-white px-4 py-3 rounded-md shadow-lg">
             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
             <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
             <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
@@ -1162,7 +1326,11 @@ export default function TaxInvoiceForm() {
             <div className="flex items-center mb-4">
               <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-green-100">
                 <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-green-800">บันทึกสำเร็จ</h3>
@@ -1170,6 +1338,7 @@ export default function TaxInvoiceForm() {
             <p className="text-gray-700 mb-4 text-center">บันทึกข้อมูลใบกำกับภาษีเรียบร้อยแล้ว</p>
             <div className="flex justify-center">
               <button
+                type="button"
                 onClick={handleGoToShop}
                 className="min-w-[200px] bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md"
               >
@@ -1180,7 +1349,10 @@ export default function TaxInvoiceForm() {
         </div>
       )}
 
-      <form onSubmit={handleSaveTaxInfo} className={`space-y-8  ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
+      <form
+        onSubmit={handleSaveTaxInfo}
+        className={`space-y-8  ${isValidated ? '' : 'opacity-50 pointer-events-none'}`}
+      >
         {/* Document Type Radio Buttons */}
         <div className="space-y-3">
           <div className="radio-group flex flex-wrap items-center gap-4">
@@ -1193,8 +1365,10 @@ export default function TaxInvoiceForm() {
                 onChange={() => handleRadioChange('tax')}
                 className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
               />
-              <span className={`${formData.documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}>
-               บุคคลธรรมดา
+              <span
+                className={`${formData.documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+              >
+                บุคคลธรรมดา
               </span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1206,7 +1380,9 @@ export default function TaxInvoiceForm() {
                 onChange={() => handleRadioChange('receipt')}
                 className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
               />
-              <span className={`${formData.documentType === 'receipt' ? 'text-red-600' : 'text-gray-600'} font-medium`}>
+              <span
+                className={`${formData.documentType === 'receipt' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+              >
                 นิติบุคคล
               </span>
             </label>
@@ -1224,10 +1400,10 @@ export default function TaxInvoiceForm() {
             value={formData.documentNumber}
             onChange={handleInputChange}
             onInvalid={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
+              ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
             }}
             onInput={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity('')
+              ;(e.target as HTMLInputElement).setCustomValidity('')
             }}
             placeholder={formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
             required
@@ -1246,11 +1422,13 @@ export default function TaxInvoiceForm() {
                   name="branchType"
                   value="head"
                   checked={formData.branchType === 'head'}
-                  onChange={() => setFormData(p => ({ ...p, branchType: 'head' }))}
+                  onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
                   required={formData.documentType === 'receipt' && !formData.branchType}
                   className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
                 />
-                <span className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}>
+                <span
+                  className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                >
                   สำนักงานใหญ่
                 </span>
               </label>
@@ -1260,10 +1438,12 @@ export default function TaxInvoiceForm() {
                   name="branchType"
                   value="branch"
                   checked={formData.branchType === 'branch'}
-                  onChange={() => setFormData(p => ({ ...p, branchType: 'branch' }))}
+                  onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
                   className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
                 />
-                <span className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}>
+                <span
+                  className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                >
                   สาขาย่อย
                 </span>
               </label>
@@ -1279,10 +1459,10 @@ export default function TaxInvoiceForm() {
                   value={formData.branchNumber || ''}
                   onChange={handleInputChange}
                   onInvalid={(e) => {
-                    (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
+                    ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
                   }}
                   onInput={(e) => {
-                    (e.target as HTMLInputElement).setCustomValidity('')
+                    ;(e.target as HTMLInputElement).setCustomValidity('')
                   }}
                   placeholder="รหัสสาขาย่อย"
                   inputMode="numeric"
@@ -1303,20 +1483,28 @@ export default function TaxInvoiceForm() {
             value={formData.branchCode}
             onChange={handleInputChange}
             onInvalid={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
+              ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
             }}
             onInput={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity('')
+              ;(e.target as HTMLInputElement).setCustomValidity('')
             }}
             placeholder="หมายเลขประจำตัวผู้เสียภาษี"
             inputMode="tel"
             maxLength={17}
             onBlur={(e) => {
-              const d = String(e.target.value || '').replace(/\D/g, '').slice(0,13)
-              if (!d) return
-              const p1 = d.slice(0,1), p2 = d.slice(1,5), p3 = d.slice(5,10), p4 = d.slice(10,12), p5 = d.slice(12,13)
+              const d = String(e.target.value || '')
+                .replace(/\D/g, '')
+                .slice(0, 13)
+              if (!d) {
+                return
+              }
+              const p1 = d.slice(0, 1),
+                p2 = d.slice(1, 5),
+                p3 = d.slice(5, 10),
+                p4 = d.slice(10, 12),
+                p5 = d.slice(12, 13)
               const dashed = [p1, p2, p3, p4, p5].filter(Boolean).join('-')
-              setFormData(prev => ({ ...prev, branchCode: dashed }))
+              setFormData((prev) => ({ ...prev, branchCode: dashed }))
             }}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -1333,10 +1521,10 @@ export default function TaxInvoiceForm() {
               value={formData.companyName}
               onChange={handleInputChange}
               onInvalid={(e) => {
-                (e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
+                ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
               }}
               onInput={(e) => {
-                (e.target as HTMLInputElement).setCustomValidity('')
+                ;(e.target as HTMLInputElement).setCustomValidity('')
               }}
               placeholder="หมายเลขโทรศัพท์"
               inputMode="tel"
@@ -1368,24 +1556,40 @@ export default function TaxInvoiceForm() {
               <select
                 name="provinceCode"
                 value={formData.provinceCode ?? ''}
-                onChange={(e) => setFormData((p) => ({ ...p, provinceCode: e.target.value ? Number(e.target.value) : null }))}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    provinceCode: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
                 onInvalid={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
                 }}
                 onInput={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('')
                 }}
                 required
                 className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
               >
                 <option value="">เลือกจังหวัด</option>
                 {provinces.map((p) => (
-                  <option key={p.code} value={p.code}>{p.nameTh}</option>
+                  <option key={p.code} value={p.code}>
+                    {p.nameTh}
+                  </option>
                 ))}
               </select>
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </span>
             </div>
@@ -1396,12 +1600,17 @@ export default function TaxInvoiceForm() {
               <select
                 name="districtCode"
                 value={formData.districtCode ?? ''}
-                onChange={(e) => setFormData((p) => ({ ...p, districtCode: e.target.value ? Number(e.target.value) : null }))}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    districtCode: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
                 onInvalid={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
                 }}
                 onInput={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('')
                 }}
                 disabled={!formData.provinceCode}
                 required
@@ -1409,12 +1618,23 @@ export default function TaxInvoiceForm() {
               >
                 <option value="">เลือกอำเภอ/เขต</option>
                 {districts.map((d) => (
-                  <option key={d.code} value={d.code}>{d.nameTh}</option>
+                  <option key={d.code} value={d.code}>
+                    {d.nameTh}
+                  </option>
                 ))}
               </select>
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </span>
             </div>
@@ -1429,12 +1649,17 @@ export default function TaxInvoiceForm() {
               <select
                 name="subdistrictCode"
                 value={formData.subdistrictCode ?? ''}
-                onChange={(e) => setFormData((p) => ({ ...p, subdistrictCode: e.target.value ? Number(e.target.value) : null }))}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    subdistrictCode: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
                 onInvalid={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
                 }}
                 onInput={(e) => {
-                  (e.target as HTMLSelectElement).setCustomValidity('')
+                  ;(e.target as HTMLSelectElement).setCustomValidity('')
                 }}
                 disabled={!formData.districtCode}
                 required
@@ -1442,12 +1667,23 @@ export default function TaxInvoiceForm() {
               >
                 <option value="">เลือกตำบล/แขวง</option>
                 {subdistricts.map((s) => (
-                  <option key={s.code} value={s.code}>{s.nameTh}</option>
+                  <option key={s.code} value={s.code}>
+                    {s.nameTh}
+                  </option>
                 ))}
               </select>
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </span>
             </div>
@@ -1476,10 +1712,10 @@ export default function TaxInvoiceForm() {
             value={formData.address}
             onChange={handleInputChange}
             onInvalid={(e) => {
-              (e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
+              ;(e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
             }}
             onInput={(e) => {
-              (e.target as HTMLTextAreaElement).setCustomValidity('')
+              ;(e.target as HTMLTextAreaElement).setCustomValidity('')
             }}
             placeholder="ที่อยู่"
             rows={3}
@@ -1502,12 +1738,8 @@ export default function TaxInvoiceForm() {
               กรุณาเข้าถึงหน้านี้ผ่าน URL ที่มี Order ID และ Email ที่ถูกต้อง
             </p>
           )}
-          {saveMessage && (
-            <p className="mt-2 text-sm text-green-600">{saveMessage}</p>
-          )}
-          {saveError && (
-            <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>
-          )}
+          {saveMessage && <p className="mt-2 text-sm text-green-600">{saveMessage}</p>}
+          {saveError && <p className="mt-2 text-sm text-red-600">Error: {saveError}</p>}
         </div>
       </form>
     </div>
