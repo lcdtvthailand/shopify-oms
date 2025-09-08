@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(npx tsx:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(true)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(rg:*)",
+      "Bash(npx @biomejs/biome init:*)",
+      "Bash(tree:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
+    ],
+    "deny": []
+  }
+}

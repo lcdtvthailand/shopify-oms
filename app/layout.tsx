@@ -1,19 +1,16 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import './globals.css'
-import TopMenu from './components/TopMenu'
-import TopBar from './components/TopBar'
+import TopBar from './components/layout/TopBar'
+import TopMenu from './components/layout/TopMenu'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'ใบกำกับภาษี - Tax Invoice Form',
   description: 'Thai Tax Invoice Form Application',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
       <body className="font-thai bg-gray-50 min-h-screen">
@@ -31,7 +28,7 @@ export default function RootLayout({
         </header>
         <TopMenu />
         <main>
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </body>
     </html>
