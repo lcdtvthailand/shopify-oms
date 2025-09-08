@@ -14,7 +14,7 @@ A Next.js application that enables Thai customers to request tax invoices for th
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm (recommended) or npm
 - Shopify store with Admin API access
 - Shopify Admin API access token
@@ -22,22 +22,26 @@ A Next.js application that enables Thai customers to request tax invoices for th
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/lcdtvthailand/shopify-oms.git
 cd shopify-oms
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Create `.env.local` file:
+
 ```bash
 cp .env.example .env.local
 ```
 
 4. Configure environment variables:
+
 ```env
 # Required
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
@@ -74,6 +78,7 @@ pnpm lint     # Run Biome linter
 ### Customer Flow
 
 1. Customer receives a link with URL parameters:
+
    ```
    https://your-domain.com/?order=12345&email=customer@example.com
    ```
@@ -134,6 +139,7 @@ If only email is provided, the system will attempt to find the latest order auto
 ### Shopify GraphQL API
 
 All Shopify API calls go through `/api/shopify/route.ts` which handles:
+
 - Authentication with access token
 - Rate limiting
 - Error handling
@@ -211,7 +217,8 @@ This project is proprietary software. All rights reserved.
 ## Support
 
 For support, please contact:
-- Email: admin@lcdtvthailand.com
+
+- Email: <admin@lcdtvthailand.com>
 - Phone: 02-xxx-xxxx
 - LINE: @lcdtvthailand
 
@@ -240,6 +247,7 @@ For support, please contact:
 ## Roadmap
 
 See [docs/improvement-suggestions.md](docs/improvement-suggestions.md) for planned improvements including:
+
 - Testing framework setup
 - Redis integration
 - API authentication
