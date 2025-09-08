@@ -244,17 +244,27 @@ export default function TaxInvoiceForm() {
     if (formData.provinceCode == null) {
       setDistricts([])
       setSubdistricts([])
-      setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
+      // Only reset if not prefilling from saved data
+      if (!prefillGuard.current) {
+        setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
+      }
       return
     }
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
-      setDistricts(geo.getDistrictsByProvince(formData.provinceCode!))
+      const districtList = geo.getDistrictsByProvince(formData.provinceCode!)
+      setDistricts(districtList)
       // reset lower levels only when not pre-filling
       if (!prefillGuard.current) {
         setSubdistricts([])
         setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
+      } else {
+        // When prefilling, ensure district options are loaded for the current district selection
+        if (formData.districtCode) {
+          const subdistrictList = geo.getSubdistrictsByDistrict(formData.districtCode)
+          setSubdistricts(subdistrictList)
+        }
       }
     })
     return () => { mounted = false }
@@ -272,7 +282,8 @@ export default function TaxInvoiceForm() {
     let mounted = true
     import('@/lib/geography/thailand').then((geo) => {
       if (!mounted) return
-      setSubdistricts(geo.getSubdistrictsByDistrict(formData.districtCode!))
+      const subdistrictList = geo.getSubdistrictsByDistrict(formData.districtCode!)
+      setSubdistricts(subdistrictList)
       if (!prefillGuard.current) {
         setFormData((p) => ({ ...p, subdistrictCode: null, postalCode: '' }))
       }
@@ -280,12 +291,20 @@ export default function TaxInvoiceForm() {
     return () => { mounted = false }
   }, [formData.districtCode])
 
-  // When subdistrict changes, auto-fill postal code
+  // When subdistrict changes, auto-fill postal code (only if not already set from saved data)
   useEffect(() => {
     if (formData.subdistrictCode == null) return
     import('@/lib/geography/thailand').then((geo) => {
       const item = geo.findBySubdistrictCode(formData.subdistrictCode!)
-      if (item) setFormData((p) => ({ ...p, postalCode: String(item.postalCode) }))
+      if (item) {
+        // Only auto-fill postal code if it's empty or if we're not prefilling from saved data
+        setFormData((p) => {
+          if (!prefillGuard.current || !p.postalCode) {
+            return { ...p, postalCode: String(item.postalCode) }
+          }
+          return p
+        })
+      }
     })
   }, [formData.subdistrictCode])
 
@@ -676,9 +695,11 @@ export default function TaxInvoiceForm() {
                 matchedProvince: provinceData?.nameTh,
                 matchedDistrict: districtData?.nameTh,
               })
-              // allow effects to run normally after a short tick
-              setTimeout(() => { prefillGuard.current = false }, 0)
-              console.log('Prefill finish')
+              // allow effects to run normally after a longer delay to ensure all data is loaded
+              setTimeout(() => { 
+                prefillGuard.current = false
+                console.log('Prefill finish')
+              }, 100)
             }
           }
         })
