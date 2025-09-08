@@ -1009,9 +1009,9 @@ export default function TaxInvoiceForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h1>
+    <div className="tax-form max-w-6xl mx-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-8 md:p-10 m-4 md:m-6">
+      <div className="flex justify-between items-center mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h1>
         <button 
           onClick={handleGoBack}
           className="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-200"
@@ -1093,10 +1093,10 @@ export default function TaxInvoiceForm() {
         </div>
       )}
 
-      <form onSubmit={handleSaveTaxInfo} className={`space-y-6 ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
+      <form onSubmit={handleSaveTaxInfo} className={`space-y-8  ${!isValidated ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Document Type Radio Buttons */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-6">
+        <div className="space-y-3">
+          <div className="radio-group flex flex-wrap items-center gap-4">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="radio"
@@ -1126,7 +1126,7 @@ export default function TaxInvoiceForm() {
           </div>
         </div>
 
-        {/* Name or Company Name */}
+        {/* Name or Company Name - Full Width */}
         <div className="space-y-2">
           <label className="block text-gray-700 font-medium">
             {formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
@@ -1152,7 +1152,7 @@ export default function TaxInvoiceForm() {
         {formData.documentType === 'receipt' && (
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium">สาขา</label>
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-6 gap-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="radio"
@@ -1207,7 +1207,7 @@ export default function TaxInvoiceForm() {
           </div>
         )}
 
-        {/* Tax Identification Number */}
+        {/* Tax Identification Number - Full Width */}
         <div className="space-y-2">
           <label className="block text-gray-700 font-medium">หมายเลขประจำตัวผู้เสียภาษี</label>
           <input
@@ -1236,7 +1236,7 @@ export default function TaxInvoiceForm() {
           />
         </div>
 
-        {/* Company Names Row */}
+        {/* Phone Numbers Row - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium">หมายเลขโทรศัพท์</label>
@@ -1273,7 +1273,7 @@ export default function TaxInvoiceForm() {
           </div>
         </div>
 
-        {/* Location Row */}
+        {/* Province and District Row - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium">จังหวัด</label>
@@ -1334,7 +1334,7 @@ export default function TaxInvoiceForm() {
           </div>
         </div>
 
-        {/* District and Postal Code Row */}
+        {/* Subdistrict and Postal Code Row - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium">ตำบล/ แขวง</label>
@@ -1381,7 +1381,7 @@ export default function TaxInvoiceForm() {
           </div>
         </div>
 
-        {/* Address */}
+        {/* Address - Full Width */}
         <div className="space-y-2">
           <label className="block text-gray-700 font-medium">ที่อยู่</label>
           <textarea
@@ -1406,7 +1406,7 @@ export default function TaxInvoiceForm() {
           <button
             type="submit"
             disabled={!isValidated || isSaving}
-            className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium px-4 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>

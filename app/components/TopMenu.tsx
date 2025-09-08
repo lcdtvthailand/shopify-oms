@@ -11,8 +11,8 @@ export default function TopMenu() {
 
   return (
     <nav className="w-full bg-red-600 text-white shadow z-40 sticky top-0 left-0 border-b border-red-700/60">
-      <div className="mx-auto max-w-screen-xl px-2 sm:px-4">
-        <div className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3 py-2 overflow-visible text-[13px] sm:text-sm md:text-[15px] font-medium tracking-wide">
+      <div className="mx-auto max-w-screen-xl px-4 md:px-6">
+        <div className="flex items-center justify-start pl-6 md:pl-10 gap-1.5 sm:gap-2 md:gap-3 py-2 overflow-visible text-[13px] sm:text-sm md:text-[15px] font-medium tracking-wide">
           {/* Hamburger / All products */}
           <button
             type="button"

@@ -3,8 +3,6 @@
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 html,
@@ -39,4 +37,75 @@ input, select, textarea {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+/* Scoped polish for the Tax Invoice form */
+
+.tax-form h1 {
+  letter-spacing: 0.2px;
+}
+.tax-form {
+  padding: revert-layer;
+  margin: auto;
+
+}
+form.space-y-8 {
+  margin: 1rem;
+}
+
+.tax-form label {
+  font-weight: 500;
+  color: #374151; /* gray-700 */
+}
+
+.tax-form input[type="text"],
+.tax-form input[type="tel"],
+.tax-form input[type="number"],
+.tax-form select,
+.tax-form textarea {
+  background-color: #ffffff;
+  border: 1px solid #D1D5DB; /* gray-300 */
+  border-radius: 0.5rem;      /* md */
+  padding: 0.75rem 1rem;      /* py-3 px-4 */
+  font-size: 0.95rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tax-form input::placeholder,
+.tax-form textarea::placeholder {
+  color: #9CA3AF; /* gray-400 */
+}
+
+.tax-form select {
+  appearance: none;
+  background-image: none; /* we draw caret in JSX */
+}
+
+.tax-form input:focus,
+.tax-form select:focus,
+.tax-form textarea:focus {
+  outline: none;
+  border-color: #EF4444; /* red-500 */
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25); /* focus ring */
+}
+
+/* Radio alignment and spacing */
+.tax-form input[type="radio"] {
+  transform: translateY(1px);
+}
+.tax-form .radio-group label,
+.tax-form .flex label {
+  gap: 0.5rem;
+}
+
+/* Grid gap fallback for older browsers */
+.tax-form .grid {
+  row-gap: 1.25rem; /* 20px */
+}
+
+/* Submit button polish (inherits from Tailwind but ensure consistent look) */
+.tax-form button[type="submit"] {
+  border-radius: 0.5rem;
+  width: 70px;
+  font-size: 16px;
+  padding: 5px;
 }
