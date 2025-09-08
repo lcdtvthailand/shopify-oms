@@ -1,4 +1,4 @@
-// File: C:\Users\Mario\OneDrive\เดสก์ท็อป\Tax invoice\app\page.tsx
+// File: /Users/fero/Desktop/HX/Works/lcdtv/shopify-oms/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
