@@ -18,7 +18,8 @@
       "Bash(node:*)",
       "Bash(git add:*)",
       "Bash(rg:*)",
-      "Bash(npx @biomejs/biome init:*)"
+      "Bash(npx @biomejs/biome init:*)",
+      "Bash(tree:*)"
     ],
     "deny": []
   }
