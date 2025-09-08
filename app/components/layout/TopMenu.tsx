@@ -1,13 +1,13 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useState } from "react";
+import Link from 'next/link'
+import { useState } from 'react'
 
 // Simple top red menu bar inspired by the provided image
 export default function TopMenu() {
-  const [brandOpen, setBrandOpen] = useState(false);
+  const [brandOpen, setBrandOpen] = useState(false)
   const itemCls =
-    "px-3 py-2 rounded-md transition-colors whitespace-nowrap border-b-2 border-transparent hover:bg-red-700/70 active:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
+    'px-3 py-2 rounded-md transition-colors whitespace-nowrap border-b-2 border-transparent hover:bg-red-700/70 active:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70'
 
   return (
     <nav className="w-full bg-red-600 text-white shadow z-40 sticky top-0 left-0 border-b border-red-700/60">
@@ -42,7 +42,8 @@ export default function TopMenu() {
           </Link>
 
           {/* Brands dropdown */}
-          <div className="relative" onMouseLeave={() => setBrandOpen(false)}>
+          {/* biome-ignore lint/a11y/useSemanticElements: dropdown wrapper needs div for styling */}
+          <div className="relative" role="navigation" onMouseLeave={() => setBrandOpen(false)}>
             <button
               type="button"
               onClick={() => setBrandOpen((s) => !s)}
@@ -71,10 +72,18 @@ export default function TopMenu() {
                 className="absolute left-0 top-full mt-1 w-60 rounded-lg bg-white text-gray-800 shadow-xl ring-1 ring-black/5 overflow-hidden z-50"
               >
                 <div className="py-1 text-sm">
-                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">Samsung</Link>
-                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">LG</Link>
-                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">Sony</Link>
-                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">TCL</Link>
+                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">
+                    Samsung
+                  </Link>
+                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">
+                    LG
+                  </Link>
+                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">
+                    Sony
+                  </Link>
+                  <Link href="#" className="block px-4 py-2 hover:bg-gray-50">
+                    TCL
+                  </Link>
                 </div>
               </div>
             )}
@@ -108,5 +117,5 @@ export default function TopMenu() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </nav>
-  );
+  )
 }

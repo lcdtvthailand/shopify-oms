@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
   // Clone the request headers
   const headers = new Headers(request.headers)
-  
+
   // Add security headers
   headers.set('X-DNS-Prefetch-Control', 'on')
   headers.set('X-XSS-Protection', '1; mode=block')
@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('Referrer-Policy', 'origin-when-cross-origin')
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  
+
   // Add CSP header for additional security
   const cspHeader = [
     "default-src 'self'",
@@ -27,11 +27,11 @@ export function middleware(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "manifest-src 'self'",
-    "upgrade-insecure-requests"
+    'upgrade-insecure-requests',
   ].join('; ')
-  
+
   headers.set('Content-Security-Policy', cspHeader)
-  
+
   return NextResponse.next({
     request: {
       headers,

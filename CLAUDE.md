@@ -77,3 +77,70 @@ Uses Tailwind CSS v4 with:
 - Form has two modes: individual (บุคคลธรรมดา) and juristic person (นิติบุคคล)
 - All Shopify data stored in order metafields under namespace `custom`
 - Uses GraphQL for all Shopify API operations
+
+## Feature: Order Status Validation & Admin Contact
+
+### Overview
+
+Prevent tax invoice creation for cancelled or fulfilled orders, and provide administrator contact information for customers who need assistance.
+
+### Implementation Plan
+
+#### 1. Order Status Validation
+
+- **GraphQL Query Updates**: Include fulfillment status, financial status, and cancellation details in order queries
+- **Eligible Statuses**: Only allow tax invoice creation for:
+  - Orders with financial status: `paid`, `partially_paid`
+  - Orders with fulfillment status: `null` (unfulfilled), `partial`
+  - Orders that are NOT cancelled
+- **Ineligible Statuses**: Block tax invoice creation for:
+  - Cancelled orders
+  - Fully fulfilled orders (fulfillment status: `fulfilled`)
+  - Refunded orders (financial status: `refunded`, `partially_refunded`)
+
+#### 2. Administrator Contact Information
+
+- **Environment Variables**:
+
+  ```
+  NEXT_PUBLIC_ADMIN_EMAIL=admin@lcdtvthailand.com
+  NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx
+  NEXT_PUBLIC_ADMIN_LINE_ID=@lcdtvthailand
+  NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00
+  ```
+
+- **Contact Methods**: Email, Phone, LINE Official Account
+- **Pre-filled Templates**: Include order number, status, and customer information
+
+#### 3. UI Components
+
+- **OrderStatusAlert**: Component to display order status warnings
+- **AdminContactModal**: Modal with administrator contact information
+- **StatusBadge**: Visual indicator for order status
+
+#### 4. User Flow
+
+```
+1. Customer enters order details
+2. System validates order status
+3. If eligible → Show tax invoice form
+4. If ineligible → Show status message + admin contact
+5. Log attempt for admin review
+```
+
+#### 5. Status Messages (Thai)
+
+- **Cancelled**: "คำสั่งซื้อนี้ถูกยกเลิกแล้ว กรุณาติดต่อเจ้าหน้าที่เพื่อขอความช่วยเหลือ"
+- **Already Fulfilled**: "คำสั่งซื้อนี้ได้ออกใบกำกับภาษีแล้ว หากต้องการสำเนา กรุณาติดต่อเจ้าหน้าที่"
+- **Refunded**: "คำสั่งซื้อนี้ได้รับการคืนเงินแล้ว ไม่สามารถออกใบกำกับภาษีได้"
+
+#### 6. Technical Implementation
+
+1. Update GraphQL queries to fetch order status fields
+2. Create status validation utility functions
+3. Implement OrderStatusAlert component
+4. Create AdminContactModal component  
+5. Integrate status checks into TaxInvoiceForm
+6. Add environment variables for admin contact
+7. Update form logic to handle ineligible orders
+8. Add logging for blocked attempts

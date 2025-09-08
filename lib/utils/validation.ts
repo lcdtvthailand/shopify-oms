@@ -12,7 +12,11 @@ export const taxInvoiceSchema = z.object({
   name: z.string().min(1).max(200),
   taxId: z.string().regex(/^\d{13}$/, 'Tax ID must be 13 digits'),
   phone1: z.string().regex(/^\d{9,10}$/, 'Phone number must be 9-10 digits'),
-  phone2: z.string().regex(/^\d{9,10}$/).optional().or(z.literal('')),
+  phone2: z
+    .string()
+    .regex(/^\d{9,10}$/)
+    .optional()
+    .or(z.literal('')),
   branchName: z.string().optional(),
   branchNumber: z.string().optional(),
   address: z.string().min(1).max(500),
