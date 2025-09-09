@@ -17,7 +17,14 @@ const config = {
     },
   },
 
-  edgeExternals: ['node:crypto'],
+  edgeExternals: [
+    'node:crypto',
+    'node:zlib',
+    'node:stream',
+    'node:util',
+    'node:buffer',
+    'node:process',
+  ],
 
   middleware: {
     external: true,
