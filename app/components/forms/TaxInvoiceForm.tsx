@@ -315,16 +315,97 @@ export default function TaxInvoiceForm() {
     // Auto-validate URL parameters
     const urlOrderId = searchParams.get('order')
     const urlEmail = searchParams.get('email')
+    const urlOms = searchParams.get('oms')
+    const urlKey = searchParams.get('key')
+    const urlTs = searchParams.get('ts')
+    const urlToken = searchParams.get('token')
 
-    if (urlOrderId && urlEmail) {
-      setOrderId(urlOrderId)
-      setEmail(urlEmail)
-      // Auto-validate immediately
-      setTimeout(() => {
-        if (mounted && validateParametersRef.current) {
-          validateParametersRef.current(urlOrderId, urlEmail)
+    // Priority 1: New Shopify link format using oms/key/ts/token
+    if (urlOms && urlKey && urlTs && urlToken) {
+      ;(async () => {
+        try {
+          setLoading(true)
+          setError(null)
+          const q = new URLSearchParams({
+            key: urlKey,
+            oms: urlOms,
+            ts: urlTs,
+            token: urlToken,
+            format: 'json',
+          })
+          const res = await fetch(`/api/resolve-oms?${q.toString()}`)
+          const json = (await res.json()) as {
+            ok: boolean
+            valid?: boolean
+            order?: string
+            email?: string
+            reason?: string
+          }
+          if (!json?.ok || json.valid !== true || !json.order || !json.email) {
+            setValidationMessage('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง')
+            setShowValidationPopup(true)
+            setIsValidated(false)
+            return
+          }
+          setOrderId(json.order)
+          setEmail(json.email)
+          // Keep OMS-style parameters in URL (no rewrite). Proceed with validation below.
+          // Trigger validation
+          setTimeout(() => {
+            if (mounted && validateParametersRef.current) {
+              validateParametersRef.current(json.order!, json.email!)
+            }
+          }, 100)
+        } catch {
+          setValidationMessage('ไม่สามารถตรวจสอบลิงก์ได้ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ')
+          setShowValidationPopup(true)
+          setIsValidated(false)
+        } finally {
+          setLoading(false)
         }
-      }, 100)
+      })()
+    } else if (urlOrderId && urlEmail) {
+      // If canonical params provided, transform to OMS format for consistency
+      ;(async () => {
+        try {
+          setLoading(true)
+          setError(null)
+          const q = new URLSearchParams({
+            order: urlOrderId,
+            email: urlEmail,
+            format: 'json',
+          })
+          const res = await fetch(`/api/build-oms?${q.toString()}`)
+          const json = (await res.json()) as {
+            ok: boolean
+            url?: string
+          }
+          if (json?.ok && json.url) {
+            // Replace to OMS-style URL; the OMS branch above will handle validation
+            router.replace(json.url)
+            return
+          }
+          // Fallback: keep old behavior if build-oms not available
+          setOrderId(urlOrderId)
+          setEmail(urlEmail)
+          setTimeout(() => {
+            if (mounted && validateParametersRef.current) {
+              validateParametersRef.current(urlOrderId, urlEmail)
+            }
+          }, 100)
+        } catch {
+          // Fallback to prior behavior on error
+          setOrderId(urlOrderId)
+          setEmail(urlEmail)
+          setTimeout(() => {
+            if (mounted && validateParametersRef.current) {
+              validateParametersRef.current(urlOrderId, urlEmail)
+            }
+          }, 100)
+        } finally {
+          setLoading(false)
+        }
+      })()
     } else if (urlEmail && !urlOrderId) {
       // If email exists but order is missing, try to auto-detect the latest order for this email
       ;(async () => {
