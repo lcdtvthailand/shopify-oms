@@ -1699,7 +1699,7 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="provinceCode"
-                        value={formData.provinceCode ?? ''}
+                        value={formData.provinceCode ? String(formData.provinceCode) : ''}
                         onChange={(e) =>
                           setFormData((p) => ({
                             ...p,
@@ -1743,7 +1743,7 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="districtCode"
-                        value={formData.districtCode ?? ''}
+                        value={formData.districtCode ? String(formData.districtCode) : ''}
                         onChange={(e) =>
                           setFormData((p) => ({
                             ...p,
@@ -1792,7 +1792,7 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="subdistrictCode"
-                        value={formData.subdistrictCode ?? ''}
+                        value={formData.subdistrictCode ? String(formData.subdistrictCode) : ''}
                         onChange={(e) =>
                           setFormData((p) => ({
                             ...p,
