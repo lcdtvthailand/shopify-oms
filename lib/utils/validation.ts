@@ -34,13 +34,23 @@ export const envSchema = z.object({
   NEXT_PUBLIC_ALLOWED_ORIGINS: z.string().optional(),
 })
 
-// Validate environment variables on module load
-export const env = envSchema.parse({
-  SHOPIFY_STORE_DOMAIN: process.env.SHOPIFY_STORE_DOMAIN,
-  SHOPIFY_ADMIN_ACCESS_TOKEN: process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_ALLOWED_ORIGINS: process.env.NEXT_PUBLIC_ALLOWED_ORIGINS,
-})
+// During build, allow missing env vars. They'll be validated at runtime.
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
+// Validate environment variables - lenient during build
+export const env = isBuildTime
+  ? {
+      SHOPIFY_STORE_DOMAIN: process.env.SHOPIFY_STORE_DOMAIN || '',
+      SHOPIFY_ADMIN_ACCESS_TOKEN: process.env.SHOPIFY_ADMIN_ACCESS_TOKEN || '',
+      NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'production',
+      NEXT_PUBLIC_ALLOWED_ORIGINS: process.env.NEXT_PUBLIC_ALLOWED_ORIGINS,
+    }
+  : envSchema.parse({
+      SHOPIFY_STORE_DOMAIN: process.env.SHOPIFY_STORE_DOMAIN,
+      SHOPIFY_ADMIN_ACCESS_TOKEN: process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_ALLOWED_ORIGINS: process.env.NEXT_PUBLIC_ALLOWED_ORIGINS,
+    })
 
 // Type exports
 export type GraphQLQuery = z.infer<typeof graphqlQuerySchema>

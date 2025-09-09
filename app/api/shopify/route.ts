@@ -59,11 +59,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate environment variables
-    if (!env.SHOPIFY_STORE_DOMAIN || !env.SHOPIFY_ADMIN_ACCESS_TOKEN) {
+    // Validate environment variables at runtime
+    const storeDomain = env.SHOPIFY_STORE_DOMAIN || process.env.SHOPIFY_STORE_DOMAIN
+    const accessToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN || process.env.SHOPIFY_ADMIN_ACCESS_TOKEN
+
+    if (!storeDomain || !accessToken) {
       logger.error('Missing Shopify configuration', {
-        hasStoreDomain: Boolean(env.SHOPIFY_STORE_DOMAIN),
-        hasAccessToken: Boolean(env.SHOPIFY_ADMIN_ACCESS_TOKEN),
+        hasStoreDomain: Boolean(storeDomain),
+        hasAccessToken: Boolean(accessToken),
       })
 
       throw new AppError('Server configuration error', ErrorCodes.INTERNAL_SERVER_ERROR, 500)
@@ -87,14 +90,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Create Shopify GraphQL endpoint URL
-    const shopifyUrl = `https://${env.SHOPIFY_STORE_DOMAIN}/admin/api/2024-07/graphql.json`
+    const shopifyUrl = `https://${storeDomain}/admin/api/2024-07/graphql.json`
 
     // Call Shopify Admin API
     const shopifyRequest = await fetch(shopifyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': env.SHOPIFY_ADMIN_ACCESS_TOKEN,
+        'X-Shopify-Access-Token': accessToken,
       },
       body: JSON.stringify({ query, variables }),
     })
