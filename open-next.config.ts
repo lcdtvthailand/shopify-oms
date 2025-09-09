@@ -15,6 +15,8 @@ const config = {
       tagCache: 'dummy',
       queue: 'dummy',
     },
+    // Include assets in the worker bundle for Cloudflare Pages
+    bundledRedirects: true,
   },
 
   edgeExternals: [

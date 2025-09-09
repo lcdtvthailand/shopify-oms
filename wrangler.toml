@@ -42,9 +42,9 @@ vars = { NODE_ENV = "staging" }
 [build]
 command = "pnpm build:cloudflare"
 
-# Static assets - required for OpenNext
-[site]
-bucket = ".open-next/assets"
+# Static assets - not compatible with Cloudflare Pages deployment
+# [site]
+# bucket = ".open-next/assets"
 
 # Limits and quotas
 [limits]
