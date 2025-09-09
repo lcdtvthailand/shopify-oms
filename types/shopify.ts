@@ -23,3 +23,32 @@ export interface ShopifyOrder {
   cancelledAt?: string | null
   refundedAt?: string | null
 }
+
+export interface ShopifyGraphQLError {
+  message: string
+  extensions?: {
+    code: string
+    [key: string]: unknown
+  }
+  locations?: Array<{
+    line: number
+    column: number
+  }>
+  path?: Array<string | number>
+}
+
+export interface ShopifyGraphQLResponse<T = unknown> {
+  data?: T
+  errors?: ShopifyGraphQLError[]
+  extensions?: {
+    cost?: {
+      requestedQueryCost: number
+      actualQueryCost: number
+      throttleStatus: {
+        maximumAvailable: number
+        currentlyAvailable: number
+        restoreRate: number
+      }
+    }
+  }
+}

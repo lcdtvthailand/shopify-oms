@@ -1,12 +1,12 @@
-# Shopify Configuration (Required)
+# Cloudflare Wrangler Local Development Variables
+# Copy this to .dev.vars and fill in your values
+
+# Required
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
 SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_xxxxxxxxxxxxx
 
-# Admin Contact Information (Optional)
+# Optional
 NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
 NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx
 NEXT_PUBLIC_ADMIN_LINE_ID=@yourlineid
 NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00
-
-# Environment
-NODE_ENV=development

@@ -8,7 +8,12 @@ export default function TopBar() {
           <div className="flex items-center gap-3 sm:gap-4 whitespace-nowrap">
             <span className="opacity-90">โทร : 091-901-7000, 091-901-8000</span>
             <span className="hidden sm:inline opacity-50">|</span>
-            <a href="https://line.me/" className="hidden sm:inline hover:underline opacity-90" target="_blank" rel="noopener noreferrer">
+            <a
+              href="https://line.me/"
+              className="hidden sm:inline hover:underline opacity-90"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               💬 LINE
             </a>
           </div>

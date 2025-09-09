@@ -21,7 +21,10 @@
       "Bash(npx @biomejs/biome init:*)",
       "Bash(tree:*)",
       "Bash(git fetch:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(chmod:*)",
+      "Bash(wrangler dev:*)",
+      "Bash(npx wrangler dev:*)"
     ],
     "deny": []
   }
