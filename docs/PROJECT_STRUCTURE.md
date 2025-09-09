@@ -1,130 +1,96 @@
 # Project Structure
 
-This project follows Next.js App Router best practices with a clean, organized folder structure.
-
-## Directory Structure
-
-```text
+```
 shopify-oms/
-├── app/                      # Next.js App Router
-│   ├── api/                  # API routes
-│   │   └── shopify/
-│   │       └── route.ts      # Shopify GraphQL API endpoint
-│   ├── components/           # React components
-│   │   ├── forms/           # Form components
-│   │   │   └── TaxInvoiceForm.tsx
-│   │   ├── layout/          # Layout components
-│   │   │   ├── TopBar.tsx
-│   │   │   └── TopMenu.tsx
-│   │   ├── modals/          # Modal components
-│   │   │   └── AdminContactModal.tsx
-│   │   └── ui/              # UI components
-│   │       ├── ErrorBoundary.tsx
-│   │       └── OrderStatusAlert.tsx
-│   ├── test-status/         # Test pages
-│   │   └── page.tsx
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   ├── not-found.tsx        # 404 page
-│   └── page.tsx             # Home page
-├── constants/               # Application constants
-│   ├── api.ts              # API-related constants
-│   ├── ui.ts               # UI messages
-│   ├── validation.ts       # Validation rules
-│   └── index.ts            # Barrel export
-├── lib/                     # Library code
-│   ├── geography/          # Geography data
-│   │   └── thailand.ts     # Thai provinces data
-│   ├── services/           # Business logic services
-│   │   └── order-status.ts # Order validation service
-│   ├── utils/              # Utility functions
-│   │   ├── errors.ts       # Error handling
-│   │   ├── formatters.ts   # Data formatters
-│   │   └── validation.ts   # Validation schemas
-│   └── hooks/              # Custom React hooks (future)
-├── types/                   # TypeScript type definitions
-│   ├── admin.ts            # Admin types
-│   ├── form.ts             # Form types
-│   ├── geography.ts        # Geography types
-│   ├── order.ts            # Order types
-│   ├── shopify.ts          # Shopify API types
-│   └── index.ts            # Barrel export
-├── __tests__/              # Test files
-│   ├── integration/        # Integration tests
-│   ├── unit/              # Unit tests
-│   ├── test-browser.html  # Browser test links
-│   └── test-order-status.md # Test documentation
-├── CLAUDE/                 # Claude AI documentation
-│   ├── CLAUDE.md          # Development guide
-│   └── test-results.md    # Test results
-├── public/                 # Static assets
-│   └── *.png              # Images
-├── .env.local             # Environment variables
-├── middleware.ts          # Next.js middleware
-├── next.config.js         # Next.js config
-├── tailwind.config.js     # Tailwind CSS config
-├── tsconfig.json          # TypeScript config
-└── package.json           # Dependencies
+├── app/                          # Next.js App Router
+│   ├── api/                      # API routes
+│   │   └── shopify/              # Shopify API proxy endpoint
+│   ├── components/               # React components
+│   │   ├── forms/                # Form components
+│   │   ├── layout/               # Layout components
+│   │   ├── modals/               # Modal components
+│   │   └── ui/                   # UI components
+│   ├── layout.tsx                # Root layout
+│   └── page.tsx                  # Home page
+│
+├── lib/                          # Utility libraries
+│   ├── geography/                # Thai geography data
+│   ├── services/                 # Business logic services
+│   └── utils/                    # Utility functions
+│
+├── types/                        # TypeScript type definitions
+│   └── shopify.ts                # Shopify API types
+│
+├── public/                       # Static assets
+│   └── (empty)                   
+│
+├── docs/                         # Documentation
+│   ├── cloudflare-deployment.md  # Cloudflare deployment guide
+│   ├── improvement-suggestions.md # Future improvements
+│   ├── PROJECT_STRUCTURE.md      # This file
+│   └── testing-guide.md          # Testing instructions
+│
+├── constants/                    # Application constants
+│   └── index.ts                  # Shared constants
+│
+├── Configuration Files
+├── .biomeignore                  # Biome ignore patterns
+├── .dev.vars.example             # Cloudflare dev vars example
+├── .gitignore                    # Git ignore patterns
+├── biome.json                    # Biome linter/formatter config
+├── middleware.ts                 # Next.js middleware
+├── next.config.js                # Next.js configuration
+├── open-next.config.ts           # OpenNext configuration
+├── package.json                  # Package dependencies
+├── pnpm-lock.yaml               # PNPM lock file
+├── postcss.config.js            # PostCSS configuration
+├── tailwind.config.js           # Tailwind CSS configuration
+├── tsconfig.json                # TypeScript configuration
+├── wrangler.toml                # Cloudflare Workers config
+└── worker-with-assets.js        # Custom worker for static assets
+
+├── Documentation Files
+├── CLAUDE.md                    # Claude AI instructions
+├── CLOUDFLARE-DEPLOYMENT.md     # Deployment instructions
+├── README.md                    # Project overview
+├── CHANGELOG.md                 # Version history
+└── LOCAL_TESTING.md             # Local testing guide
 ```
 
-## Key Architectural Decisions
+## Key Directories
 
-### 1. Component Organization
+### `/app`
+Next.js 15 App Router structure with server components by default.
 
-- **forms/**: Complex form components with business logic
-- **layout/**: Page layout components (headers, footers)
-- **modals/**: Modal dialog components
-- **ui/**: Reusable UI components (alerts, buttons, etc.)
+### `/lib`
+- `geography/` - Complete Thai provinces, districts, sub-districts data
+- `services/` - Order status validation, business logic
+- `utils/` - Error handling, validation, formatting utilities
 
-### 2. Business Logic Separation
+### `/types`
+TypeScript interfaces for Shopify GraphQL responses and application data.
 
-- **lib/services/**: Core business logic and domain services
-- **lib/utils/**: Pure utility functions
-- **lib/hooks/**: Custom React hooks for shared state logic
+### `/docs`
+Project documentation including deployment guides and improvement suggestions.
 
-### 3. Type Safety
+## Configuration Files
 
-- All types centralized in `/types` directory
-- Barrel exports for easy importing
-- Shared types between frontend and API
+- **biome.json** - Code quality and formatting rules
+- **wrangler.toml** - Cloudflare Workers deployment configuration
+- **open-next.config.ts** - OpenNext adapter configuration for Cloudflare
+- **.dev.vars.example** - Template for local Cloudflare environment variables
 
-### 4. Constants Management
+## Build Outputs (git-ignored)
 
-- All constants in `/constants` directory
-- Separated by concern (API, UI, validation)
-- Type-safe constant definitions
+- `.next/` - Next.js build output
+- `.open-next/` - OpenNext build for Cloudflare
+- `node_modules/` - Dependencies
+- `.wrangler/` - Wrangler cache
 
-### 5. Testing Structure
+## Scripts
 
-- Unit tests for utilities and services
-- Integration tests for API routes
-- Test documentation and browser testing tools
-
-## Import Guidelines
-
-```typescript
-// Types
-import { OrderStatus, FormData } from '@/types'
-
-// Services
-import { validateOrderStatus } from '@/lib/services/order-status'
-
-// Utils
-import { formatThaiPhone } from '@/lib/utils/formatters'
-import { AppError } from '@/lib/utils/errors'
-
-// Components
-import { TaxInvoiceForm } from '@/app/components/forms/TaxInvoiceForm'
-import { ErrorBoundary } from '@/app/components/ui/ErrorBoundary'
-
-// Constants
-import { API_ROUTES, UI_MESSAGES } from '@/constants'
-```
-
-## Benefits of This Structure
-
-1. **Maintainability**: Clear separation of concerns
-2. **Scalability**: Easy to add new features
-3. **Type Safety**: Centralized type definitions
-4. **Testing**: Organized test structure
-5. **Developer Experience**: Intuitive file locations
+See `package.json` for available scripts:
+- `pnpm dev` - Local development
+- `pnpm build` - Production build
+- `pnpm deploy:cf` - Deploy to Cloudflare Workers
+- `pnpm lint` - Run Biome checks

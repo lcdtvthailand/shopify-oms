@@ -10,39 +10,25 @@ export default {
       url.pathname.startsWith('/_next/static/') ||
       url.pathname.endsWith('.css') ||
       url.pathname.endsWith('.js') ||
-      url.pathname === '/favicon.ico'
+      url.pathname === '/favicon.ico' ||
+      url.pathname.endsWith('.png') ||
+      url.pathname.endsWith('.jpg') ||
+      url.pathname.endsWith('.jpeg')
     ) {
-      // Try Workers Sites KV binding
-      if (env.__STATIC_CONTENT) {
+      // Try modern ASSETS binding first
+      if (env.ASSETS) {
         try {
-          // Remove leading slash for KV lookup
-          const pathKey = url.pathname.substring(1)
-          const asset = await env.__STATIC_CONTENT.get(pathKey, {
-            type: 'stream',
-            cacheTtl: 3600,
-          })
+          // ASSETS binding handles the request directly
+          const assetResponse = await env.ASSETS.fetch(request)
 
-          if (asset) {
-            // Set appropriate content type
-            const headers = new Headers()
-            if (url.pathname.endsWith('.css')) {
-              headers.set('Content-Type', 'text/css; charset=utf-8')
-            } else if (url.pathname.endsWith('.js')) {
-              headers.set('Content-Type', 'application/javascript; charset=utf-8')
-            } else if (url.pathname.endsWith('.ico')) {
-              headers.set('Content-Type', 'image/x-icon')
-            }
-
-            // Add cache headers
-            headers.set('Cache-Control', 'public, max-age=31536000, immutable')
-
-            return new Response(asset, {
-              status: 200,
-              headers,
-            })
+          if (assetResponse.status === 200) {
+            // Clone response to add cache headers
+            const response = new Response(assetResponse.body, assetResponse)
+            response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+            return response
           }
         } catch (e) {
-          console.error('Error serving static asset:', e)
+          console.error('Error serving static asset from ASSETS:', e)
         }
       }
 

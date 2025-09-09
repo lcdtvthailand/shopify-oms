@@ -1,57 +1,146 @@
-# Deployment Solution for Cloudflare
+# Cloudflare Workers Deployment Guide
 
-## The Problem
+## Build and Deployment Process
 
-- Cloudflare Pages doesn't support Workers Sites (which OpenNext uses)
-- Static assets return 404 errors when deployed through Cloudflare Pages UI
-- The application needs both dynamic routes (API) and static assets
+### Prerequisites
 
-## The Solution: Deploy as a Worker
+1. Install Wrangler CLI globally:
 
-### Step 1: Authenticate with Cloudflare
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. Authenticate with Cloudflare:
+
+   ```bash
+   wrangler login
+   ```
+
+### Step 1: Build the Application
 
 ```bash
-# Install wrangler globally if not already installed
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
+pnpm build:cloudflare
 ```
 
-### Step 2: Deploy Directly
+This creates:
+
+- `.open-next/worker.js` - Main worker file
+- `.open-next/assets/` - Static assets directory
+- `.open-next/server-functions/` - Server-side code
+
+### Step 2: Deploy to Cloudflare Workers
+
+#### Option A: Deploy with Workers Sites (Recommended)
 
 ```bash
-# Build and deploy
-pnpm build:cloudflare
 wrangler deploy
 ```
 
-### Step 3: Set Environment Variables
+#### Option B: Deploy with explicit compatibility date
 
-After deployment, go to:
+```bash
+pnpm deploy:cf
+```
 
-1. Cloudflare Dashboard → Workers & Pages
-2. Find `shopify-oms` (Worker, not Pages)
-3. Settings → Variables
-4. Add:
-   - `SHOPIFY_STORE_DOMAIN`
-   - `SHOPIFY_ADMIN_ACCESS_TOKEN`
+### Step 3: Configure Environment Variables
 
-## Why This Works
+After deployment, set your environment variables:
 
-- `wrangler deploy` properly handles Workers Sites
-- Static assets are served from the `.open-next/assets` directory
-- The worker handles both dynamic routes and static assets
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Navigate to Workers & Pages → `shopify-oms`
+3. Go to Settings → Variables
+4. Add these variables:
 
-## Alternative: Use Vercel
+   ```
+   SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
+   SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_xxxxxxxxxxxxx
+   NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com (optional)
+   NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx (optional)
+   NEXT_PUBLIC_ADMIN_LINE_ID=@yourlineid (optional)
+   NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00 (optional)
+   ```
 
-If you prefer UI-based deployment:
+### Step 4: Verify Deployment
 
-1. Deploy to Vercel (Next.js native platform)
-2. Set environment variables in Vercel dashboard
-3. Everything works out of the box
+1. Visit your worker URL:
 
-## DO NOT USE
+   ```
+   https://shopify-oms.lcdtv.workers.dev
+   ```
 
-- Cloudflare Pages UI deployment (incompatible with OpenNext Workers Sites)
-- GitHub integration for auto-deployment (will fail with same error)
+2. Test with parameters:
+
+   ```
+   https://shopify-oms.lcdtv.workers.dev/?order=ORDER_NUMBER&email=customer@email.com
+   ```
+
+## Deployment Scripts
+
+- `pnpm deploy` - Deploy to default environment
+- `pnpm deploy:staging` - Deploy to staging
+- `pnpm deploy:production` - Deploy to production
+- `pnpm deploy:cf` - Deploy with latest compatibility date
+
+## Troubleshooting
+
+### If static assets still return 404
+
+1. Check that Workers Sites is enabled in wrangler.toml:
+
+   ```toml
+   [site]
+   bucket = ".open-next/assets"
+   ```
+
+2. Verify the build created assets:
+
+   ```bash
+   ls -la .open-next/assets/_next/static/
+   ```
+
+3. Check worker logs:
+
+   ```bash
+   pnpm cf:tail
+   ```
+
+### Custom Domain Setup
+
+1. Add to wrangler.toml:
+
+   ```toml
+   routes = [
+     { pattern = "yourdomain.com/*", zone_name = "yourdomain.com" }
+   ]
+   ```
+
+2. Ensure your domain is active on Cloudflare
+
+3. Redeploy:
+
+   ```bash
+   pnpm deploy:production
+   ```
+
+## Architecture
+
+The deployment uses:
+
+- **OpenNext** - Adapts Next.js for edge runtime
+- **Cloudflare Workers** - Runs the application globally
+- **Workers Sites** - Serves static assets from KV
+- **Custom Worker Wrapper** - Handles static asset routing
+
+## Files Structure
+
+```
+.open-next/
+├── worker.js           # Base OpenNext worker
+├── assets/            # Static files (CSS, JS, images)
+│   └── _next/
+│       ├── static/
+│       └── ...
+└── server-functions/  # Server-side code
+```
+
+worker-with-assets.js  # Custom wrapper that handles static routing

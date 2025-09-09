@@ -42,9 +42,10 @@ vars = { NODE_ENV = "staging" }
 [build]
 command = "pnpm build:cloudflare"
 
-# Static assets for Workers Sites
-[site]
-bucket = ".open-next/assets"
+# Static assets configuration
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 # Limits and quotas
 [limits]
