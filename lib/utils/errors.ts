@@ -57,21 +57,23 @@ export const handleApiError = (error: unknown): NextResponse => {
 }
 
 export const logger = {
-  error: (message: string, error?: any, metadata?: Record<string, any>) => {
+  error: (message: string, error?: unknown, metadata?: Record<string, unknown>) => {
     const timestamp = new Date().toISOString()
     console.error(`[ERROR] ${timestamp} - ${message}`, {
       error,
       metadata,
-      stack: error?.stack,
+      stack: error instanceof Error ? error.stack : undefined,
     })
   },
 
-  info: (message: string, metadata?: Record<string, any>) => {
+  info: (message: string, metadata?: Record<string, unknown>) => {
     const timestamp = new Date().toISOString()
-    console.log(`[INFO] ${timestamp} - ${message}`, metadata)
+    // Using console.info is allowed in Next.js
+    // eslint-disable-next-line no-console
+    console.info(`[INFO] ${timestamp} - ${message}`, metadata)
   },
 
-  warn: (message: string, metadata?: Record<string, any>) => {
+  warn: (message: string, metadata?: Record<string, unknown>) => {
     const timestamp = new Date().toISOString()
     console.warn(`[WARN] ${timestamp} - ${message}`, metadata)
   },

@@ -34,6 +34,7 @@ yarn-error.log*
 .env.production
 .env.development
 .env.test
+.dev.vars
 
 # vercel
 .vercel
@@ -44,6 +45,11 @@ next-env.d.ts
 
 # turbo
 .turbo
+
+# Cloudflare/OpenNext
+.worker-next/
+.wrangler/
+.mf/
 
 # editor directories and files
 .vscode/*
@@ -60,6 +66,7 @@ Thumbs.db
 # Package manager files
 package-lock.json
 yarn.lock
+
 # Keep pnpm-lock.yaml
 .clinerules/byterover-rules.md
 .kilocode/rules/byterover-rules.md
@@ -69,3 +76,9 @@ yarn.lock
 .kiro/steering/byterover-rules.md
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.md
+
+# OpenNext
+.open-next
+.open-next.config.ts
+.open-next.config.js
+.open-next.config.json

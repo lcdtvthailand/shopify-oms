@@ -11,8 +11,92 @@ import {
   validateOrderStatus,
 } from '@/lib/services/order-status'
 import { logger } from '@/lib/utils/errors'
+import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
 // Geography types are imported from thailand.ts
+
+// GraphQL Response Types
+interface OrderNode {
+  id: string
+  name: string
+  createdAt: string
+  fullyPaid?: boolean
+  displayFinancialStatus?: string
+  displayFulfillmentStatus?: string
+  cancelledAt?: string | null
+  customer?: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    defaultAddress?: {
+      address1?: string
+      address2?: string
+      city?: string
+      zip?: string
+      province?: string
+      country?: string
+    }
+  }
+  lineItems?: {
+    edges: Array<{
+      node: {
+        title: string
+        quantity: number
+        variant?: { price: string }
+      }
+    }>
+  }
+  totalPriceSet?: {
+    shopMoney: {
+      amount: string
+      currencyCode: string
+    }
+  }
+  metafields?: {
+    nodes: Array<{
+      key: string
+      value: string
+      type?: string
+    }>
+  }
+}
+
+interface OrdersQueryResponse {
+  orders: {
+    edges: Array<{
+      node: OrderNode
+    }>
+  }
+}
+
+interface OrderQueryResponse {
+  order: OrderNode
+}
+
+// Removed unused MetafieldNode interface - metafield nodes are part of OrderNode
+
+interface MetafieldsSetResponse {
+  metafieldsSet: {
+    metafields: Array<{
+      id: string
+      key: string
+      namespace: string
+    }>
+    userErrors: Array<{
+      field?: string[]
+      message: string
+      code?: string
+    }>
+  }
+}
+
+// Geography Types
+interface GeographyItem {
+  code: number
+  nameTh: string
+  nameEn: string
+  postalCode?: number
+}
 
 interface FormData {
   documentType: 'tax' | 'receipt'
@@ -108,9 +192,10 @@ export default function TaxInvoiceForm() {
   const searchParams = useSearchParams()
 
   // Forward declarations for functions used in useEffect
-  const validateParametersRef =
-    useRef<(orderIdParam?: string, emailParam?: string) => Promise<void>>()
-  const loadExistingMetafieldsRef = useRef<(orderGid: string) => Promise<void>>()
+  const validateParametersRef = useRef<
+    ((orderIdParam?: string, emailParam?: string) => Promise<void>) | null
+  >(null)
+  const loadExistingMetafieldsRef = useRef<((orderGid: string) => Promise<void>) | null>(null)
 
   // Helper: Fetch latest order by email with createdAt for recency checks
   const fetchLatestOrderByEmail = useCallback(
@@ -135,7 +220,7 @@ export default function TaxInvoiceForm() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: FIND_BY_EMAIL, variables: { query: queryString } }),
         })
-        let result: any
+        let result: ShopifyGraphQLResponse<OrdersQueryResponse> | null
         try {
           result = await response.json()
         } catch {
@@ -180,7 +265,7 @@ export default function TaxInvoiceForm() {
           }
         }
         return null
-      } catch (_e) {
+      } catch {
         // fetchLatestOrderByEmail failed
         return null
       }
@@ -269,7 +354,7 @@ export default function TaxInvoiceForm() {
             setShowValidationPopup(true)
             setIsValidated(false)
           }
-        } catch (_) {
+        } catch {
           setValidationMessage('ไม่สามารถค้นหาออเดอร์จากอีเมลได้ กรุณาระบุ Order ID และ Email ใน URL')
           setShowValidationPopup(true)
           setIsValidated(false)
@@ -575,13 +660,13 @@ export default function TaxInvoiceForm() {
         body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderGid } }),
       })
 
-      const result: any = await response.json()
+      const result = (await response.json()) as ShopifyGraphQLResponse<OrderQueryResponse>
       const nodes = result?.data?.order?.metafields?.nodes || []
 
       if (nodes.length > 0) {
         // Create a map of metafield keys to values
         const metaMap: Record<string, string> = {}
-        nodes.forEach((node: any) => {
+        nodes.forEach((node) => {
           metaMap[node.key] = node.value || ''
         })
 
@@ -684,7 +769,7 @@ export default function TaxInvoiceForm() {
               setFormData((prev) => ({ ...prev, provinceCode: provinceData.code }))
 
               const districts = geo.getDistrictsByProvince(provinceData.code)
-              let districtData = null as any
+              let districtData: GeographyItem | null = null
               if (district) {
                 districtData =
                   districts.find(
@@ -722,7 +807,7 @@ export default function TaxInvoiceForm() {
               if (districtData) {
                 setFormData((prev) => ({ ...prev, districtCode: districtData.code }))
                 const subdistricts = geo.getSubdistrictsByDistrict(districtData.code)
-                let subdistrictData = null as any
+                let subdistrictData: GeographyItem | null = null
                 if (subDistrict) {
                   subdistrictData =
                     subdistricts.find(
@@ -751,17 +836,18 @@ export default function TaxInvoiceForm() {
                 const normSub = normalize(subDistrict || '')
                 for (const d of districts) {
                   const subs = geo.getSubdistrictsByDistrict(d.code)
-                  let hit = null as any
+                  let hit: GeographyItem | null = null
                   if (normSub) {
-                    hit = subs.find(
-                      (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
-                    )
+                    hit =
+                      subs.find(
+                        (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
+                      ) || null
                   }
                   if (!hit && postalCode && String(postalCode).length >= 5) {
-                    hit = subs.find((s) => String(s.postalCode) === String(postalCode))
+                    hit = subs.find((s) => String(s.postalCode) === String(postalCode)) || null
                   }
                   if (hit) {
-                    found = { dCode: d.code, sCode: hit.code, sPostal: hit.postalCode }
+                    found = { dCode: d.code, sCode: hit.code, sPostal: hit.postalCode || 0 }
                     break
                   }
                 }
@@ -783,21 +869,23 @@ export default function TaxInvoiceForm() {
                     const ds = geo.getDistrictsByProvince(p.code)
                     for (const d of ds) {
                       const subs = geo.getSubdistrictsByDistrict(d.code)
-                      let hit = null as any
+                      let hit: GeographyItem | null = null
                       if (normSub) {
-                        hit = subs.find(
-                          (s) => normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
-                        )
+                        hit =
+                          subs.find(
+                            (s) =>
+                              normalize(s.nameTh) === normSub || normalize(s.nameEn) === normSub
+                          ) || null
                       }
                       if (!hit && postalCode && String(postalCode).length >= 5) {
-                        hit = subs.find((s) => String(s.postalCode) === String(postalCode))
+                        hit = subs.find((s) => String(s.postalCode) === String(postalCode)) || null
                       }
                       if (hit) {
                         g = {
                           pCode: p.code,
                           dCode: d.code,
                           sCode: hit.code,
-                          sPostal: hit.postalCode,
+                          sPostal: hit.postalCode || 0,
                         }
                         break
                       }
@@ -828,7 +916,7 @@ export default function TaxInvoiceForm() {
           }
         })
       }
-    } catch (_err) {
+    } catch {
       // Failed to load existing metafields
       // Don't show error to user, just continue with empty form
     }
@@ -906,20 +994,16 @@ export default function TaxInvoiceForm() {
         }),
       })
 
-      let result: any
+      let result: ShopifyGraphQLResponse<OrdersQueryResponse> | null
       try {
         result = await response.json()
-      } catch (_) {
+      } catch {
         result = null
       }
 
       if (!response.ok) {
-        const message = result?.error || 'Failed to fetch order data'
-        const details =
-          typeof result?.details === 'string'
-            ? result.details
-            : JSON.stringify(result?.details || {})
-        throw new Error(`${message}${details ? `: ${details}` : ''}`)
+        const message = result?.errors?.[0]?.message || 'Failed to fetch order data'
+        throw new Error(message)
       }
 
       if (result?.errors) {
@@ -953,7 +1037,7 @@ export default function TaxInvoiceForm() {
           (node.displayFinancialStatus?.toLowerCase() as OrderFinancialStatus) || 'pending',
         fulfillmentStatus:
           (node.displayFulfillmentStatus?.toLowerCase() as OrderFulfillmentStatus) || null,
-        cancelledAt: node.cancelledAt,
+        cancelledAt: node.cancelledAt || null,
         displayFinancialStatus: node.displayFinancialStatus,
         displayFulfillmentStatus: node.displayFulfillmentStatus,
       }
@@ -998,8 +1082,8 @@ export default function TaxInvoiceForm() {
         setShowFormOverlay(true)
         setValidationInProgress(false)
       }, 500)
-    } catch (err: any) {
-      setValidationMessage(err?.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
+    } catch (err) {
+      setValidationMessage(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล')
       setShowValidationPopup(true)
       setIsValidated(false)
     } finally {
@@ -1103,7 +1187,6 @@ export default function TaxInvoiceForm() {
       setSaveError('กรุณาเลือกประเภทสาขา')
       return
     }
-    const _taxId = taxIdDigits
     // build dashed variant for display in metafields panel
     const taxIdFormatted = (() => {
       const d = taxIdDigits
@@ -1176,9 +1259,13 @@ export default function TaxInvoiceForm() {
         body: JSON.stringify({ query: METAFIELDS_SET, variables }),
       })
 
-      const result: any = await response.json()
+      const result = (await response.json()) as ShopifyGraphQLResponse<MetafieldsSetResponse>
 
-      if (!response.ok || result?.errors || result?.data?.metafieldsSet?.userErrors?.length > 0) {
+      if (
+        !response.ok ||
+        result?.errors ||
+        (result?.data?.metafieldsSet?.userErrors?.length ?? 0) > 0
+      ) {
         const ue = result?.data?.metafieldsSet?.userErrors?.[0]
         const errMsg =
           result?.errors?.[0]?.message ||
@@ -1204,8 +1291,11 @@ export default function TaxInvoiceForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: GET_ORDER_METAFIELDS, variables: { id: orderData.id } }),
       })
-      const confirmJson: any = await confirmRes.json()
-      const _nodes = confirmJson?.data?.order?.metafields?.nodes || []
+      const confirmJson = (await confirmRes.json()) as ShopifyGraphQLResponse<OrderQueryResponse>
+      // Verify the metafields were saved successfully
+      if (!confirmJson?.data?.order?.metafields?.nodes?.length) {
+        logger.warn('No metafields found after save')
+      }
       setSaveMessage('บันทึกข้อมูลใบกำกับภาษีสำเร็จ!')
       setShowSavePopup(true)
       // Reformat Tax ID in UI to dashed form after save
@@ -1224,8 +1314,8 @@ export default function TaxInvoiceForm() {
         return [p1, p2, p3, p4, p5].filter(Boolean).join('-')
       }
       setFormData((prev) => ({ ...prev, branchCode: fmtId(prev.branchCode) }))
-    } catch (err: any) {
-      setSaveError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
     } finally {
       setIsSaving(false)
     }

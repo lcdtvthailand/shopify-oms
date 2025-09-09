@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors'
 import { env, graphqlQuerySchema } from '@/lib/utils/validation'
+import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
 // CORS headers configuration
 const corsHeaders = {
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const shopifyData = await shopifyRequest.json()
+    const shopifyData = (await shopifyRequest.json()) as ShopifyGraphQLResponse
 
     // Check for GraphQL errors
     if (shopifyData.errors) {
