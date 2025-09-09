@@ -41,9 +41,9 @@ vars = { NODE_ENV = "staging" }
 [build]
 command = "pnpm build:cloudflare"
 
-# Static assets
-[site]
-bucket = ".open-next/assets"
+# Static assets handled by OpenNext
+# [site]
+# bucket = ".open-next/assets"
 
 # Limits and quotas
 [limits]

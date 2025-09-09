@@ -1,0 +1,6 @@
+name = 'shopify-oms'
+compatibility_date = "2025-09-09"
+compatibility_flags = ["nodejs_compat", "streams_enable_constructors"]
+
+# This is a minimal config for Cloudflare Pages
+# Environment variables should be set in the Cloudflare Pages dashboard
