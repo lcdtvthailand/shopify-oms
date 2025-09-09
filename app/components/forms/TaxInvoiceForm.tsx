@@ -393,13 +393,7 @@ export default function TaxInvoiceForm() {
       const districtList = geo.getDistrictsByProvince(formData.provinceCode!)
       setDistricts(districtList)
       // reset lower levels only when not pre-filling
-      if (prefillGuard.current) {
-        // When prefilling, ensure district options are loaded for the current district selection
-        if (formData.districtCode) {
-          const subdistrictList = geo.getSubdistrictsByDistrict(formData.districtCode)
-          setSubdistricts(subdistrictList)
-        }
-      } else {
+      if (!prefillGuard.current) {
         setSubdistricts([])
         setFormData((p) => ({ ...p, districtCode: null, subdistrictCode: null, postalCode: '' }))
       }
@@ -407,7 +401,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, formData.districtCode])
+  }, [formData.provinceCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
