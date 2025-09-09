@@ -13,9 +13,10 @@
     "prepare": "husky",
     "build:cloudflare": "opennextjs-cloudflare build",
     "build:cf-pages": "next build && cp -r .next/static .open-next/assets/_next/",
-    "deploy": "pnpm build:cloudflare && wrangler deploy --env=\"\"",
+    "deploy": "pnpm build:cloudflare && wrangler deploy",
     "deploy:staging": "pnpm build:cloudflare && wrangler deploy --env staging",
     "deploy:production": "pnpm build:cloudflare && wrangler deploy --env production",
+    "deploy:cf": "pnpm build:cloudflare && wrangler deploy --compatibility-date 2025-09-01",
     "preview": "pnpm build:cloudflare && wrangler dev",
     "cf:dev": "wrangler dev --local",
     "cf:tail": "wrangler tail"

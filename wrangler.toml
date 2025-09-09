@@ -1,6 +1,6 @@
 name = 'shopify-oms'
-main = ".open-next/worker.js"
-compatibility_date = "2024-09-23"
+main = "worker-with-assets.js"
+compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
@@ -42,9 +42,9 @@ vars = { NODE_ENV = "staging" }
 [build]
 command = "pnpm build:cloudflare"
 
-# Static assets - not compatible with Cloudflare Pages deployment
-# [site]
-# bucket = ".open-next/assets"
+# Static assets for Workers Sites
+[site]
+bucket = ".open-next/assets"
 
 # Limits and quotas
 [limits]
