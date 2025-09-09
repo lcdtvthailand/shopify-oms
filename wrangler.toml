@@ -22,9 +22,10 @@ NODE_ENV = "production"
 # bucket_name = "your-bucket-name"
 
 # Routes configuration
-routes = [
-  { pattern = "your-domain.com/*", zone_name = "your-domain.com" }
-]
+# Uncomment and update with your actual domain
+# routes = [
+#   { pattern = "example.com/*", zone_name = "example.com" }
+# ]
 
 # Production environment
 [env.production]
