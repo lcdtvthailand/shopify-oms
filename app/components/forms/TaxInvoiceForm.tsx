@@ -1323,36 +1323,44 @@ export default function TaxInvoiceForm() {
       ])
       .filter((m) => (m.value ?? '') !== '')
 
-    const variables = {
-      metafields: metafieldsToSave.map((m) => ({
-        ownerId: orderData.id,
-        namespace: m.namespace,
-        key: m.key,
-        type: m.type,
-        value: m.value,
-      })),
-    }
+    // Prepare inputs and batch into chunks of 25 to satisfy Shopify limits
+    const allInputs = metafieldsToSave.map((m) => ({
+      ownerId: orderData.id,
+      namespace: m.namespace,
+      key: m.key,
+      type: m.type,
+      value: m.value,
+    }))
 
     try {
-      const response = await fetch('/api/shopify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: METAFIELDS_SET, variables }),
-      })
+      const CHUNK_SIZE = 25
+      const userErrors: Array<{ field?: string[]; message: string; code?: string }> = []
 
-      const result = (await response.json()) as ShopifyGraphQLResponse<MetafieldsSetResponse>
+      for (let i = 0; i < allInputs.length; i += CHUNK_SIZE) {
+        const chunk = allInputs.slice(i, i + CHUNK_SIZE)
+        const variables = { metafields: chunk }
 
-      if (
-        !response.ok ||
-        result?.errors ||
-        (result?.data?.metafieldsSet?.userErrors?.length ?? 0) > 0
-      ) {
-        const ue = result?.data?.metafieldsSet?.userErrors?.[0]
-        const errMsg =
-          result?.errors?.[0]?.message ||
-          (ue
-            ? `${ue.message}${ue.code ? ` (${ue.code})` : ''}${ue.field ? ` [${ue.field}]` : ''}`
-            : 'Failed to save metafields')
+        const resp = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: METAFIELDS_SET, variables }),
+        })
+        const json = (await resp.json()) as ShopifyGraphQLResponse<MetafieldsSetResponse>
+
+        if (!resp.ok || json?.errors) {
+          const errMsg = json?.errors?.[0]?.message || 'Failed to save metafields'
+          throw new Error(errMsg)
+        }
+        if (json?.data?.metafieldsSet?.userErrors?.length) {
+          userErrors.push(...json.data.metafieldsSet.userErrors)
+        }
+      }
+
+      if (userErrors.length) {
+        const ue = userErrors[0]
+        const errMsg = `${ue.message}${ue.code ? ` (${ue.code})` : ''}${
+          ue.field ? ` [${ue.field}]` : ''
+        }`
         throw new Error(errMsg)
       }
 
@@ -1361,7 +1369,7 @@ export default function TaxInvoiceForm() {
         query getOrderMetafields($id: ID!) {
           order(id: $id) {
             id
-            metafields(first: 20, namespace: "custom") {
+            metafields(first: 100, namespace: "custom") {
               nodes { key value type }
             }
           }
