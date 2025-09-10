@@ -1,221 +1,146 @@
-# Cloudflare Deployment Guide
+# Cloudflare Workers Deployment Guide
 
-This guide explains how to deploy the Shopify OMS Thai Tax Invoice application to Cloudflare Workers using OpenNext.
+## Build and Deployment Process
 
-## Prerequisites
+### Prerequisites
 
-1. Cloudflare account with Workers enabled
-2. Wrangler CLI configured with your Cloudflare credentials
-3. Node.js 18+ and pnpm installed
+1. Install Wrangler CLI globally:
 
-## Setup Instructions
+   ```bash
+   npm install -g wrangler
+   ```
 
-### 1. Configure Cloudflare Account
+2. Authenticate with Cloudflare:
 
-First, ensure you have the necessary Cloudflare resources:
+   ```bash
+   wrangler login
+   ```
 
-```bash
-# Login to Cloudflare
-wrangler login
-
-# Create a KV namespace for caching (optional)
-wrangler kv:namespace create "NEXT_CACHE_WORKERS_KV"
-```
-
-### 2. Update wrangler.toml
-
-Edit `wrangler.toml` with your specific configuration:
-
-```toml
-name = "your-worker-name"
-routes = [
-  { pattern = "your-domain.com/*", zone_name = "your-domain.com" }
-]
-
-[[kv_namespaces]]
-binding = "NEXT_CACHE_WORKERS_KV"
-id = "your-kv-namespace-id" # Replace with actual ID from step 1
-```
-
-### 3. Set Environment Variables
-
-Configure your secrets using Wrangler:
+### Step 1: Build the Application
 
 ```bash
-# Set Shopify credentials
-wrangler secret put SHOPIFY_STORE_DOMAIN
-wrangler secret put SHOPIFY_ADMIN_ACCESS_TOKEN
-
-# Set admin contact info (optional)
-wrangler secret put NEXT_PUBLIC_ADMIN_EMAIL
-wrangler secret put NEXT_PUBLIC_ADMIN_PHONE
-wrangler secret put NEXT_PUBLIC_ADMIN_LINE_ID
-wrangler secret put NEXT_PUBLIC_ADMIN_OFFICE_HOURS
-```
-
-## Build and Deploy
-
-### Local Development
-
-Test your application locally with Cloudflare's runtime:
-
-```bash
-# Build for Cloudflare
 pnpm build:cloudflare
-
-# Run locally with Wrangler
-pnpm preview
 ```
 
-### Staging Deployment
+This creates:
 
-Deploy to staging environment:
+- `.open-next/worker.js` - Main worker file
+- `.open-next/assets/` - Static assets directory
+- `.open-next/server-functions/` - Server-side code
+
+### Step 2: Deploy to Cloudflare Workers
+
+#### Option A: Deploy with Workers Sites (Recommended)
 
 ```bash
-pnpm deploy:staging
+wrangler deploy
 ```
 
-### Production Deployment
-
-Deploy to production:
+#### Option B: Deploy with explicit compatibility date
 
 ```bash
-pnpm deploy:production
+pnpm deploy:cf
 ```
 
-## Available Scripts
+### Step 3: Configure Environment Variables
 
-- `pnpm build:cloudflare` - Build the application for Cloudflare Workers
+After deployment, set your environment variables:
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Navigate to Workers & Pages → `shopify-oms`
+3. Go to Settings → Variables
+4. Add these variables:
+
+   ```
+   SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
+   SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_xxxxxxxxxxxxx
+   NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com (optional)
+   NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx (optional)
+   NEXT_PUBLIC_ADMIN_LINE_ID=@yourlineid (optional)
+   NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00 (optional)
+   ```
+
+### Step 4: Verify Deployment
+
+1. Visit your worker URL:
+
+   ```
+   https://shopify-oms.lcdtv.workers.dev
+   ```
+
+2. Test with parameters:
+
+   ```
+   https://shopify-oms.lcdtv.workers.dev/?order=ORDER_NUMBER&email=customer@email.com
+   ```
+
+## Deployment Scripts
+
 - `pnpm deploy` - Deploy to default environment
-- `pnpm deploy:staging` - Deploy to staging environment
-- `pnpm deploy:production` - Deploy to production environment
-- `pnpm preview` - Build and preview locally with Wrangler
-- `pnpm cf:dev` - Run Wrangler in local development mode
-- `pnpm cf:tail` - Tail production logs
-
-## Configuration Details
-
-### OpenNext Configuration
-
-The `open-next.config.ts` file configures how Next.js is adapted for Cloudflare:
-
-- **Edge Runtime**: Configured for API routes to ensure compatibility
-- **Caching**: KV namespace binding for Next.js cache
-- **ISR**: Disabled (not supported on Cloudflare Workers)
-
-### Wrangler Configuration
-
-The `wrangler.toml` file configures the Cloudflare Worker:
-
-- **Compatibility**: Set to `2024-09-23` with `nodejs_compat` flag
-- **Routes**: Configure your domain routing
-- **KV Namespaces**: Optional caching layer
-- **Environments**: Separate staging and production configs
-
-## Limitations and Considerations
-
-### Cloudflare Workers Limitations
-
-1. **CPU Time**: 50ms limit per request (can be increased)
-2. **Memory**: 128MB limit
-3. **Request Size**: 100MB limit
-4. **No File System**: Static files must be served from R2 or external CDN
-
-### Next.js Feature Support
-
-- ✅ App Router
-- ✅ API Routes
-- ✅ Server Components
-- ✅ Client Components
-- ✅ Dynamic Routes
-- ❌ Image Optimization (use Cloudflare Images)
-- ❌ ISR/On-Demand Revalidation
-- ❌ File uploads (use R2)
-
-### Performance Tips
-
-1. **Use Edge Runtime**: Configure API routes to use edge runtime for better performance
-2. **Cache Strategically**: Utilize KV namespaces for frequently accessed data
-3. **Optimize Bundle**: Keep worker bundle under 10MB for faster cold starts
+- `pnpm deploy:staging` - Deploy to staging
+- `pnpm deploy:production` - Deploy to production
+- `pnpm deploy:cf` - Deploy with latest compatibility date
 
 ## Troubleshooting
 
-### Common Issues
+### If static assets still return 404
 
-1. **Build Failures**
-   ```bash
-   # Clear cache and rebuild
-   rm -rf .next .worker-next
-   pnpm build:cloudflare
+1. Check that Workers Sites is enabled in wrangler.toml:
+
+   ```toml
+   [site]
+   bucket = ".open-next/assets"
    ```
 
-2. **Environment Variables Not Working**
-   - Ensure secrets are set with `wrangler secret put`
-   - Check that variable names match in code and wrangler.toml
+2. Verify the build created assets:
 
-3. **Route Not Working**
-   - Verify domain is proxied through Cloudflare (orange cloud)
-   - Check route patterns in wrangler.toml
+   ```bash
+   ls -la .open-next/assets/_next/static/
+   ```
 
-4. **Memory Limits**
-   - Optimize imports to reduce bundle size
-   - Use dynamic imports for large libraries
+3. Check worker logs:
 
-### Debug Commands
+   ```bash
+   pnpm cf:tail
+   ```
 
-```bash
-# View real-time logs
-pnpm cf:tail
+### Custom Domain Setup
 
-# Check deployment status
-wrangler deployments list
+1. Add to wrangler.toml:
 
-# View environment variables (non-secret)
-wrangler vars list
+   ```toml
+   routes = [
+     { pattern = "yourdomain.com/*", zone_name = "yourdomain.com" }
+   ]
+   ```
+
+2. Ensure your domain is active on Cloudflare
+
+3. Redeploy:
+
+   ```bash
+   pnpm deploy:production
+   ```
+
+## Architecture
+
+The deployment uses:
+
+- **OpenNext** - Adapts Next.js for edge runtime
+- **Cloudflare Workers** - Runs the application globally
+- **Workers Sites** - Serves static assets from KV
+- **Custom Worker Wrapper** - Handles static asset routing
+
+## Files Structure
+
+```
+.open-next/
+├── worker.js           # Base OpenNext worker
+├── assets/            # Static files (CSS, JS, images)
+│   └── _next/
+│       ├── static/
+│       └── ...
+└── server-functions/  # Server-side code
 ```
 
-## Monitoring
-
-### Cloudflare Dashboard
-
-Monitor your application through the Cloudflare dashboard:
-
-1. Workers & Pages > Your Worker
-2. View metrics, logs, and errors
-3. Set up alerts for errors or usage limits
-
-### Custom Logging
-
-The application uses structured logging. View logs with:
-
-```bash
-wrangler tail --format pretty
-```
-
-## Cost Considerations
-
-Cloudflare Workers pricing:
-
-- **Free Tier**: 100,000 requests/day
-- **Paid Tier**: $5/month for 10 million requests
-- **Additional**: $0.50 per million requests
-
-Consider costs for:
-- Worker requests
-- KV operations
-- R2 storage (if used)
-- Bandwidth
-
-## Security Best Practices
-
-1. **API Keys**: Always use `wrangler secret` for sensitive data
-2. **CORS**: Configure appropriate CORS headers in middleware
-3. **Rate Limiting**: Implement rate limiting for API routes
-4. **Input Validation**: Validate all user inputs server-side
-
-## Support
-
-For deployment issues:
-- [OpenNext Documentation](https://opennext.js.org/cloudflare)
-- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers)
-- [Project Issues](https://github.com/lcdtvthailand/shopify-oms/issues)
+worker-with-assets.js  # Custom wrapper that handles static routing

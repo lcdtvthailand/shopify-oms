@@ -26,7 +26,22 @@
       "Bash(wrangler dev:*)",
       "Bash(npx wrangler dev:*)",
       "Bash(git checkout:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(wrangler whoami:*)",
+      "Bash(wrangler deployments:*)",
+      "Bash(wrangler kv:namespace:*)",
+      "Bash(wrangler kv namespace:*)",
+      "Bash(wrangler secret:*)",
+      "Bash(timeout 10 wrangler tail --format pretty)",
+      "Bash(wrangler deploy:*)",
+      "Bash(npx wrangler kv namespace:*)",
+      "Bash(npx wrangler kv key list:*)",
+      "Bash(npx wrangler pages project:*)",
+      "Bash(npx wrangler deploy:*)",
+      "Bash(npx wrangler r2 bucket list:*)",
+      "Bash(npx wrangler queues:*)",
+      "Bash(npx wrangler d1 list:*)"
     ],
     "deny": []
   }
