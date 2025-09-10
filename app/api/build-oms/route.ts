@@ -122,12 +122,14 @@ export function GET(req: NextRequest) {
     const tokenSource = `${rawOms}|${ts}|${key}`
     const token = md5(tokenSource)
 
-    const omsEnc = encodeURIComponent(rawOms)
-    const tokenEnc = encodeURIComponent(token)
-    const url = new URL(
-      `/?key=${encodeURIComponent(key)}&oms=${omsEnc}&ts=${ts}&token=${tokenEnc}`,
-      urlObj.origin
-    )
+    const payload = { key, oms: rawOms, ts, token }
+    const code = Buffer.from(JSON.stringify(payload), 'utf8')
+      .toString('base64')
+      .replace(/=+$/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+
+    const url = new URL(`/?code=${encodeURIComponent(code)}`, urlObj.origin)
 
     // If accessed in browser, redirect to the new format unless format=json
     const format = (sp.get('format') || '').toLowerCase()
@@ -135,7 +137,7 @@ export function GET(req: NextRequest) {
       return NextResponse.redirect(url, 302)
     }
 
-    return NextResponse.json({ ok: true, key, oms: rawOms, ts, token, url: url.toString() })
+    return NextResponse.json({ ok: true, key, oms: rawOms, ts, token, code, url: url.toString() })
   } catch (_e) {
     return NextResponse.json({ ok: false, reason: 'error' }, { status: 500 })
   }

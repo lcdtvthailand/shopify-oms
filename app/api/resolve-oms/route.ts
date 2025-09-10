@@ -120,11 +120,49 @@ export function GET(req: NextRequest) {
   try {
     const urlObj = new URL(req.url)
     const { searchParams } = urlObj
-    const key = searchParams.get('key') || ''
-    const oms = searchParams.get('oms') || ''
-    const ts = searchParams.get('ts') || ''
-    const token = (searchParams.get('token') || '').toLowerCase()
+    const codeParam = searchParams.get('code') || ''
+    let key = searchParams.get('key') || ''
+    let oms = searchParams.get('oms') || ''
+    let ts = searchParams.get('ts') || ''
+    let token = (searchParams.get('token') || '').toLowerCase()
     const format = (searchParams.get('format') || '').toLowerCase()
+
+    // Optional: decode combined code (base64url(JSON.stringify({key, oms, ts, token})))
+    const fromBase64Url = (b64url: string): string => {
+      const b64 = b64url
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        .padEnd(Math.ceil(b64url.length / 4) * 4, '=')
+      if (typeof atob === 'function') {
+        // Workers / edge runtimes
+        const binary = atob(b64)
+        // Convert binary string to UTF-8
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        return new TextDecoder().decode(bytes)
+      }
+      // Node.js fallback
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { Buffer: NodeBuffer } = require('node:buffer') as typeof import('node:buffer')
+      return NodeBuffer.from(b64, 'base64').toString('utf8')
+    }
+    if (codeParam && (!key || !oms || !ts || !token)) {
+      try {
+        const json = fromBase64Url(codeParam)
+        const obj = JSON.parse(json) as Partial<{
+          key: string
+          oms: string
+          ts: string | number
+          token: string
+        }>
+        key = String(obj.key || '')
+        oms = String(obj.oms || '')
+        ts = String(obj.ts ?? '')
+        token = String(obj.token || '').toLowerCase()
+      } catch {
+        // fallthrough; handled by missing_params below
+      }
+    }
 
     if (!key || !oms || !ts || !token) {
       return NextResponse.json({ ok: false, reason: 'missing_params' }, { status: 400 })
@@ -186,9 +224,12 @@ export function GET(req: NextRequest) {
 
     const canonicalOrder = orderName.replace(/^#/, '')
     if (valid && format !== 'json') {
-      // Accessed directly in browser -> keep OMS-style parameters on the app root
+      // Accessed directly in browser
+      // If a combined code was provided, preserve it in the redirect; otherwise keep OMS-style params
       const dest = new URL(
-        `/?key=${encodeURIComponent(keyDec)}&oms=${encodeURIComponent(`${orderName}|${email}`)}&ts=${encodeURIComponent(tsDec)}&token=${encodeURIComponent(tokenDec)}`,
+        codeParam
+          ? `/?code=${encodeURIComponent(codeParam)}`
+          : `/?key=${encodeURIComponent(keyDec)}&oms=${encodeURIComponent(`${orderName}|${email}`)}&ts=${encodeURIComponent(tsDec)}&token=${encodeURIComponent(tokenDec)}`,
         urlObj.origin
       )
       return NextResponse.redirect(dest, 302)
