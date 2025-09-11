@@ -41,7 +41,8 @@
       "Bash(npx wrangler deploy:*)",
       "Bash(npx wrangler r2 bucket list:*)",
       "Bash(npx wrangler queues:*)",
-      "Bash(npx wrangler d1 list:*)"
+      "Bash(npx wrangler d1 list:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
