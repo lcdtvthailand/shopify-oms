@@ -319,9 +319,47 @@ export default function TaxInvoiceForm() {
     const urlKey = searchParams.get('key')
     const urlTs = searchParams.get('ts')
     const urlToken = searchParams.get('token')
+    const urlCode = searchParams.get('code')
 
+    // Priority 0: Single combined code param
+    if (urlCode) {
+      ;(async () => {
+        try {
+          setLoading(true)
+          setError(null)
+          const q = new URLSearchParams({ code: urlCode, format: 'json' })
+          const res = await fetch(`/api/resolve-oms?${q.toString()}`)
+          const json = (await res.json()) as {
+            ok: boolean
+            valid?: boolean
+            order?: string
+            email?: string
+            reason?: string
+          }
+          if (!json?.ok || json.valid !== true || !json.order || !json.email) {
+            setValidationMessage('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง')
+            setShowValidationPopup(true)
+            setIsValidated(false)
+            return
+          }
+          setOrderId(json.order)
+          setEmail(json.email)
+          setTimeout(() => {
+            if (mounted && validateParametersRef.current) {
+              validateParametersRef.current(json.order!, json.email!)
+            }
+          }, 100)
+        } catch {
+          setValidationMessage('ไม่สามารถตรวจสอบลิงก์ได้ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ')
+          setShowValidationPopup(true)
+          setIsValidated(false)
+        } finally {
+          setLoading(false)
+        }
+      })()
+    }
     // Priority 1: New Shopify link format using oms/key/ts/token
-    if (urlOms && urlKey && urlTs && urlToken) {
+    else if (urlOms && urlKey && urlTs && urlToken) {
       ;(async () => {
         try {
           setLoading(true)
