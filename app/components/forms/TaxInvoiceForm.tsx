@@ -25,6 +25,7 @@ interface OrderNode {
   displayFulfillmentStatus?: string
   cancelledAt?: string | null
   customer?: {
+    id?: string
     firstName?: string
     lastName?: string
     email?: string
@@ -118,6 +119,7 @@ interface FormData {
 type OrderData = {
   id: string
   name: string
+  customerId?: string | null
   customer?: {
     firstName?: string
     lastName?: string
@@ -526,7 +528,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode])
+  }, [formData.provinceCode, formData.districtCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -1075,6 +1077,7 @@ export default function TaxInvoiceForm() {
               displayFulfillmentStatus
               cancelledAt
               customer {
+                id
                 firstName
                 lastName
                 email
@@ -1184,6 +1187,7 @@ export default function TaxInvoiceForm() {
       setOrderData({
         id: node.id,
         name: node.name,
+        customerId: node.customer?.id || null,
         customer: node.customer,
       })
       setIsValidated(true)
@@ -1400,6 +1404,246 @@ export default function TaxInvoiceForm() {
           ue.field ? ` [${ue.field}]` : ''
         }`
         throw new Error(errMsg)
+      }
+
+      // Aggregate into JSON array metafield: custom.default_tax_profile
+      // Prefer Customer owner if available (so it shows on Customer page), fallback to Order
+      const ownerCustomerId = orderData.customerId || orderData.customer?.id || null
+      let profiles: any[] = []
+      let existingValue: string | undefined
+
+      if (ownerCustomerId) {
+        const GET_CUSTOMER_PROFILE = `
+          query getDefaultTaxProfile($id: ID!) {
+            customer(id: $id) {
+              id
+              metafield(namespace: "custom", key: "default_tax_profile") {
+                id
+                value
+                type
+              }
+            }
+          }
+        `
+        const profileRes = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: GET_CUSTOMER_PROFILE, variables: { id: ownerCustomerId } }),
+        })
+        const profileJson = (await profileRes.json()) as ShopifyGraphQLResponse<{
+          customer: { metafield?: { id?: string; value?: string; type?: string } | null } | null
+        }>
+        existingValue = profileJson?.data?.customer?.metafield?.value
+      }
+      // Fallback: try order-level if customer-level empty
+      if (!existingValue) {
+        const GET_ORDER_PROFILE = `
+          query getDefaultTaxProfile($id: ID!) {
+            order(id: $id) {
+              id
+              metafield(namespace: "custom", key: "default_tax_profile") {
+                id
+                value
+                type
+              }
+            }
+          }
+        `
+        const profileRes2 = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: GET_ORDER_PROFILE, variables: { id: orderData.id } }),
+        })
+        const profileJson2 = (await profileRes2.json()) as ShopifyGraphQLResponse<{
+          order: { metafield?: { id?: string; value?: string; type?: string } | null } | null
+        }>
+        existingValue = profileJson2?.data?.order?.metafield?.value
+      }
+
+      if (existingValue) {
+        try {
+          const parsed = JSON.parse(existingValue)
+          if (Array.isArray(parsed)) {
+            profiles = parsed
+          }
+        } catch {
+          // ignore invalid json and start fresh
+          profiles = []
+        }
+      }
+
+      // 2) Build current profile payload
+      const currentProfile = {
+        customer_type: customerType,
+        company_name: companyName,
+        branch_type: branchTypeTh,
+        branch_code: branchCode,
+        tax_id: taxIdDigits,
+        tax_id_formatted: taxIdFormatted,
+        phone_number: phoneNumber,
+        alt_phone_number: altPhoneNumber,
+        province,
+        district,
+        sub_district: subDistrict,
+        postal_code: postalCode,
+        full_address: fullAddress,
+        savedAt: new Date().toISOString(),
+        status: 'normal' as 'default' | 'normal',
+      }
+
+      // 3) Upsert by key (tax_id + branch_code + full_address)
+      const keyMatch = (p: any) =>
+        (p?.tax_id || '') === currentProfile.tax_id &&
+        (p?.branch_code || '') === currentProfile.branch_code &&
+        (p?.full_address || '') === currentProfile.full_address
+
+      const existingIndex = profiles.findIndex(keyMatch)
+      if (existingIndex >= 0) {
+        // Preserve existing status when updating
+        const existingStatus = profiles[existingIndex]?.status === 'default' ? 'default' : 'normal'
+        profiles[existingIndex] = {
+          ...profiles[existingIndex],
+          ...currentProfile,
+          status: existingStatus,
+        }
+      } else {
+        // Determine status for new entry: keep exactly one default
+        const hasDefault = profiles.some((p) => p?.status === 'default')
+        currentProfile.status = hasDefault ? 'normal' : 'default'
+        profiles.push(currentProfile)
+      }
+
+      // 4) Enforce only one default (if multiple somehow exist, keep the earliest one)
+      const defaultIndices = profiles
+        .map((p, idx) => (p?.status === 'default' ? idx : -1))
+        .filter((i) => i >= 0)
+      if (defaultIndices.length > 1) {
+        const keep = defaultIndices[0]
+        profiles = profiles.map((p, idx) => ({ ...p, status: idx === keep ? 'default' : 'normal' }))
+      }
+
+      // 4.1) Deduplicate by tax_id_formatted so only 1 record per tax ID is kept
+      {
+        const groups: Record<string, any[]> = {}
+        for (const p of profiles as any[]) {
+          const key = String((p && (p.tax_id_formatted || p.tax_id)) || '')
+          if (!groups[key]) groups[key] = []
+          groups[key].push(p)
+        }
+        const deduped: any[] = []
+        for (const key in groups) {
+          const arr: any[] = groups[key]
+          if (!key) {
+            // If key is empty, keep all as-is (shouldn't normally happen)
+            deduped.push(...arr)
+            continue
+          }
+          // Prefer the one marked default
+          const preferred = arr.find((x: any) => x && x.status === 'default')
+          if (preferred) {
+            deduped.push(preferred)
+          } else if (arr.length) {
+            // Otherwise, keep the most recently saved
+            const sorted = arr
+              .slice()
+              .sort(
+                (a: any, b: any) =>
+                  new Date(b?.savedAt || 0).getTime() - new Date(a?.savedAt || 0).getTime()
+              )
+            deduped.push(sorted[0])
+          }
+        }
+        profiles = deduped
+      }
+
+      // 4.2) Re-enforce only one default globally after deduplication
+      {
+        const defaultIdxs = profiles
+          .map((p, idx) => (p?.status === 'default' ? idx : -1))
+          .filter((i) => i >= 0)
+        if (defaultIdxs.length === 0 && profiles.length) {
+          profiles[0] = { ...profiles[0], status: 'default' }
+        } else if (defaultIdxs.length > 1) {
+          const keep = defaultIdxs[0]
+          profiles = profiles.map((p, idx) => ({
+            ...p,
+            status: idx === keep ? 'default' : 'normal',
+          }))
+        }
+      }
+
+      // 5) Save back to Shopify as JSON metafield
+      const SAVE_DEFAULT_PROFILE = `
+        mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) {
+            metafields { id key namespace }
+            userErrors { field message code }
+          }
+        }
+      `
+      // Save to customer (if available)
+      if (ownerCustomerId) {
+        const variablesCust = {
+          metafields: [
+            {
+              ownerId: ownerCustomerId,
+              namespace: 'custom',
+              key: 'default_tax_profile',
+              type: 'json',
+              value: JSON.stringify(profiles),
+            },
+          ],
+        }
+        const respCust = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: SAVE_DEFAULT_PROFILE, variables: variablesCust }),
+        })
+        const jsonCust = (await respCust.json()) as ShopifyGraphQLResponse<MetafieldsSetResponse>
+        if (!respCust.ok || jsonCust?.errors) {
+          const errMsg =
+            jsonCust?.errors?.[0]?.message || 'Failed to save default tax profile (customer)'
+          throw new Error(errMsg)
+        }
+        if (jsonCust?.data?.metafieldsSet?.userErrors?.length) {
+          const ue = jsonCust.data.metafieldsSet.userErrors[0]
+          const errMsg = `${ue.message}${ue.code ? ` (${ue.code})` : ''}${
+            ue.field ? ` [${ue.field}]` : ''
+          }`
+          throw new Error(errMsg)
+        }
+      }
+      // Also save to order for reference
+      {
+        const variablesOrd = {
+          metafields: [
+            {
+              ownerId: orderData.id,
+              namespace: 'custom',
+              key: 'default_tax_profile',
+              type: 'json',
+              value: JSON.stringify(profiles),
+            },
+          ],
+        }
+        const respOrd = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: SAVE_DEFAULT_PROFILE, variables: variablesOrd }),
+        })
+        const jsonOrd = (await respOrd.json()) as ShopifyGraphQLResponse<MetafieldsSetResponse>
+        if (!respOrd.ok || jsonOrd?.errors) {
+          const errMsg =
+            jsonOrd?.errors?.[0]?.message || 'Failed to save default tax profile (order)'
+          throw new Error(errMsg)
+        }
+        if (jsonOrd?.data?.metafieldsSet?.userErrors?.length) {
+          const ue = jsonOrd.data.metafieldsSet.userErrors[0]
+          const errMsg = `${ue.message}${ue.code ? ` (${ue.code})` : ''}${
+            ue.field ? ` [${ue.field}]` : ''
+          }`
+          throw new Error(errMsg)
+        }
       }
 
       // Confirm by reading back the saved metafields
