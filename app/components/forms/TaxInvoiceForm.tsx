@@ -529,7 +529,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, formData.districtCode])
+  }, [formData.provinceCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
