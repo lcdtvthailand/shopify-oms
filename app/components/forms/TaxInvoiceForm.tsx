@@ -121,6 +121,7 @@ type OrderData = {
   name: string
   customerId?: string | null
   customer?: {
+    id?: string
     firstName?: string
     lastName?: string
     email?: string
