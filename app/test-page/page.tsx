@@ -641,11 +641,23 @@ export default function TestPage() {
             const found = (mlist as any[]).find(
               (m: any) => String(m?.namespace) === ns && String(m?.key) === key
             )
-            if (found && typeof found.value !== 'undefined' && String(found.value).trim() !== '')
+            if (found && typeof found.value !== 'undefined' && String(found.value).trim() !== '') {
               return String(found.value)
+            }
           }
           return ''
         }
+
+        // Determine shipping option display and delivery method per checkout mapping
+        const shippingOptionRaw = String(ship?.title || ship?.source || '')
+        const shippingOptionDisplay =
+          shippingOptionRaw === 'Thailand Shipping'
+            ? `${shippingOptionRaw} (รับสินค้าเองที่ร้าน)`
+            : shippingOptionRaw
+        const deliveryMethodText =
+          shippingOptionDisplay === 'Thailand Shipping (รับสินค้าเองที่ร้าน)'
+            ? 'รับสินค้าเองที่ร้าน'
+            : 'จัดส่งตามที่อยู่'
 
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
@@ -660,10 +672,8 @@ export default function TestPage() {
           ค่าส่ง: o.currentShippingPriceSet?.shopMoney?.amount || '',
           ภาษี: o.currentTotalTaxSet?.shopMoney?.amount || '',
           ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
-          แท็ก: Array.isArray(o.tags) ? o.tags.join(', ') : '',
-          แหล่งที่มา: o.sourceName || '',
-          ตัวเลือกการจัดส่ง: ship?.code || '',
-          วิธีการจัดส่ง: ship?.title || ship?.source || '',
+          ตัวเลือกการจัดส่ง: shippingOptionDisplay,
+          วิธีการจัดส่ง: deliveryMethodText,
           หมายเลขติดตาม: tracking.join(', '),
           ชื่อผู้รับ: shippingAddress?.name || '',
           โทรผู้รับ: shippingAddress?.phone || '',
@@ -763,7 +773,6 @@ export default function TestPage() {
             เลขที่ออเดอร์: o.name,
             ชื่อบริการ: s?.title || '',
             รหัส: s?.code || '',
-            แหล่งที่มา: s?.source || '',
             ราคาก่อนส่วนลด: s?.originalPriceSet?.shopMoney?.amount || '',
             ราคาหลังส่วนลด: s?.discountedPriceSet?.shopMoney?.amount || '',
           })
@@ -1018,6 +1027,17 @@ export default function TestPage() {
           return ''
         }
 
+        // Determine shipping option display and delivery method per checkout mapping
+        const shippingOptionRaw2 = String(ship?.title || ship?.source || '')
+        const shippingOptionDisplay2 =
+          shippingOptionRaw2 === 'Thailand Shipping'
+            ? `${shippingOptionRaw2} (รับสินค้าเองที่ร้าน)`
+            : shippingOptionRaw2
+        const deliveryMethodText2 =
+          shippingOptionDisplay2 === 'Thailand Shipping (รับสินค้าเองที่ร้าน)'
+            ? 'รับสินค้าเองที่ร้าน'
+            : 'จัดส่งตามที่อยู่'
+
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
           วันที่: o.createdAt ? new Date(o.createdAt).toLocaleString('th-TH') : '',
@@ -1031,10 +1051,8 @@ export default function TestPage() {
           ค่าส่ง: o.currentShippingPriceSet?.shopMoney?.amount || '',
           ภาษี: o.currentTotalTaxSet?.shopMoney?.amount || '',
           ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
-          แท็ก: Array.isArray(o.tags) ? o.tags.join(', ') : '',
-          แหล่งที่มา: o.sourceName || '',
-          ตัวเลือกการจัดส่ง: ship?.code || '',
-          วิธีการจัดส่ง: ship?.title || ship?.source || '',
+          ตัวเลือกการจัดส่ง: shippingOptionDisplay2,
+          วิธีการจัดส่ง: deliveryMethodText2,
           หมายเลขติดตาม: tracking.join(', '),
           ชื่อผู้รับ: shippingAddress?.name || '',
           โทรผู้รับ: shippingAddress?.phone || '',
@@ -1128,7 +1146,6 @@ export default function TestPage() {
             เลขที่ออเดอร์: o.name,
             ชื่อบริการ: s?.title || '',
             รหัส: s?.code || '',
-            แหล่งที่มา: s?.source || '',
             ราคาก่อนส่วนลด: s?.originalPriceSet?.shopMoney?.amount || '',
             ราคาหลังส่วนลด: s?.discountedPriceSet?.shopMoney?.amount || '',
           })
@@ -1955,6 +1972,11 @@ export default function TestPage() {
                         const shipLine: any =
                           ((order as any).shippingLines?.edges || [])[0]?.node || {}
                         const shippingMethod: string = shipLine?.title || shipLine?.source || ''
+                        const shippingOptionRaw2_list = String(shippingMethod || '')
+                        const shippingOptionDisplay2_list =
+                          shippingOptionRaw2_list === 'Thailand Shipping'
+                            ? `${shippingOptionRaw2_list} (รับสินค้าเองที่ร้าน)`
+                            : shippingOptionRaw2_list
                         const tracking: string[] = Array.isArray((order as any).fulfillments)
                           ? ((order as any).fulfillments as any[]).flatMap((f: any) =>
                               Array.isArray(f?.trackingInfo)
@@ -2113,11 +2135,13 @@ export default function TestPage() {
                                     <span>{shippingAddress?.address1 || '-'}</span>
                                   </div>
                                 </div>
-                                {shippingMethod && (
+                                {shippingOptionDisplay2_list && (
                                   <div>
                                     <span className="text-[11px] text-gray-500">วิธี/บริการ</span>
                                     <span className="mx-1 text-gray-400">:</span>
-                                    <span className="font-medium">{shippingMethod}</span>
+                                    <span className="font-medium">
+                                      {shippingOptionDisplay2_list}
+                                    </span>
                                   </div>
                                 )}
                                 {tracking.length > 0 && (
@@ -2437,10 +2461,7 @@ export default function TestPage() {
                               หมายเหตุจากผู้ซื้อ: {fmt(o.note)}
                             </div>
                             <div className="text-sm text-gray-700">
-                              แท็ก: {o.tags?.length ? o.tags.join(', ') : '-'}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ช่องทางการขาย: {fmt(o.sourceName)}
+                              {/* Removed tags and sales channel display */}
                             </div>
                           </section>
 
@@ -2528,22 +2549,30 @@ export default function TestPage() {
                                     .join(', ')
                                 : '-'}
                             </div>
-                            <div className="text-sm text-gray-700">
-                              วิธีการจัดส่ง:{' '}
-                              {shipLines.length
-                                ? shipLines
-                                    .map((s: any) => s?.title || s?.code || s?.source)
-                                    .filter(Boolean)
-                                    .join(', ')
-                                : '-'}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              บริการจัดส่ง:{' '}
-                              {fulfillments
-                                .map((f: any) => f?.service?.serviceName)
-                                .filter(Boolean)
-                                .join(', ') || '-'}
-                            </div>
+                            {(() => {
+                              const shippingOptionRaw2_details = String(
+                                (shipLines[0]?.title || shipLines[0]?.source || '') as string
+                              )
+                              const shippingOptionDisplay2_details =
+                                shippingOptionRaw2_details === 'Thailand Shipping'
+                                  ? `${shippingOptionRaw2_details} (รับสินค้าเองที่ร้าน)`
+                                  : shippingOptionRaw2_details
+                              const deliveryMethodText_details =
+                                shippingOptionDisplay2_details ===
+                                'Thailand Shipping (รับสินค้าเองที่ร้าน)'
+                                  ? 'รับสินค้าเองที่ร้าน'
+                                  : 'จัดส่งตามที่อยู่'
+                              return (
+                                <>
+                                  <div className="text-sm text-gray-700">
+                                    วิธีการจัดส่ง: {deliveryMethodText_details || '-'}
+                                  </div>
+                                  <div className="text-sm text-gray-700">
+                                    บริการจัดส่ง: {shippingOptionDisplay2_details || '-'}
+                                  </div>
+                                </>
+                              )
+                            })()}
                           </section>
 
                           <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
