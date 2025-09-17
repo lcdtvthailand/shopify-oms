@@ -1,9 +1,16 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import './globals.css'
+import { Anuphan } from 'next/font/google'
 import TopBar from './components/layout/TopBar'
 import TopMenu from './components/layout/TopMenu'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+
+const anuphan = Anuphan({
+  subsets: ['thai', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'ใบกำกับภาษี - Tax Invoice Form',
@@ -13,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
-      <body className="font-thai bg-gray-50 min-h-screen">
+      <body className={`bg-gray-50 min-h-screen ${anuphan.className}`}>
         <TopBar />
         <header className="bg-white">
           <div className="mx-auto max-w-screen-xl px-3 sm:px-4 py-2 sm:py-3 flex justify-center">
