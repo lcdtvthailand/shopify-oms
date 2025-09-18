@@ -546,7 +546,8 @@ export default function TestPage() {
   }, [])
   const exportToXlsx = async () => {
     try {
-      const XLSX = await import('xlsx')
+      const ExcelJSImport: any = await import('exceljs')
+      const ExcelJS = ExcelJSImport?.default ? ExcelJSImport.default : ExcelJSImport
       const orders = getFilteredOrders()
       const ordersRows: any[] = []
       orders.forEach((o) => {
@@ -560,14 +561,14 @@ export default function TestPage() {
             )
           : []
         const shippingAddress = o.shippingAddress || {}
-        const billingAddress = o.billingAddress || {}
+        const _billingAddress = o.billingAddress || {}
 
         // Consolidated summaries (Option A)
         const itemEdges: any[] = (o.lineItems as any)?.edges || []
         const formatItem = (it: any) => {
           const name = it?.name || ''
-          const sku = it?.sku || it?.variant?.sku || ''
-          return `${name}${sku ? ` [${sku}]` : ''}`
+          // Return only the item name; do not append SKU in brackets
+          return `${name}`
         }
         const _itemsCount = itemEdges.reduce(
           (n: number, e: any) => n + Number(e?.node?.quantity ?? 0),
@@ -579,7 +580,7 @@ export default function TestPage() {
           .join(' | ')
 
         const shipEdges: any[] = (o.shippingLines as any)?.edges || []
-        const shippingSummary = shipEdges
+        const _shippingSummary = shipEdges
           .map((e: any) => {
             const s = e.node
             const title = s?.title || s?.source || ''
@@ -597,14 +598,12 @@ export default function TestPage() {
             const type = d?.__typename || ''
             const codeOrTitle = d?.code || d?.title || ''
             const amount = d?.value?.amount || ''
-            const pct =
-              typeof d?.value?.percentage !== 'undefined' ? `${d?.value?.percentage}%` : ''
-            return `${type}${codeOrTitle ? `:${codeOrTitle}` : ''}${amount ? ` amount:${amount}` : ''}${pct ? ` pct:${pct}` : ''}`
+            return `${type}${codeOrTitle ? `:${codeOrTitle}` : ''}${amount ? ` amount:${amount}` : ''}`
           })
           .join(' | ')
 
         const txEdges: any[] = (o.transactions as any)?.edges || []
-        const transactionsSummary = txEdges
+        const _transactionsSummary = txEdges
           .map((e: any) => {
             const t = e.node
             const feeSum = Array.isArray(t?.fees)
@@ -620,7 +619,7 @@ export default function TestPage() {
           .join(' | ')
 
         const refEdges: any[] = (o.refunds as any)?.edges || []
-        const refundsSummary = refEdges
+        const _refundsSummary = refEdges
           .map((e: any) => {
             const r = e.node
             const when = r?.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : ''
@@ -629,7 +628,7 @@ export default function TestPage() {
           .join(' | ')
 
         const caList: any[] = o.customAttributes || []
-        const customAttrSummary = caList
+        const _customAttrSummary = caList
           .map((c: any) => `${c?.key || ''}:${c?.value || ''}`)
           .join(' | ')
 
@@ -659,6 +658,19 @@ export default function TestPage() {
             ? 'รับสินค้าเองที่ร้าน'
             : 'จัดส่งตามที่อยู่'
 
+        // Determine whether buyer requested a tax invoice based on presence of key TI metafields
+        const requestedTaxInvoice = !!(
+          getMf(['custom.customer_type', 'custom.custom_customer_type']) ||
+          getMf(['custom.company_name', 'custom.custom_company_name']) ||
+          getMf([
+            'custom.tax_id',
+            'custom.custom_tax_id',
+            'custom.tax_id_formatted',
+            'custom.custom_tax_id_formatted',
+          ]) ||
+          getMf(['custom.full_address', 'custom.custom_full_address'])
+        )
+
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
           วันที่: o.createdAt ? new Date(o.createdAt).toLocaleString('th-TH') : '',
@@ -674,53 +686,48 @@ export default function TestPage() {
           ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
           ตัวเลือกการจัดส่ง: shippingOptionDisplay,
           วิธีการจัดส่ง: deliveryMethodText,
-          หมายเลขติดตาม: tracking.join(', '),
+          หมายเลขติดตามพัสดุ: tracking.join(', '),
           ชื่อผู้รับ: shippingAddress?.name || '',
-          โทรผู้รับ: shippingAddress?.phone || '',
-          'ที่อยู่ผู้รับ 1': shippingAddress?.address1 || '',
-          'ที่อยู่ผู้รับ 2': shippingAddress?.address2 || '',
+          เบอร์โทรผู้รับ: shippingAddress?.phone || '',
+          ที่อยู่ผู้รับ: shippingAddress?.address1 || '',
+          'ตำบล/แขวง': shippingAddress?.address2 || '',
           'อำเภอ/เขต': shippingAddress?.city || '',
           จังหวัด: shippingAddress?.province || '',
           ประเทศ: shippingAddress?.country || '',
           รหัสไปรษณีย์: shippingAddress?.zip || '',
-          ชื่อผู้วางบิล: billingAddress?.name || '',
-          โทรผู้วางบิล: billingAddress?.phone || '',
-          'ที่อยู่วางบิล 1': billingAddress?.address1 || '',
-          'ที่อยู่วางบิล 2': billingAddress?.address2 || '',
-          'อำเภอ/เขต (บิล)': billingAddress?.city || '',
-          'จังหวัด (บิล)': billingAddress?.province || '',
-          'ประเทศ (บิล)': billingAddress?.country || '',
-          'รหัสไปรษณีย์ (บิล)': billingAddress?.zip || '',
 
           // Consolidated columns
           // One item per row as requested; will be set per push below
-          'รายการสินค้า (สรุป)': '',
-          'จำนวนสินค้า (แถวนี้)': 0,
-          'SKU (แถวนี้)': '',
-          'การจัดส่ง (สรุป)': shippingSummary,
-          'ส่วนลด (สรุป)': discountSummary,
-          'ธุรกรรม (สรุป)': transactionsSummary,
-          'การคืนเงิน (สรุป)': refundsSummary,
-          'คุณสมบัติที่กำหนดเอง (สรุป)': customAttrSummary,
+          รายการสินค้า: '',
+          จำนวนสินค้า: 0,
+          SKU: '',
+          ราคาตั้งต้น: '',
+          ราคาขาย: '',
+          ราคาขายสุทธิ: '',
+          ส่วนลด: discountSummary,
+          ขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
 
           // Tax invoice (TI) fields
-          'TI: ประเภท': getMf(['custom.customer_type', 'custom.custom_customer_type']),
-          'TI: ชื่อบริษัท': getMf(['custom.company_name', 'custom.custom_company_name']),
-          'TI: สาขา': getMf(['custom.branch_type', 'custom.custom_branch_type']),
-          'TI: รหัสสาขา': getMf(['custom.branch_code', 'custom.custom_branch_code']),
-          'TI: เลขผู้เสียภาษี': getMf([
+          ประเภทใบกำกับภาษี: getMf(['custom.customer_type', 'custom.custom_customer_type']),
+          'ชื่อ (ใบกำกับภาษี)': getMf(['custom.company_name', 'custom.custom_company_name']),
+          'ประเภทสาขา (ใบกำกับภาษี)': getMf(['custom.branch_type', 'custom.custom_branch_type']),
+          'รหัสสาขา (ใบกำกับภาษี)': getMf(['custom.branch_code', 'custom.custom_branch_code']),
+          เลขผู้เสียภาษี: getMf([
             'custom.tax_id',
             'custom.custom_tax_id',
             'custom.tax_id_formatted',
             'custom.custom_tax_id_formatted',
           ]),
-          'TI: โทรศัพท์': getMf(['custom.phone_number', 'custom.custom_phone_number']),
-          'TI: โทรศัพท์สำรอง': getMf(['custom.alt_phone_number', 'custom.custom_alt_phone_number']),
-          'TI: จังหวัด': getMf(['custom.province', 'custom.custom_province']),
-          'TI: อำเภอ/เขต': getMf(['custom.district', 'custom.custom_district']),
-          'TI: ตำบล/แขวง': getMf(['custom.sub_district', 'custom.custom_sub_district']),
-          'TI: ไปรษณีย์': getMf(['custom.postal_code', 'custom.custom_postal_code']),
-          'TI: ที่อยู่': getMf(['custom.full_address', 'custom.custom_full_address']),
+          'โทรศัพท์ (ใบกำกับภาษี)': getMf(['custom.phone_number', 'custom.custom_phone_number']),
+          'โทรศัพท์สำรอง (ใบกำกับภาษี)': getMf([
+            'custom.alt_phone_number',
+            'custom.custom_alt_phone_number',
+          ]),
+          'จังหวัด (ใบกำกับภาษี)': getMf(['custom.province', 'custom.custom_province']),
+          'อำเภอ/เขต (ใบกำกับภาษี)': getMf(['custom.district', 'custom.custom_district']),
+          'ตำบล/แขวง (ใบกำกับภาษี)': getMf(['custom.sub_district', 'custom.custom_sub_district']),
+          'ไปรษณีย์ (ใบกำกับภาษี)': getMf(['custom.postal_code', 'custom.custom_postal_code']),
+          'ที่อยู่ (ใบกำกับภาษี)': getMf(['custom.full_address', 'custom.custom_full_address']),
         }
 
         if (itemEdges.length > 0) {
@@ -728,17 +735,27 @@ export default function TestPage() {
             const it = e.node
             ordersRows.push({
               ...baseRow,
-              'รายการสินค้า (สรุป)': formatItem(it),
-              'จำนวนสินค้า (แถวนี้)': Number(it?.quantity ?? 0),
-              'SKU (แถวนี้)': it?.sku || it?.variant?.sku || '',
+              รายการสินค้า: formatItem(it),
+              จำนวนสินค้า: Number(it?.quantity ?? 0),
+              SKU: it?.sku || it?.variant?.sku || '',
+              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขายสุทธิ: (() => {
+                const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+                const qty = Number(it?.quantity ?? 0)
+                return (unit * qty).toFixed(2)
+              })(),
             })
           })
         } else {
           ordersRows.push({
             ...baseRow,
-            'รายการสินค้า (สรุป)': '-',
-            'จำนวนสินค้า (แถวนี้)': 0,
-            'SKU (แถวนี้)': '',
+            รายการสินค้า: '-',
+            จำนวนสินค้า: 0,
+            SKU: '',
+            ราคาตั้งต้น: '',
+            ราคาขาย: '',
+            ราคาขายสุทธิ: '',
           })
         }
       })
@@ -845,7 +862,7 @@ export default function TestPage() {
         })
       })
 
-      // Build structured tax invoice sheet from metafields (custom.*)
+      // Build structured tax invoice sheet from metafields (custom.*) for ALL export
       const taxInvoiceRows: any[] = []
       orders.forEach((o) => {
         const mlist = nodesFrom((o as any).metafields)
@@ -886,26 +903,68 @@ export default function TestPage() {
         })
       })
 
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ordersRows), 'คำสั่งซื้อ')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(itemsRows), 'รายการสินค้า')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(shippingRows), 'การจัดส่ง')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(discountRows), 'ส่วนลด')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(transactionRows), 'ธุรกรรม')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), 'การคืนเงิน')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(customAttrRows), 'คุณสมบัติที่กำหนดเอง')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taxInvoiceRows), 'ใบกำกับภาษี')
+      const wb = new ExcelJS.Workbook()
+      const addSheetFromRows = (
+        name: string,
+        rows: any[]
+      ): { ws: any; headers: string[] } | null => {
+        const ws = wb.addWorksheet(name)
+        if (!rows || rows.length === 0) return { ws, headers: [] }
+        const headers = Object.keys(rows[0])
+        ws.columns = headers.map((h) => ({
+          header: h,
+          key: h,
+          width: Math.min(40, Math.max(12, String(h).length + 2)),
+        }))
+        rows.forEach((r) => {
+          ws.addRow(r)
+        })
+        return { ws, headers }
+      }
+      const main = addSheetFromRows('คำสั่งซื้อ', ordersRows)
+      addSheetFromRows('รายการสินค้า', itemsRows)
+      addSheetFromRows('การจัดส่ง', shippingRows)
+      addSheetFromRows('ส่วนลด', discountRows)
+      addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
+
+      // Style tax-invoice request column in main sheet
+      if (main?.headers.length) {
+        const colIdx = main.headers.indexOf('ขอใบกำกับภาษี') + 1
+        if (colIdx > 0) {
+          const ws = main.ws
+          for (let r = 2; r <= ws.rowCount; r++) {
+            const cell = ws.getRow(r).getCell(colIdx)
+            const val = String(cell.value ?? '')
+            const isRequested = val === 'ขอใบกำกับภาษี'
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: isRequested ? 'FFC6F6D5' : 'FFFECACA' }, // green-200 / red-200
+            }
+          }
+        }
+      }
+
       const fileName = `orders_${new Date().toISOString().slice(0, 10)}.xlsx`
-      XLSX.writeFile(wb, fileName)
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Export failed', err)
-      alert('ไม่สามารถส่งออกไฟล์ได้ กรุณาติดตั้งแพ็กเกจ xlsx และลองใหม่')
+      alert('ไม่สามารถส่งออกไฟล์ได้ กรุณาติดตั้งแพ็กเกจ exceljs และลองใหม่')
     }
   }
   const exportAllFromShopify = async () => {
     try {
       setExportingAll(true)
-      const XLSX = await import('xlsx')
+      const ExcelJS: any = await import('exceljs')
       let after: string | null = null
       let allOrders: OrderNode[] = []
       const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
@@ -938,7 +997,7 @@ export default function TestPage() {
             )
           : []
         const shippingAddress = o.shippingAddress || {}
-        const billingAddress = o.billingAddress || {}
+        const _billingAddress = o.billingAddress || {}
         // Consolidated summaries (Option A)
         const itemEdges: any[] = (o.lineItems as any)?.edges || []
         const formatItem = (it: any) => {
@@ -959,7 +1018,7 @@ export default function TestPage() {
           .join(' | ')
 
         const shipEdges: any[] = (o.shippingLines as any)?.edges || []
-        const shippingSummary = shipEdges
+        const _shippingSummary = shipEdges
           .map((e: any) => {
             const s = e.node
             const title = s?.title || s?.source || ''
@@ -984,7 +1043,7 @@ export default function TestPage() {
           .join(' | ')
 
         const txEdges: any[] = (o.transactions as any)?.edges || []
-        const transactionsSummary = txEdges
+        const _transactionsSummary = txEdges
           .map((e: any) => {
             const t = e.node
             const feeSum = Array.isArray(t?.fees)
@@ -1000,7 +1059,7 @@ export default function TestPage() {
           .join(' | ')
 
         const refEdges: any[] = (o.refunds as any)?.edges || []
-        const refundsSummary = refEdges
+        const _refundsSummary = refEdges
           .map((e: any) => {
             const r = e.node
             const when = r?.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : ''
@@ -1009,7 +1068,7 @@ export default function TestPage() {
           .join(' | ')
 
         const caList: any[] = o.customAttributes || []
-        const customAttrSummary = caList
+        const _customAttrSummary = caList
           .map((c: any) => `${c?.key || ''}:${c?.value || ''}`)
           .join(' | ')
 
@@ -1038,6 +1097,19 @@ export default function TestPage() {
             ? 'รับสินค้าเองที่ร้าน'
             : 'จัดส่งตามที่อยู่'
 
+        // Determine whether buyer requested a tax invoice based on presence of key TI metafields
+        const requestedTaxInvoice2 = !!(
+          getMf(['custom.customer_type', 'custom.custom_customer_type']) ||
+          getMf(['custom.company_name', 'custom.custom_company_name']) ||
+          getMf([
+            'custom.tax_id',
+            'custom.custom_tax_id',
+            'custom.tax_id_formatted',
+            'custom.custom_tax_id_formatted',
+          ]) ||
+          getMf(['custom.full_address', 'custom.custom_full_address'])
+        )
+
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
           วันที่: o.createdAt ? new Date(o.createdAt).toLocaleString('th-TH') : '',
@@ -1053,33 +1125,25 @@ export default function TestPage() {
           ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
           ตัวเลือกการจัดส่ง: shippingOptionDisplay2,
           วิธีการจัดส่ง: deliveryMethodText2,
-          หมายเลขติดตาม: tracking.join(', '),
+          หมายเลขติดตามพัสดุ: tracking.join(', '),
           ชื่อผู้รับ: shippingAddress?.name || '',
-          โทรผู้รับ: shippingAddress?.phone || '',
-          'ที่อยู่ผู้รับ 1': shippingAddress?.address1 || '',
-          'ที่อยู่ผู้รับ 2': shippingAddress?.address2 || '',
+          เบอร์โทรผู้รับ: shippingAddress?.phone || '',
+          ที่อยู่ผู้รับ: shippingAddress?.address1 || '',
+          'ตำบล/แขวง': shippingAddress?.address2 || '',
           'อำเภอ/เขต': shippingAddress?.city || '',
           จังหวัด: shippingAddress?.province || '',
           ประเทศ: shippingAddress?.country || '',
           รหัสไปรษณีย์: shippingAddress?.zip || '',
-          ชื่อผู้วางบิล: billingAddress?.name || '',
-          โทรผู้วางบิล: billingAddress?.phone || '',
-          'ที่อยู่วางบิล 1': billingAddress?.address1 || '',
-          'ที่อยู่วางบิล 2': billingAddress?.address2 || '',
-          'อำเภอ/เขต (บิล)': billingAddress?.city || '',
-          'จังหวัด (บิล)': billingAddress?.province || '',
-          'ประเทศ (บิล)': billingAddress?.country || '',
-          'รหัสไปรษณีย์ (บิล)': billingAddress?.zip || '',
 
           // Consolidated columns (one item per row)
-          'รายการสินค้า (สรุป)': '',
-          'จำนวนสินค้า (แถวนี้)': 0,
-          'SKU (แถวนี้)': '',
-          'การจัดส่ง (สรุป)': shippingSummary,
-          'ส่วนลด (สรุป)': discountSummary,
-          'ธุรกรรม (สรุป)': transactionsSummary,
-          'การคืนเงิน (สรุป)': refundsSummary,
-          'คุณสมบัติที่กำหนดเอง (สรุป)': customAttrSummary,
+          รายการสินค้า: '',
+          จำนวนสินค้า: 0,
+          SKU: '',
+          ราคาตั้งต้น: '',
+          ราคาขาย: '',
+          ราคาขายสุทธิ: '',
+          ส่วนลด: discountSummary,
+          ขอใบกำกับภาษี: requestedTaxInvoice2 ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
 
           // Tax invoice (TI) fields
           'TI: ประเภท': getMf(['custom.customer_type', 'custom.custom_customer_type']),
@@ -1106,17 +1170,27 @@ export default function TestPage() {
             const it = e.node
             ordersRows.push({
               ...baseRow,
-              'รายการสินค้า (สรุป)': formatItem(it),
-              'จำนวนสินค้า (แถวนี้)': Number(it?.quantity ?? 0),
-              'SKU (แถวนี้)': it?.sku || it?.variant?.sku || '',
+              รายการสินค้า: formatItem(it),
+              จำนวนสินค้า: Number(it?.quantity ?? 0),
+              SKU: it?.sku || it?.variant?.sku || '',
+              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขายสุทธิ: (() => {
+                const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+                const qty = Number(it?.quantity ?? 0)
+                return (unit * qty).toFixed(2)
+              })(),
             })
           })
         } else {
           ordersRows.push({
             ...baseRow,
-            'รายการสินค้า (สรุป)': '-',
-            'จำนวนสินค้า (แถวนี้)': 0,
-            'SKU (แถวนี้)': '',
+            รายการสินค้า: '-',
+            จำนวนสินค้า: 0,
+            SKU: '',
+            ราคาตั้งต้น: '',
+            ราคาขาย: '',
+            ราคาขายสุทธิ: '',
           })
         }
       })
@@ -1257,16 +1331,61 @@ export default function TestPage() {
           ที่อยู่: getMf(['custom.full_address', 'custom.custom_full_address']),
         })
       })
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ordersRows), 'คำสั่งซื้อ')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(itemsRows), 'รายการสินค้า')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(shippingRows), 'การจัดส่ง')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(discountRows), 'ส่วนลด')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(transactionRows), 'ธุรกรรม')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), 'การคืนเงิน')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(customAttrRows), 'คุณสมบัติที่กำหนดเอง')
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taxInvoiceRows), 'ใบกำกับภาษี')
-      XLSX.writeFile(wb, `orders_all_${new Date().toISOString().slice(0, 10)}.xlsx`)
+      const wb = new ExcelJS.Workbook()
+      const addSheetFromRows = (
+        name: string,
+        rows: any[]
+      ): { ws: any; headers: string[] } | null => {
+        const ws = wb.addWorksheet(name)
+        if (!rows || rows.length === 0) return { ws, headers: [] }
+        const headers = Object.keys(rows[0])
+        ws.columns = headers.map((h) => ({
+          header: h,
+          key: h,
+          width: Math.min(40, Math.max(12, String(h).length + 2)),
+        }))
+        rows.forEach((r) => {
+          ws.addRow(r)
+        })
+        return { ws, headers }
+      }
+      const main = addSheetFromRows('คำสั่งซื้อ', ordersRows)
+      addSheetFromRows('รายการสินค้า', itemsRows)
+      addSheetFromRows('การจัดส่ง', shippingRows)
+      addSheetFromRows('ส่วนลด', discountRows)
+      addSheetFromRows('ธุรกรรม', transactionRows)
+      addSheetFromRows('การคืนเงิน', refundRows)
+      addSheetFromRows('คุณสมบัติที่กำหนดเอง', customAttrRows)
+      addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
+
+      if (main?.headers.length) {
+        const colIdx = main.headers.indexOf('ขอใบกำกับภาษี') + 1
+        if (colIdx > 0) {
+          const ws = main.ws
+          for (let r = 2; r <= ws.rowCount; r++) {
+            const cell = ws.getRow(r).getCell(colIdx)
+            const val = String(cell.value ?? '')
+            const isRequested = val === 'ขอใบกำกับภาษี'
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: isRequested ? 'FFC6F6D5' : 'FFFECACA' },
+            }
+          }
+        }
+      }
+
+      const fileName = `orders_all_${new Date().toISOString().slice(0, 10)}.xlsx`
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Export all failed', err)
       alert('ไม่สามารถส่งออกทั้งหมดได้ กรุณาลองใหม่อีกครั้ง')
@@ -1449,7 +1568,12 @@ export default function TestPage() {
     }).format(parseFloat(price))
   }
 
-  const fmt = (s?: string | null) => s ?? '-'
+  const fmt = (s?: string | null) => {
+    if (s == null) return '-'
+    const t = String(s).trim()
+    return t === '' ? '-' : t
+  }
+
   const money = (ps?: PriceSet) => (ps?.shopMoney?.amount ? formatPrice(ps.shopMoney.amount) : '-')
   const findOrder = (id: string) => data.find((o) => o.id === id)
   const nodesFrom = (src: any): any[] => {
@@ -2094,19 +2218,14 @@ export default function TestPage() {
                                     {shippingAddress?.name || '-'}
                                   </span>
                                 </div>
-                                {shippingAddress?.phone && (
-                                  <div>
-                                    <span className="text-[11px] text-gray-500">โทร</span>
-                                    <span className="mx-1 text-gray-400">:</span>
-                                    <span className="font-medium">{shippingAddress.phone}</span>
-                                  </div>
-                                )}
+                                <div>
+                                  <span className="text-[11px] text-gray-500">โทร</span>
+                                  <span className="mx-1 text-gray-400">:</span>
+                                  <span className="font-medium">
+                                    {shippingAddress?.phone || '-'}
+                                  </span>
+                                </div>
                                 <div className="break-words space-y-0.5">
-                                  <div>
-                                    <span className="text-[11px] text-gray-500">ประเทศ</span>
-                                    <span className="mx-1 text-gray-400">:</span>
-                                    <span>{shippingAddress?.country || '-'}</span>
-                                  </div>
                                   <div>
                                     <span className="text-[11px] text-gray-500">จังหวัด</span>
                                     <span className="mx-1 text-gray-400">:</span>
@@ -2117,13 +2236,11 @@ export default function TestPage() {
                                     <span className="mx-1 text-gray-400">:</span>
                                     <span>{shippingAddress?.city || '-'}</span>
                                   </div>
-                                  {shippingAddress?.address2 && (
-                                    <div>
-                                      <span className="text-[11px] text-gray-500">ตำบล/แขวง</span>
-                                      <span className="mx-1 text-gray-400">:</span>
-                                      <span>{shippingAddress.address2}</span>
-                                    </div>
-                                  )}
+                                  <div>
+                                    <span className="text-[11px] text-gray-500">ตำบล/แขวง</span>
+                                    <span className="mx-1 text-gray-400">:</span>
+                                    <span>{shippingAddress?.address2 || '-'}</span>
+                                  </div>
                                   <div>
                                     <span className="text-[11px] text-gray-500">รหัสไปรษณีย์</span>
                                     <span className="mx-1 text-gray-400">:</span>
@@ -2153,7 +2270,7 @@ export default function TestPage() {
                                 )}
                                 <div className="pt-2">
                                   <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
-                                    ใบกำกับภาษี: {hasTaxInvoice ? 'มี' : 'ไม่มี'}
+                                    {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
                                   </Badge>
                                 </div>
                               </div>
@@ -2529,11 +2646,9 @@ export default function TestPage() {
                             <div className="text-sm text-gray-700">
                               อำเภอ/เขต: {fmt(o.shippingAddress?.city)}
                             </div>
-                            {o.shippingAddress?.address2 && (
-                              <div className="text-sm text-gray-700">
-                                ตำบล/แขวง: {fmt(o.shippingAddress?.address2)}
-                              </div>
-                            )}
+                            <div className="text-sm text-gray-700">
+                              ตำบล/แขวง: {fmt(o.shippingAddress?.address2)}
+                            </div>
                             <div className="text-sm text-gray-700">
                               รหัสไปรษณีย์: {fmt(o.shippingAddress?.zip)}
                             </div>
@@ -2541,7 +2656,7 @@ export default function TestPage() {
                               ที่อยู่: {fmt(o.shippingAddress?.address1)}
                             </div>
                             <div className="text-sm text-gray-700">
-                              หมายเลขติดตาม:{' '}
+                              หมายเลขติดตามพัสดุ:{' '}
                               {trackings.length
                                 ? trackings
                                     .map((t: any) => t?.number)
