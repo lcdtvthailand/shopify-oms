@@ -705,7 +705,7 @@ export default function TestPage() {
           ราคาขาย: '',
           ราคาขายสุทธิ: '',
           ส่วนลด: discountSummary,
-          ขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
+          ร้องขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
 
           // Tax invoice (TI) fields
           ประเภทใบกำกับภาษี: getMf(['custom.customer_type', 'custom.custom_customer_type']),
@@ -733,19 +733,19 @@ export default function TestPage() {
         if (itemEdges.length > 0) {
           itemEdges.forEach((e: any) => {
             const it = e.node
-            ordersRows.push({
-              ...baseRow,
-              รายการสินค้า: formatItem(it),
-              จำนวนสินค้า: Number(it?.quantity ?? 0),
-              SKU: it?.sku || it?.variant?.sku || '',
-              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขายสุทธิ: (() => {
-                const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-                const qty = Number(it?.quantity ?? 0)
-                return (unit * qty).toFixed(2)
-              })(),
-            })
+            const qty = Number(it?.quantity ?? 0)
+            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+            for (let i = 0; i < qty; i++) {
+              ordersRows.push({
+                ...baseRow,
+                รายการสินค้า: formatItem(it),
+                จำนวนสินค้า: 1,
+                SKU: it?.sku || it?.variant?.sku || '',
+                ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+                ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+                ราคาขายสุทธิ: unit.toFixed(2),
+              })
+            }
           })
         } else {
           ordersRows.push({
@@ -929,7 +929,7 @@ export default function TestPage() {
 
       // Style tax-invoice request column in main sheet
       if (main?.headers.length) {
-        const colIdx = main.headers.indexOf('ขอใบกำกับภาษี') + 1
+        const colIdx = main.headers.indexOf('ร้องขอใบกำกับภาษี') + 1
         if (colIdx > 0) {
           const ws = main.ws
           for (let r = 2; r <= ws.rowCount; r++) {
@@ -1002,11 +1002,8 @@ export default function TestPage() {
         const itemEdges: any[] = (o.lineItems as any)?.edges || []
         const formatItem = (it: any) => {
           const name = it?.name || ''
-          const sku = it?.sku || it?.variant?.sku || ''
-          const qty = Number(it?.quantity ?? 0)
-          const unitAfterDisc = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-          const net = (unitAfterDisc * qty).toFixed(2)
-          return `${name}${sku ? ` [${sku}]` : ''} x${qty} @${unitAfterDisc || ''} = ${net}`
+          // For per-unit rows, display only the product name (no SKU/qty summary)
+          return `${name}`
         }
         const _itemsCount = itemEdges.reduce(
           (n: number, e: any) => n + Number(e?.node?.quantity ?? 0),
@@ -1143,7 +1140,7 @@ export default function TestPage() {
           ราคาขาย: '',
           ราคาขายสุทธิ: '',
           ส่วนลด: discountSummary,
-          ขอใบกำกับภาษี: requestedTaxInvoice2 ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
+          ร้องขอใบกำกับภาษี: requestedTaxInvoice2 ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
 
           // Tax invoice (TI) fields
           'TI: ประเภท': getMf(['custom.customer_type', 'custom.custom_customer_type']),
@@ -1168,19 +1165,19 @@ export default function TestPage() {
         if (itemEdges.length > 0) {
           itemEdges.forEach((e: any) => {
             const it = e.node
-            ordersRows.push({
-              ...baseRow,
-              รายการสินค้า: formatItem(it),
-              จำนวนสินค้า: Number(it?.quantity ?? 0),
-              SKU: it?.sku || it?.variant?.sku || '',
-              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขายสุทธิ: (() => {
-                const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-                const qty = Number(it?.quantity ?? 0)
-                return (unit * qty).toFixed(2)
-              })(),
-            })
+            const qty = Number(it?.quantity ?? 0)
+            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+            for (let i = 0; i < qty; i++) {
+              ordersRows.push({
+                ...baseRow,
+                รายการสินค้า: formatItem(it),
+                จำนวนสินค้า: 1,
+                SKU: it?.sku || it?.variant?.sku || '',
+                ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+                ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+                ราคาขายสุทธิ: unit.toFixed(2),
+              })
+            }
           })
         } else {
           ordersRows.push({
@@ -1359,7 +1356,7 @@ export default function TestPage() {
       addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
 
       if (main?.headers.length) {
-        const colIdx = main.headers.indexOf('ขอใบกำกับภาษี') + 1
+        const colIdx = main.headers.indexOf('ร้องขอใบกำกับภาษี') + 1
         if (colIdx > 0) {
           const ws = main.ws
           for (let r = 2; r <= ws.rowCount; r++) {
