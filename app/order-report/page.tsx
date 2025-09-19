@@ -828,21 +828,36 @@ export default function TestPage() {
         }
 
         if (itemEdges.length > 0) {
+          // Group same items together (by SKU if present, otherwise by name + variant + unit price)
+          const groups = new Map<string, { it: any; qty: number }>()
           itemEdges.forEach((e: any) => {
             const it = e.node
             const qty = Number(it?.quantity ?? 0)
+            const sku = it?.sku || it?.variant?.sku || ''
+            const name = it?.name || ''
+            const variantTitle = it?.variant?.title || ''
             const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-            for (let i = 0; i < qty; i++) {
-              ordersRows.push({
-                ...baseRow,
-                รายการสินค้า: formatItem(it),
-                จำนวนสินค้า: 1,
-                SKU: it?.sku || it?.variant?.sku || '',
-                ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-                ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-                ราคาขายสุทธิ: unit.toFixed(2),
-              })
+            const key = sku
+              ? `SKU:${sku}|PRICE:${unit.toFixed(2)}`
+              : `NAME:${name}|VAR:${variantTitle}|PRICE:${unit.toFixed(2)}`
+            const existed = groups.get(key)
+            if (existed) {
+              existed.qty += qty
+            } else {
+              groups.set(key, { it, qty })
             }
+          })
+          Array.from(groups.values()).forEach(({ it, qty }) => {
+            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+            ordersRows.push({
+              ...baseRow,
+              รายการสินค้า: formatItem(it),
+              จำนวนสินค้า: qty,
+              SKU: it?.sku || it?.variant?.sku || '',
+              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขายสุทธิ: (unit * qty).toFixed(2),
+            })
           })
         } else {
           ordersRows.push({
@@ -1260,21 +1275,36 @@ export default function TestPage() {
         }
 
         if (itemEdges.length > 0) {
+          // Group same items together (by SKU if present, otherwise by name + variant + unit price)
+          const groups = new Map<string, { it: any; qty: number }>()
           itemEdges.forEach((e: any) => {
             const it = e.node
             const qty = Number(it?.quantity ?? 0)
+            const sku = it?.sku || it?.variant?.sku || ''
+            const name = it?.name || ''
+            const variantTitle = it?.variant?.title || ''
             const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-            for (let i = 0; i < qty; i++) {
-              ordersRows.push({
-                ...baseRow,
-                รายการสินค้า: formatItem(it),
-                จำนวนสินค้า: 1,
-                SKU: it?.sku || it?.variant?.sku || '',
-                ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-                ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-                ราคาขายสุทธิ: unit.toFixed(2),
-              })
+            const key = sku
+              ? `SKU:${sku}|PRICE:${unit.toFixed(2)}`
+              : `NAME:${name}|VAR:${variantTitle}|PRICE:${unit.toFixed(2)}`
+            const existed = groups.get(key)
+            if (existed) {
+              existed.qty += qty
+            } else {
+              groups.set(key, { it, qty })
             }
+          })
+          Array.from(groups.values()).forEach(({ it, qty }) => {
+            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
+            ordersRows.push({
+              ...baseRow,
+              รายการสินค้า: formatItem(it),
+              จำนวนสินค้า: qty,
+              SKU: it?.sku || it?.variant?.sku || '',
+              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+              ราคาขายสุทธิ: (unit * qty).toFixed(2),
+            })
           })
         } else {
           ordersRows.push({
