@@ -645,6 +645,13 @@ export default function TestPage() {
       const ExcelJS = ExcelJSImport?.default ? ExcelJSImport.default : ExcelJSImport
       const orders = getFilteredOrders()
       const ordersRows: any[] = []
+
+      // Helper function to safely parse numbers
+      const parseNumber = (value: string | undefined | null): number => {
+        if (!value || value === '') return 0
+        const parsed = parseFloat(value)
+        return isNaN(parsed) ? 0 : parsed
+      }
       orders.forEach((o) => {
         const customerName = o.customer?.displayName || o.customer?.email || ''
         const ship = (o.shippingLines as any)?.edges?.[0]?.node
@@ -693,7 +700,7 @@ export default function TestPage() {
             const type = d?.__typename || ''
             const codeOrTitle = d?.code || d?.title || ''
             const amount = d?.value?.amount || ''
-            return `${type}${codeOrTitle ? `:${codeOrTitle}` : ''}${amount ? ` amount:${amount}` : ''}`
+            return `${type}${codeOrTitle ? ` ${codeOrTitle}` : ''}${amount ? ` amount:${amount}` : ''}`
           })
           .join(' | ')
 
@@ -774,11 +781,6 @@ export default function TestPage() {
           'ชื่อผู้ใช้ (ผู้ซื้อ)': customerName,
           อีเมล: o.customer?.email || o.email || '',
           เบอร์โทร: o.customer?.phone || '',
-          ยอดรวม: o.currentTotalPriceSet?.shopMoney?.amount || '',
-          ยอดสินค้า: o.currentSubtotalPriceSet?.shopMoney?.amount || '',
-          ค่าส่ง: o.currentShippingPriceSet?.shopMoney?.amount || '',
-          ภาษี: o.currentTotalTaxSet?.shopMoney?.amount || '',
-          ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
           ตัวเลือกการจัดส่ง: shippingOptionDisplay,
           วิธีการจัดส่ง: deliveryMethodText,
           หมายเลขติดตามพัสดุ: tracking.join(', '),
@@ -790,19 +792,19 @@ export default function TestPage() {
           จังหวัด: shippingAddress?.province || '',
           ประเทศ: shippingAddress?.country || '',
           รหัสไปรษณีย์: shippingAddress?.zip || '',
-
-          // Consolidated columns
-          // One item per row as requested; will be set per push below
           รายการสินค้า: '',
-          จำนวนสินค้า: 0,
           SKU: '',
-          ราคาตั้งต้น: '',
-          ราคาขาย: '',
-          ราคาขายสุทธิ: '',
+          ราคาตั้งต้น: 0,
+          ราคาขาย: 0,
+          จำนวนสินค้า: 0,
+          ราคาขายสุทธิ: 0,
           ส่วนลด: discountSummary,
+          ส่วนลดรวม: parseNumber(o.currentTotalDiscountsSet?.shopMoney?.amount),
+          ยอดรวม: parseNumber(o.currentTotalPriceSet?.shopMoney?.amount),
+          ยอดสินค้า: parseNumber(o.currentSubtotalPriceSet?.shopMoney?.amount),
+          ค่าส่ง: parseNumber(o.currentShippingPriceSet?.shopMoney?.amount),
+          ภาษี: parseNumber(o.currentTotalTaxSet?.shopMoney?.amount),
           ร้องขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
-
-          // Tax invoice (TI) fields
           ประเภทใบกำกับภาษี: getMf(['custom.customer_type', 'custom.custom_customer_type']),
           'ชื่อ (ใบกำกับภาษี)': getMf(['custom.company_name', 'custom.custom_company_name']),
           'ประเภทสาขา (ใบกำกับภาษี)': getMf(['custom.branch_type', 'custom.custom_branch_type']),
