@@ -467,7 +467,102 @@ const _groupMetafields = (list: any[]) => {
   return Array.from(map.entries()).map(([ns, items]) => ({ ns, items }))
 }
 
+// Authentication Popup Component (top-level to avoid recreating on each render)
+const AuthPopup = ({
+  authCode,
+  setAuthCode,
+  handleAuth,
+  authError,
+  authAttempts,
+}: {
+  authCode: string
+  setAuthCode: (v: string) => void
+  handleAuth: () => void
+  authError: string
+  authAttempts: number
+}) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl border border-red-200 p-8 max-w-md w-full mx-4">
+      <div className="text-center mb-6">
+        <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <svg
+            className="w-8 h-8 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">เข้าสู่ระบบรายงาน</h2>
+        <p className="text-gray-600">กรุณาใส่รหัสเพื่อเข้าถึงหน้ารายงานคำสั่งซื้อ</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">รหัสเข้าใช้งาน</label>
+          <input
+            type="password"
+            value={authCode}
+            onChange={(e) => setAuthCode(e.target.value)}
+            onKeyPress={(e) =>
+              e.key === 'Enter' && authAttempts < 3 && authCode.trim() && handleAuth()
+            }
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+            placeholder="ใส่รหัสที่นี่"
+            disabled={authAttempts >= 3}
+          />
+        </div>
+
+        {authError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex items-center">
+              <svg
+                className="w-5 h-5 text-red-400 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-sm text-red-700">{authError}</p>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleAuth}
+          disabled={!authCode.trim() || authAttempts >= 3}
+          className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+        >
+          {authAttempts >= 3 ? 'ถูกล็อค กรุณารอ...' : 'เข้าสู่ระบบ'}
+        </button>
+
+        <div className="text-right text-xs text-gray-500 mt-4">ความพยายาม: {authAttempts}/3</div>
+      </div>
+    </div>
+  </div>
+)
+
 export default function TestPage() {
+  // Authentication states
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showAuthPopup, setShowAuthPopup] = useState(true)
+  const [authCode, setAuthCode] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authAttempts, setAuthAttempts] = useState(0)
+
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<OrderNode[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -1402,6 +1497,33 @@ export default function TestPage() {
     }
   }, [selectedId, scrollToDetails])
 
+  // Check for existing authentication on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/order-report-auth', {
+          method: 'GET',
+          credentials: 'include', // Include cookies
+        })
+
+        if (response.ok) {
+          const authData = (await response.json()) as { authenticated?: boolean }
+          if (authData.authenticated) {
+            setIsAuthenticated(true)
+            setShowAuthPopup(false)
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        // If check fails, show popup
+        setIsAuthenticated(false)
+        setShowAuthPopup(true)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
   const ordersQuery = `
     query Orders($after: String) {
       orders(first: 240, after: $after) {
@@ -1695,6 +1817,75 @@ export default function TestPage() {
     setPage(1)
   }, [])
 
+  // Handle authentication
+  const handleAuth = async () => {
+    if (!authCode.trim()) {
+      setAuthError('กรุณาใส่รหัสเข้าใช้งาน')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/order-report-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+        body: JSON.stringify({ code: authCode }),
+      })
+
+      const responseData = (await response.json()) as { success?: boolean; message?: string }
+
+      if (response.ok && responseData.success) {
+        // Authentication successful
+        setIsAuthenticated(true)
+        setShowAuthPopup(false)
+        setAuthError('')
+        setAuthCode('')
+        setAuthAttempts(0)
+      } else {
+        // Authentication failed
+        setAuthAttempts((prev) => prev + 1)
+        setAuthError(responseData.message || 'รหัสไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
+        setAuthCode('')
+
+        // Lock after 3 failed attempts
+        if (authAttempts >= 2) {
+          setAuthError('คุณใส่รหัสผิดเกินกำหนด กรุณารอ 5 นาทีแล้วลองใหม่')
+          setTimeout(
+            () => {
+              setAuthAttempts(0)
+              setAuthError('')
+            },
+            5 * 60 * 1000
+          ) // 5 minutes
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error)
+      setAuthError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง')
+    }
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/order-report-auth', {
+        method: 'DELETE',
+        credentials: 'include', // Include cookies
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Always reset state regardless of API call result
+      setIsAuthenticated(false)
+      setShowAuthPopup(true)
+      setAuthCode('')
+      setAuthError('')
+      setAuthAttempts(0)
+    }
+  }
+
   const handleSelectOrder = (id: string, orderName: string) => {
     setSelectedId(id)
     setShowRaw(false)
@@ -1730,6 +1921,19 @@ export default function TestPage() {
     }, 100)
   }
 
+  // Show authentication popup if not authenticated
+  if (!isAuthenticated || showAuthPopup) {
+    return (
+      <AuthPopup
+        authCode={authCode}
+        setAuthCode={setAuthCode}
+        handleAuth={handleAuth}
+        authError={authError}
+        authAttempts={authAttempts}
+      />
+    )
+  }
+
   return (
     <div className={'min-h-screen bg-white p-4 sm:p-6 lg:p-8'}>
       <div className="max-w-[1920px] mx-auto">
@@ -1739,8 +1943,35 @@ export default function TestPage() {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
                 รายงานคำสั่งซื้อ LCDTV Thailand
               </h1>
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                เข้าสู่ระบบแล้ว
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                title="ออกจากระบบ"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                ออกจากระบบ
+              </button>
               <button
                 type="button"
                 onClick={() => fetchOrders(null)}

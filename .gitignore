@@ -11,8 +11,19 @@
 /.next/
 /out/
 
+# next.js (extras)
+/.next-cache/
+/.next-static/
+/.turbo/
+/.vercel/
+
 # production
 /build
+dist/
+
+# cloudflare wrangler/build cache
+.wrangler/
+.cache/
 
 # misc
 .DS_Store
@@ -32,6 +43,13 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .dev.vars
+dev.vars
+
+# tool caches
+.eslintcache
+
+# OS junk
+Thumbs.db
 
 # vercel
 .vercel
