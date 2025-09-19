@@ -5,8 +5,14 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as { code?: unknown }
     const code = typeof body.code === 'string' ? body.code : undefined
 
-    // Get the password from environment variable
-    const validPassword = process.env.ORDER_REPORT_PASSWORD || 'LCDTV2025'
+    // Get the password from environment variable (required)
+    const validPassword = process.env.ORDER_REPORT_PASSWORD
+    if (!validPassword) {
+      return NextResponse.json(
+        { success: false, message: 'Server not configured: ORDER_REPORT_PASSWORD is missing' },
+        { status: 500 }
+      )
+    }
 
     // Validate the code
     if (!code) {
