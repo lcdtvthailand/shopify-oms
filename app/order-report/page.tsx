@@ -765,11 +765,17 @@ export default function TestPage() {
         const getMf = (candidates: string[]): string => {
           for (const cand of candidates) {
             const [ns, key] = String(cand).split('.')
-            const found = (mlist as any[]).find(
+            // First try exact namespace.key match
+            const exact = (mlist as any[]).find(
               (m: any) => String(m?.namespace) === ns && String(m?.key) === key
             )
-            if (found && typeof found.value !== 'undefined' && String(found.value).trim() !== '') {
-              return String(found.value)
+            if (exact && typeof exact.value !== 'undefined' && String(exact.value).trim() !== '') {
+              return String(exact.value)
+            }
+            // Fallback: match by key across any namespace
+            const anyNs = (mlist as any[]).find((m: any) => String(m?.key) === key)
+            if (anyNs && typeof anyNs.value !== 'undefined' && String(anyNs.value).trim() !== '') {
+              return String(anyNs.value)
             }
           }
           return ''
@@ -832,7 +838,13 @@ export default function TestPage() {
           ภาษี: parseNumber(o.currentTotalTaxSet?.shopMoney?.amount),
           ร้องขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
           ประเภทใบกำกับภาษี: getMf(['custom.customer_type', 'custom.custom_customer_type']),
-          'ชื่อ (ใบกำกับภาษี)': getMf(['custom.company_name', 'custom.custom_company_name']),
+          'คำนำหน้าชื่อ (ใบกำกับภาษี)': getMf(['custom.title_name', 'custom.custom_title_name']),
+          'ชื่อ-นามสกุล (ใบกำกับภาษี)': getMf(['custom.full_name', 'custom.custom_full_name']),
+          'ชื่อบริษัท (ใบกำกับภาษี)': getMf([
+            'custom.company_name',
+            'custom.custom_company_name',
+            'custom.custom_company_name',
+          ]),
           'ประเภทสาขา (ใบกำกับภาษี)': getMf(['custom.branch_type', 'custom.custom_branch_type']),
           'รหัสสาขา (ใบกำกับภาษี)': getMf(['custom.branch_code', 'custom.custom_branch_code']),
           เลขผู้เสียภาษี: getMf([
@@ -1028,7 +1040,13 @@ export default function TestPage() {
             'custom.customer_type',
             'custom.custom_customer_type',
           ]),
-          ชื่อบริษัท: getMf(['custom.company_name', 'custom.custom_company_name']),
+          คำนำหน้าชื่อ: getMf(['custom.title_name', 'custom.custom_title_name']),
+          'ชื่อ-นามสกุล': getMf(['custom.full_name', 'custom.custom_full_name']),
+          ชื่อบริษัท: getMf([
+            'custom.company_name',
+            'custom.custom_company_name',
+            'custom.custom_company_name',
+          ]),
           สาขา: getMf(['custom.branch_type', 'custom.custom_branch_type']),
           รหัสสาขา: getMf(['custom.branch_code', 'custom.custom_branch_code']),
           หมายเลขประจำตัวผู้เสียภาษี: getMf([
@@ -1311,56 +1329,53 @@ export default function TestPage() {
     }
   `
 
-  const fetchOrders = useCallback(
-    async (after: string | null = null) => {
-      setLoading(true)
-      setError(null)
+  const fetchOrders = useCallback(async (after: string | null = null) => {
+    setLoading(true)
+    setError(null)
 
-      try {
-        const response = await fetch('/api/shopify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: ordersQuery,
-            variables: { after },
-          }),
-        })
+    try {
+      const response = await fetch('/api/shopify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: ordersQuery,
+          variables: { after },
+        }),
+      })
 
-        const json: unknown = await response.json()
+      const json: unknown = await response.json()
 
-        // Handle API errors returned by our /api/shopify route
-        if (!response.ok) {
-          const api = (json as { error?: string; code?: string; details?: unknown }) || {}
-          const apiError = typeof api.error === 'string' ? api.error : 'Request failed'
-          const details = api.details ? ` Details: ${JSON.stringify(api.details)}` : ''
-          throw new Error(`API error ${response.status}: ${apiError}.${details}`)
-        }
-
-        const result = json as ShopifyGraphQLResponse<OrdersResponse>
-        if (result.errors && result.errors.length > 0) {
-          throw new Error(`GraphQL errors: ${result.errors.map((e) => e.message).join(' | ')}`)
-        }
-
-        if (!result.data) {
-          throw new Error('Empty response from Shopify (no data field)')
-        }
-
-        const responseData = result.data
-        const orders = responseData.orders.edges.map((edge) => edge.node)
-
-        // if after provided, append; else replace
-        setData((prev) => (after ? [...prev, ...orders] : orders))
-        setPageInfo(responseData.orders.pageInfo)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error occurred')
-      } finally {
-        setLoading(false)
+      // Handle API errors returned by our /api/shopify route
+      if (!response.ok) {
+        const api = (json as { error?: string; code?: string; details?: unknown }) || {}
+        const apiError = typeof api.error === 'string' ? api.error : 'Request failed'
+        const details = api.details ? ` Details: ${JSON.stringify(api.details)}` : ''
+        throw new Error(`API error ${response.status}: ${apiError}.${details}`)
       }
-    },
-    [ordersQuery]
-  )
+
+      const result = json as ShopifyGraphQLResponse<OrdersResponse>
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(`GraphQL errors: ${result.errors.map((e) => e.message).join(' | ')}`)
+      }
+
+      if (!result.data) {
+        throw new Error('Empty response from Shopify (no data field)')
+      }
+
+      const responseData = result.data
+      const orders = responseData.orders.edges.map((edge) => edge.node)
+
+      // if after provided, append; else replace
+      setData((prev) => (after ? [...prev, ...orders] : orders))
+      setPageInfo(responseData.orders.pageInfo)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const formatPrice = (price: string) => {
     return new Intl.NumberFormat('th-TH', {
@@ -2125,6 +2140,10 @@ export default function TestPage() {
                         const tiKeys = new Set([
                           'customer_type',
                           'custom_customer_type',
+                          'title_name',
+                          'custom_title_name',
+                          'full_name',
+                          'custom_full_name',
                           'company_name',
                           'custom_company_name',
                           'branch_type',
@@ -2409,6 +2428,10 @@ export default function TestPage() {
                   const tiKeys = new Set([
                     'customer_type',
                     'custom_customer_type',
+                    'title_name',
+                    'custom_title_name',
+                    'full_name',
+                    'custom_full_name',
                     'company_name',
                     'custom_company_name',
                     'branch_type',
@@ -3225,16 +3248,26 @@ export default function TestPage() {
                               const getMf = (candidates: string[]): string => {
                                 for (const cand of candidates) {
                                   const [ns, key] = cand.split('.')
-                                  const found = metafields.find(
+                                  // Try exact namespace.key first
+                                  const exact = metafields.find(
                                     (m: any) =>
                                       String(m?.namespace) === ns && String(m?.key) === key
                                   )
                                   if (
-                                    found &&
-                                    typeof found.value !== 'undefined' &&
-                                    String(found.value).trim() !== ''
+                                    exact &&
+                                    typeof exact.value !== 'undefined' &&
+                                    String(exact.value).trim() !== ''
                                   ) {
-                                    return String(found.value)
+                                    return String(exact.value)
+                                  }
+                                  // Fallback: any namespace with same key
+                                  const anyNs = metafields.find((m: any) => String(m?.key) === key)
+                                  if (
+                                    anyNs &&
+                                    typeof anyNs.value !== 'undefined' &&
+                                    String(anyNs.value).trim() !== ''
+                                  ) {
+                                    return String(anyNs.value)
                                   }
                                 }
                                 return '-'
@@ -3243,6 +3276,14 @@ export default function TestPage() {
                                 {
                                   k: 'ประเภท (นิติบุคคล/บุคคลธรรมดา)',
                                   v: getMf(['custom.customer_type', 'custom.custom_customer_type']),
+                                },
+                                {
+                                  k: 'คำนำหน้าชื่อ',
+                                  v: getMf(['custom.title_name', 'custom.custom_title_name']),
+                                },
+                                {
+                                  k: 'ชื่อ-นามสกุล',
+                                  v: getMf(['custom.full_name', 'custom.custom_full_name']),
                                 },
                                 {
                                   k: 'ชื่อบริษัท',

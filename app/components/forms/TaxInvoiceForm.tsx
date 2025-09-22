@@ -2168,6 +2168,33 @@ export default function TaxInvoiceForm() {
                   </div>
                 </div>
 
+                {/* Address - Full Width */}
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">
+                    ที่อยู่
+                    <span className="ml-2 text-gray-500 text-sm">
+                      {formData.documentType === 'receipt'
+                        ? '(กรอกตามที่อยู่จดทะเบียนบริษัท)'
+                        : '(กรอก เลขที่, ชื่อหมู่บ้าน อาคาร คอนโด, หมู่ที่, ซอย, ถนน)'}
+                    </span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    onInvalid={(e) => {
+                      ;(e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
+                    }}
+                    onInput={(e) => {
+                      ;(e.target as HTMLTextAreaElement).setCustomValidity('')
+                    }}
+                    placeholder="ที่อยู่"
+                    rows={1}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
                 {/* Province and District Row - Two Columns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -2175,13 +2202,32 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="provinceCode"
-                        value={formData.provinceCode ?? ''}
-                        onChange={(e) =>
+                        value={formData.provinceCode != null ? String(formData.provinceCode) : ''}
+                        onChange={async (e) => {
+                          const value = e.target.value
+                          // Single state update for province + resets
                           setFormData((p) => ({
                             ...p,
-                            provinceCode: e.target.value ? Number(e.target.value) : null,
+                            provinceCode: value ? Number(value) : null,
+                            districtCode: null,
+                            subdistrictCode: null,
+                            postalCode: '',
                           }))
-                        }
+                          // Proactively load districts
+                          if (value) {
+                            try {
+                              const geo = await import('@/lib/geography/thailand')
+                              const list = geo.getDistrictsByProvince(Number(value))
+                              setDistricts(list)
+                              setSubdistricts([])
+                            } catch (_err) {
+                              // no-op; fallback to useEffect loader
+                            }
+                          } else {
+                            setDistricts([])
+                            setSubdistricts([])
+                          }
+                        }}
                         onInvalid={(e) => {
                           ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกจังหวัด')
                         }}
@@ -2193,7 +2239,7 @@ export default function TaxInvoiceForm() {
                       >
                         <option value="">เลือกจังหวัด</option>
                         {provinces.map((p) => (
-                          <option key={p.code} value={p.code}>
+                          <option key={p.code} value={String(p.code)}>
                             {p.nameTh}
                           </option>
                         ))}
@@ -2212,6 +2258,9 @@ export default function TaxInvoiceForm() {
                           />
                         </svg>
                       </span>
+                      {formData.provinceCode && districts.length === 0 ? (
+                        <p className="mt-1 text-xs text-red-600">ไม่พบอำเภอสำหรับจังหวัดที่เลือก</p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2219,26 +2268,40 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="districtCode"
-                        value={formData.districtCode ?? ''}
-                        onChange={(e) =>
+                        value={formData.districtCode != null ? String(formData.districtCode) : ''}
+                        onChange={async (e) => {
+                          const value = e.target.value
                           setFormData((p) => ({
                             ...p,
-                            districtCode: e.target.value ? Number(e.target.value) : null,
+                            districtCode: value ? Number(value) : null,
+                            subdistrictCode: null,
+                            postalCode: '',
                           }))
-                        }
+                          if (value) {
+                            try {
+                              const geo = await import('@/lib/geography/thailand')
+                              const subs = geo.getSubdistrictsByDistrict(Number(value))
+                              setSubdistricts(subs)
+                            } catch (_err) {
+                              // no-op; fallback to useEffect loader
+                            }
+                          } else {
+                            setSubdistricts([])
+                          }
+                        }}
                         onInvalid={(e) => {
                           ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกอำเภอ/เขต')
                         }}
                         onInput={(e) => {
                           ;(e.target as HTMLSelectElement).setCustomValidity('')
                         }}
-                        disabled={!formData.provinceCode}
+                        disabled={false}
                         required
                         className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
                       >
                         <option value="">เลือกอำเภอ/เขต</option>
                         {districts.map((d) => (
-                          <option key={d.code} value={d.code}>
+                          <option key={d.code} value={String(d.code)}>
                             {d.nameTh}
                           </option>
                         ))}
@@ -2268,7 +2331,9 @@ export default function TaxInvoiceForm() {
                     <div className="relative">
                       <select
                         name="subdistrictCode"
-                        value={formData.subdistrictCode ?? ''}
+                        value={
+                          formData.subdistrictCode != null ? String(formData.subdistrictCode) : ''
+                        }
                         onChange={(e) =>
                           setFormData((p) => ({
                             ...p,
@@ -2287,7 +2352,7 @@ export default function TaxInvoiceForm() {
                       >
                         <option value="">เลือกตำบล/แขวง</option>
                         {subdistricts.map((s) => (
-                          <option key={s.code} value={s.code}>
+                          <option key={s.code} value={String(s.code)}>
                             {s.nameTh}
                           </option>
                         ))}
@@ -2328,33 +2393,6 @@ export default function TaxInvoiceForm() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-
-                {/* Address - Full Width */}
-                <div className="space-y-2">
-                  <label className="block text-gray-700 font-medium">
-                    ที่อยู่
-                    <span className="ml-2 text-gray-500 text-sm">
-                      {formData.documentType === 'receipt'
-                        ? '(กรอกตามที่อยู่จดทะเบียนบริษัท)'
-                        : '(กรอก เลขที่, ชื่อหมู่บ้าน อาคาร คอนโด, หมู่ที่, ซอย, ถนน)'}
-                    </span>
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    onInvalid={(e) => {
-                      ;(e.target as HTMLTextAreaElement).setCustomValidity('กรุณากรอกที่อยู่')
-                    }}
-                    onInput={(e) => {
-                      ;(e.target as HTMLTextAreaElement).setCustomValidity('')
-                    }}
-                    placeholder="ที่อยู่"
-                    rows={3}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                  />
                 </div>
 
                 {/* Submit Button */}
