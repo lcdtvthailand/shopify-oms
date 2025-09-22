@@ -1849,6 +1849,24 @@ export default function TestPage() {
     setPage(1)
   }, [])
 
+  // Auto-fetch on first load when already authenticated (e.g., valid cookie/session)
+  useEffect(() => {
+    if (isAuthenticated && !showAuthPopup && !loading && data.length === 0) {
+      // Fetch the first page automatically
+      fetchOrders(null)
+    }
+  }, [isAuthenticated, showAuthPopup])
+
+  // Auto-fetch subsequent pages while there are more pages
+  useEffect(() => {
+    if (!isAuthenticated || showAuthPopup) return
+    if (loading) return
+    if (pageInfo?.hasNextPage) {
+      // Keep fetching next pages until exhausted
+      fetchOrders(pageInfo.endCursor)
+    }
+  }, [isAuthenticated, showAuthPopup, pageInfo?.hasNextPage, loading])
+
   // Handle authentication
   const handleAuth = async () => {
     if (!authCode.trim()) {
@@ -1875,6 +1893,8 @@ export default function TestPage() {
         setAuthError('')
         setAuthCode('')
         setAuthAttempts(0)
+        // Immediately fetch orders after successful authentication
+        await fetchOrders(null)
       } else {
         // Authentication failed
         setAuthAttempts((prev) => prev + 1)
