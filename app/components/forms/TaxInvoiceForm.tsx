@@ -101,6 +101,9 @@ interface GeographyItem {
 
 interface FormData {
   documentType: 'tax' | 'receipt'
+  titleName: string
+  fullName: string
+  companyNameText: string
   documentNumber: string
   branchCode: string
   companyName: string
@@ -145,6 +148,9 @@ export default function TaxInvoiceForm() {
   const arrivalAtRef = useRef<string>(new Date().toISOString())
   const [formData, setFormData] = useState<FormData>({
     documentType: 'tax',
+    titleName: '',
+    fullName: '',
+    companyNameText: '',
     documentNumber: '',
     branchCode: '',
     companyName: '',
@@ -529,7 +535,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode])
+  }, [formData.provinceCode, formData.districtCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -610,31 +616,10 @@ export default function TaxInvoiceForm() {
       setFormData((prev) => ({ ...prev, [name]: formatThaiPhone(value) }))
       return
     }
-    // Helper: format 13-digit Thai ID/Tax ID -> 1-2345-67890-12-3
+    // Helper: format 13-digit Thai ID/Tax ID -> keep only digits, no dashes
     const formatThaiId13 = (raw: string) => {
       const d = raw.replace(/\D/g, '').slice(0, 13)
-      if (!d) {
-        return ''
-      }
-      const p1 = d.slice(0, 1)
-      const p2 = d.slice(1, 5)
-      const p3 = d.slice(5, 10)
-      const p4 = d.slice(10, 12)
-      const p5 = d.slice(12, 13)
-      let out = p1
-      if (p2) {
-        out += `-${p2}`
-      }
-      if (p3) {
-        out += `-${p3}`
-      }
-      if (p4) {
-        out += `-${p4}`
-      }
-      if (p5) {
-        out += `-${p5}`
-      }
-      return out
+      return d
     }
     if (name === 'branchCode') {
       setFormData((prev) => ({ ...prev, [name]: formatThaiId13(value) }))
@@ -647,8 +632,13 @@ export default function TaxInvoiceForm() {
     e.preventDefault()
 
     // Basic validation
-    if (!formData.documentNumber.trim()) {
-      alert('กรุณากรอกชื่อ-นามสกุล')
+    if (formData.documentType === 'tax') {
+      if (!formData.fullName.trim()) {
+        alert('กรุณากรอกชื่อ-นามสกุล')
+        return
+      }
+    } else if (!formData.companyNameText.trim()) {
+      alert('กรุณากรอกชื่อบริษัท')
       return
     }
 
@@ -710,6 +700,9 @@ export default function TaxInvoiceForm() {
     // Reset form
     setFormData({
       documentType: 'tax',
+      titleName: '',
+      fullName: '',
+      companyNameText: '',
       documentNumber: '',
       branchCode: '',
       companyName: '',
@@ -732,6 +725,9 @@ export default function TaxInvoiceForm() {
     setFormData((prev) => ({
       ...prev,
       documentType: value,
+      // Independent fields: clear the other field when switching types
+      fullName: value === 'tax' ? prev.fullName : '',
+      companyNameText: value === 'receipt' ? prev.companyNameText : '',
       // reset branch type when switching to บุคคลธรรมดา
       branchType: value === 'receipt' ? (prev.branchType ?? 'head') : null,
       branchNumber: value === 'receipt' ? prev.branchNumber : '',
@@ -797,7 +793,12 @@ export default function TaxInvoiceForm() {
 
         // Map metafields back to form data
         const customerType = metaMap.customer_type || metaMap.custom_customer_type || ''
-        const companyName = metaMap.company_name || metaMap.custom_company_name || ''
+        const titleName = metaMap.title_name || metaMap.custom_title_name || ''
+        const fullName = metaMap.full_name || metaMap.custom_full_name || ''
+        const customCompanyName =
+          metaMap.custom_company_name || metaMap.custom_custom_company_name || ''
+        // Keep legacy company_name for backward compatibility only (not mixing with custom_company_name)
+        const legacyCompanyName = metaMap.company_name || ''
         const branchType = metaMap.branch_type || metaMap.custom_branch_type || ''
         const branchCode = metaMap.branch_code || metaMap.custom_branch_code || ''
         const taxId = metaMap.tax_id || metaMap.custom_tax_id || ''
@@ -834,27 +835,39 @@ export default function TaxInvoiceForm() {
 
         // Extracted values for geo matching
 
-        // Helper to format 13-digit tax ID for display
+        // Helper to format 13-digit tax ID for display (no dashes)
         const fmtId = (raw: string) => {
           const d = String(raw || '')
             .replace(/\D/g, '')
             .slice(0, 13)
-          if (!d) {
-            return ''
-          }
-          const p1 = d.slice(0, 1),
-            p2 = d.slice(1, 5),
-            p3 = d.slice(5, 10),
-            p4 = d.slice(10, 12),
-            p5 = d.slice(12, 13)
-          return [p1, p2, p3, p4, p5].filter(Boolean).join('-')
+          return d
         }
 
         // Update form data with existing values
+        // Use appropriate field based on customer type - strict separation
+        let documentName = ''
+        if (customerType === 'นิติบุคคล') {
+          // For juristic person, only use custom_company_name fields
+          documentName = customCompanyName
+          // Fallback to legacy only if no custom_company_name exists
+          if (!documentName && !fullName) {
+            documentName = legacyCompanyName
+          }
+        } else {
+          // For individual person, only use full_name fields
+          documentName = fullName
+          // Fallback to legacy only if no full_name exists
+          if (!documentName && !customCompanyName) {
+            documentName = legacyCompanyName
+          }
+        }
+
         setFormData((prev) => ({
           ...prev,
           documentType: customerType === 'นิติบุคคล' ? 'receipt' : 'tax',
-          documentNumber: companyName,
+          titleName: titleName,
+          fullName: customerType === 'นิติบุคคล' ? '' : documentName,
+          companyNameText: customerType === 'นิติบุคคล' ? documentName : '',
           branchCode: fmtId(taxId),
           companyName: phoneNumber,
           companyNameEng: altPhoneNumber,
@@ -1234,9 +1247,20 @@ export default function TaxInvoiceForm() {
     setSaveError('')
 
     // Required field validations (general)
-    if (!formData.documentNumber.trim()) {
+    if (formData.documentType === 'tax') {
+      if (!formData.fullName.trim()) {
+        setIsSaving(false)
+        setSaveError('กรุณากรอกชื่อ-นามสกุล')
+        return
+      }
+      if (!formData.titleName.trim()) {
+        setIsSaving(false)
+        setSaveError('กรุณาเลือกคำนำหน้าชื่อ')
+        return
+      }
+    } else if (!formData.companyNameText.trim()) {
       setIsSaving(false)
-      setSaveError('กรุณากรอกชื่อ/ชื่อบริษัท')
+      setSaveError('กรุณากรอกชื่อบริษัท')
       return
     }
     if (!formData.companyName.trim()) {
@@ -1278,7 +1302,8 @@ export default function TaxInvoiceForm() {
 
     // แปลงค่าจาก UI เดิมให้ตรงกับฟิลด์ที่ต้องการบันทึก
     const customerType = formData.documentType === 'receipt' ? 'นิติบุคคล' : 'บุคคลธรรมดา'
-    const companyName = formData.documentNumber || ''
+    const fullNameToSave = formData.fullName || ''
+    const companyNameToSave = formData.companyNameText || ''
     const branchTypeTh =
       formData.documentType === 'receipt'
         ? formData.branchType === 'branch'
@@ -1302,7 +1327,11 @@ export default function TaxInvoiceForm() {
     const taxIdDigits = (formData.branchCode || '').replace(/\D/g, '')
     if (!taxIdDigits || taxIdDigits.length !== 13) {
       setIsSaving(false)
-      setSaveError('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษีให้ครบ 13 หลัก')
+      setSaveError(
+        formData.documentType === 'receipt'
+          ? 'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษีให้ครบ 13 หลัก'
+          : 'กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลัก'
+      )
       return
     }
     // Still require branch type selection for juristic
@@ -1341,7 +1370,17 @@ export default function TaxInvoiceForm() {
     // Build inputs with two key variants for compatibility with Admin definitions
     const baseFields = [
       { key: 'customer_type', value: customerType, type: 'single_line_text_field' },
-      { key: 'company_name', value: companyName, type: 'single_line_text_field' },
+      { key: 'title_name', value: formData.titleName || '', type: 'single_line_text_field' },
+      {
+        key: 'full_name',
+        value: formData.documentType === 'tax' ? fullNameToSave : '',
+        type: 'single_line_text_field',
+      },
+      {
+        key: 'custom_company_name',
+        value: formData.documentType === 'receipt' ? companyNameToSave : '',
+        type: 'single_line_text_field',
+      },
       { key: 'branch_type', value: branchTypeTh, type: 'single_line_text_field' },
       { key: 'branch_code', value: branchCode, type: 'single_line_text_field' },
       { key: 'tax_id', value: taxIdFormatted, type: 'single_line_text_field' },
@@ -1476,7 +1515,9 @@ export default function TaxInvoiceForm() {
       // 2) Build current profile payload
       const currentProfile = {
         customer_type: customerType,
-        company_name: companyName,
+        title_name: formData.titleName || '',
+        full_name: formData.documentType === 'tax' ? fullNameToSave : '',
+        custom_company_name: formData.documentType === 'receipt' ? companyNameToSave : '',
         branch_type: branchTypeTh,
         branch_code: branchCode,
         tax_id: taxIdDigits,
@@ -1670,20 +1711,12 @@ export default function TaxInvoiceForm() {
       }
       setSaveMessage('บันทึกข้อมูลใบกำกับภาษีสำเร็จ!')
       setShowSavePopup(true)
-      // Reformat Tax ID in UI to dashed form after save
+      // Keep Tax ID as digits only (no dashes) after save
       const fmtId = (raw: string) => {
         const d = String(raw || '')
           .replace(/\D/g, '')
           .slice(0, 13)
-        if (!d) {
-          return ''
-        }
-        const p1 = d.slice(0, 1),
-          p2 = d.slice(1, 5),
-          p3 = d.slice(5, 10),
-          p4 = d.slice(10, 12),
-          p5 = d.slice(12, 13)
-        return [p1, p2, p3, p4, p5].filter(Boolean).join('-')
+        return d
       }
       setFormData((prev) => ({ ...prev, branchCode: fmtId(prev.branchCode) }))
     } catch (err) {
@@ -1901,27 +1934,98 @@ export default function TaxInvoiceForm() {
                   </div>
                 </div>
 
-                {/* Name or Company Name - Full Width */}
-                <div className="space-y-2">
-                  <label className="block text-gray-700 font-medium">
-                    {formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
-                  </label>
-                  <input
-                    type="text"
-                    name="documentNumber"
-                    value={formData.documentNumber}
-                    onChange={handleInputChange}
-                    onInvalid={(e) => {
-                      ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ/ชื่อบริษัท')
-                    }}
-                    onInput={(e) => {
-                      ;(e.target as HTMLInputElement).setCustomValidity('')
-                    }}
-                    placeholder={formData.documentType === 'receipt' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
+                {/* Title Name and Name/Company Name Row */}
+                {formData.documentType === 'tax' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Title Name - 1/3 width */}
+                    <div className="space-y-2">
+                      <label className="block text-gray-700 font-medium">คำนำหน้าชื่อ</label>
+                      <div className="relative">
+                        <select
+                          name="titleName"
+                          value={formData.titleName}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              titleName: e.target.value,
+                            }))
+                          }
+                          onInvalid={(e) => {
+                            ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกคำนำหน้าชื่อ')
+                          }}
+                          onInput={(e) => {
+                            ;(e.target as HTMLSelectElement).setCustomValidity('')
+                          }}
+                          required={formData.documentType === 'tax'}
+                          className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                        >
+                          <option value="">เลือกคำนำหน้าชื่อ</option>
+                          <option value="นาย">นาย</option>
+                          <option value="นาง">นาง</option>
+                          <option value="นางสาว">นางสาว</option>
+                        </select>
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Name - 2/3 width */}
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="block text-gray-700 font-medium">ชื่อ-นามสกุล</label>
+                      <input
+                        key={`fullName-${formData.documentType}`}
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        autoComplete="name"
+                        onInvalid={(e) => {
+                          ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อ-นามสกุล')
+                        }}
+                        onInput={(e) => {
+                          ;(e.target as HTMLInputElement).setCustomValidity('')
+                        }}
+                        placeholder="ชื่อ-นามสกุล"
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Company Name - Full Width for juristic person */
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">ชื่อบริษัท</label>
+                    <input
+                      key={`companyName-${formData.documentType}`}
+                      type="text"
+                      name="companyNameText"
+                      value={formData.companyNameText}
+                      onChange={handleInputChange}
+                      autoComplete="organization"
+                      onInvalid={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกชื่อบริษัท')
+                      }}
+                      onInput={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('')
+                      }}
+                      placeholder="ชื่อบริษัท"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
 
                 {/* Head office / Branch for juristic person */}
                 {formData.documentType === 'receipt' && (
@@ -1988,7 +2092,14 @@ export default function TaxInvoiceForm() {
 
                 {/* Tax Identification Number - Full Width */}
                 <div className="space-y-2">
-                  <label className="block text-gray-700 font-medium">หมายเลขประจำตัวผู้เสียภาษี</label>
+                  <label className="block text-gray-700 font-medium">
+                    {formData.documentType === 'receipt'
+                      ? 'หมายเลขประจำตัวผู้เสียภาษี'
+                      : 'เลขประจำตัวประชาชน'}
+                    <span className="ml-2 text-gray-500 text-sm">
+                      (กรอกเลข 13 หลักโดยไม่ต้องมีขีดคั่นหรือเว้นวรรค)
+                    </span>
+                  </label>
                   <input
                     type="text"
                     name="branchCode"
@@ -1996,29 +2107,22 @@ export default function TaxInvoiceForm() {
                     onChange={handleInputChange}
                     onInvalid={(e) => {
                       ;(e.target as HTMLInputElement).setCustomValidity(
-                        'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี'
+                        formData.documentType === 'receipt'
+                          ? 'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี'
+                          : 'กรุณากรอกเลขประจำตัวประชาชน'
                       )
                     }}
                     onInput={(e) => {
                       ;(e.target as HTMLInputElement).setCustomValidity('')
                     }}
-                    placeholder="หมายเลขประจำตัวผู้เสียภาษี"
+                    placeholder={`${formData.documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'} (กรอกเลข 13 หลักโดยไม่ต้องมีขีดคั่นหรือเว้นวรรค)`}
                     inputMode="tel"
-                    maxLength={17}
+                    maxLength={13}
                     onBlur={(e) => {
                       const d = String(e.target.value || '')
                         .replace(/\D/g, '')
                         .slice(0, 13)
-                      if (!d) {
-                        return
-                      }
-                      const p1 = d.slice(0, 1),
-                        p2 = d.slice(1, 5),
-                        p3 = d.slice(5, 10),
-                        p4 = d.slice(10, 12),
-                        p5 = d.slice(12, 13)
-                      const dashed = [p1, p2, p3, p4, p5].filter(Boolean).join('-')
-                      setFormData((prev) => ({ ...prev, branchCode: dashed }))
+                      setFormData((prev) => ({ ...prev, branchCode: d }))
                     }}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -2211,6 +2315,12 @@ export default function TaxInvoiceForm() {
                       name="postalCode"
                       value={formData.postalCode}
                       onChange={handleInputChange}
+                      onInvalid={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสไปรษณีย์')
+                      }}
+                      onInput={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('')
+                      }}
                       placeholder="รหัสไปรษณีย์"
                       inputMode="numeric"
                       maxLength={5}
@@ -2222,7 +2332,14 @@ export default function TaxInvoiceForm() {
 
                 {/* Address - Full Width */}
                 <div className="space-y-2">
-                  <label className="block text-gray-700 font-medium">ที่อยู่</label>
+                  <label className="block text-gray-700 font-medium">
+                    ที่อยู่
+                    <span className="ml-2 text-gray-500 text-sm">
+                      {formData.documentType === 'receipt'
+                        ? '(กรอกตามที่อยู่จดทะเบียนบริษัท)'
+                        : '(กรอก เลขที่, ชื่อหมู่บ้าน อาคาร คอนโด, หมู่ที่, ซอย, ถนน)'}
+                    </span>
+                  </label>
                   <textarea
                     name="address"
                     value={formData.address}
