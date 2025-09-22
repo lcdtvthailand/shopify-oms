@@ -326,130 +326,147 @@ const PaginationControls = ({
       </div>
     </div>
   ) : (
-    <div className="bg-white border border-red-200 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-red-100 rounded-lg">
-          <svg
-            className="h-4 w-4 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
-            />
-          </svg>
-        </div>
-        <div className="text-sm text-red-700 font-medium flex items-center gap-2 whitespace-nowrap">
-          แสดง{' '}
-          <span className="font-bold">
-            {startIndex + 1}-{endIndex}
-          </span>{' '}
-          จากทั้งหมด <span className="font-bold">{totalItems}</span> รายการ
-          <span className="text-xs text-red-600/70 font-normal">
-            • หน้า {safePage} จาก {totalPages}
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-6 flex-wrap sm:ml-auto w-full justify-end">
-        {typeof dateQuickFilter !== 'undefined' && typeof setDateQuickFilter !== 'undefined' && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-red-700 font-medium">ช่วงวันที่</label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setDateQuickFilter('today')}
-                className={`px-3 py-1.5 text-sm rounded-lg border ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
-              >
-                วันนี้
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateQuickFilter('yesterday')}
-                className={`px-3 py-1.5 text-sm rounded-lg border ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
-              >
-                เมื่อวาน
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateQuickFilter('last7')}
-                className={`px-3 py-1.5 text-sm rounded-lg border ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
-              >
-                7 วันล่าสุด
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateQuickFilter('all')}
-                className={`px-3 py-1.5 text-sm rounded-lg border ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
-                title="ล้างตัวกรองวันที่แบบด่วน"
-              >
-                ทั้งหมด
-              </button>
+    <div className="bg-white border border-red-200 rounded-xl px-4 sm:px-6 py-4 shadow-lg">
+      {/* Mobile-first layout */}
+      <div className="flex flex-col gap-4">
+        {/* Stats row - always visible */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <svg
+              className="h-4 w-4 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+              />
+            </svg>
+          </div>
+          <div className="text-sm text-red-700 font-medium">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span>
+                แสดง{' '}
+                <span className="font-bold">
+                  {startIndex + 1}-{endIndex}
+                </span>{' '}
+                จากทั้งหมด <span className="font-bold">{totalItems}</span> รายการ
+              </span>
+              <span className="text-xs text-red-600/70 font-normal">
+                หน้า {safePage} จาก {totalPages}
+              </span>
             </div>
           </div>
-        )}
-        {typeof monthFilter !== 'undefined' &&
-          typeof setMonthFilter !== 'undefined' &&
-          thaiMonths && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-red-700 font-medium">เดือน</label>
-              <select
-                className="text-sm border-2 border-red-200 rounded-lg px-3 py-2 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[8rem]"
-                value={monthFilter}
-                onChange={(e) => {
-                  setDateQuickFilter?.('all')
-                  setMonthFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10))
-                }}
-              >
-                <option value="all">ทั้งหมด</option>
-                {thaiMonths.map((m, idx) => (
-                  <option key={`month-${m}`} value={idx + 1}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+        </div>
+
+        {/* Controls row - responsive layout */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Date filters - mobile responsive */}
+          {typeof dateQuickFilter !== 'undefined' && typeof setDateQuickFilter !== 'undefined' && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+              <label className="text-sm text-red-700 font-medium whitespace-nowrap">ช่วงวันที่</label>
+              <div className="grid grid-cols-2 sm:flex gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={() => setDateQuickFilter('today')}
+                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                >
+                  วันนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDateQuickFilter('yesterday')}
+                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                >
+                  เมื่อวาน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDateQuickFilter('last7')}
+                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                >
+                  7 วันล่าสุด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDateQuickFilter('all')}
+                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  title="ล้างตัวกรองวันที่แบบด่วน"
+                >
+                  ทั้งหมด
+                </button>
+              </div>
             </div>
           )}
-        {typeof yearFilter !== 'undefined' && typeof setYearFilter !== 'undefined' && years && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-red-700 font-medium">ปี</label>
+          {/* Month/Year filters - mobile responsive */}
+          <div className="grid grid-cols-1 sm:flex gap-3 w-full">
+            {typeof monthFilter !== 'undefined' &&
+              typeof setMonthFilter !== 'undefined' &&
+              thaiMonths && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-red-700 font-medium whitespace-nowrap">เดือน</label>
+                  <select
+                    className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[6rem] sm:min-w-[8rem]"
+                    value={monthFilter}
+                    onChange={(e) => {
+                      setDateQuickFilter?.('all')
+                      setMonthFilter(
+                        e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10)
+                      )
+                    }}
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    {thaiMonths.map((m, idx) => (
+                      <option key={`month-${m}`} value={idx + 1}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            {typeof yearFilter !== 'undefined' && typeof setYearFilter !== 'undefined' && years && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-red-700 font-medium whitespace-nowrap">ปี</label>
+                <select
+                  className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[5rem] sm:min-w-[6rem]"
+                  value={yearFilter}
+                  onChange={(e) => {
+                    setDateQuickFilter?.('all')
+                    setYearFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10))
+                  }}
+                >
+                  <option value="all">ทั้งหมด</option>
+                  {years
+                    .sort((a, b) => b - a)
+                    .map((y) => (
+                      <option key={y} value={y}>
+                        {y + 543}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+          </div>
+          {/* Page size selector */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label className="text-sm text-red-700 font-medium whitespace-nowrap">แสดงต่อหน้า</label>
             <select
-              className="text-sm border-2 border-red-200 rounded-lg px-3 py-2 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[6rem]"
-              value={yearFilter}
+              className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+              value={pageSize}
               onChange={(e) => {
-                setDateQuickFilter?.('all')
-                setYearFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10))
+                setPage(() => 1)
+                setPageSize(parseInt(e.target.value, 10))
               }}
             >
-              <option value="all">ทั้งหมด</option>
-              {years
-                .sort((a, b) => b - a)
-                .map((y) => (
-                  <option key={y} value={y}>
-                    {y + 543}
-                  </option>
-                ))}
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-red-700 font-medium">แสดงต่อหน้า</label>
-          <select
-            className="text-sm border-2 border-red-200 rounded-lg px-3 py-2 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
-            value={pageSize}
-            onChange={(e) => {
-              setPage(() => 1)
-              setPageSize(parseInt(e.target.value, 10))
-            }}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
         </div>
       </div>
     </div>
@@ -575,7 +592,7 @@ export default function TestPage() {
   })
   const [pageSize, setPageSize] = useState<number>(10)
   const [page, setPage] = useState<number>(1)
-  const [exportingAll, setExportingAll] = useState(false)
+  const [exportingAll, _setExportingAll] = useState(false)
   const [monthFilter, setMonthFilter] = useState<number | 'all'>('all')
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
   const [dateQuickFilter, setDateQuickFilter] = useState<'all' | 'today' | 'yesterday' | 'last7'>(
@@ -650,7 +667,7 @@ export default function TestPage() {
       const parseNumber = (value: string | undefined | null): number => {
         if (!value || value === '') return 0
         const parsed = parseFloat(value)
-        return isNaN(parsed) ? 0 : parsed
+        return Number.isNaN(parsed) ? 0 : parsed
       }
       orders.forEach((o) => {
         const customerName = o.customer?.displayName || o.customer?.email || ''
@@ -1057,7 +1074,26 @@ export default function TestPage() {
         }
       }
 
-      const fileName = `orders_${new Date().toISOString().slice(0, 10)}.xlsx`
+      // Determine filename based on the date range of orders included
+      const createdDates = orders
+        .map((o) => new Date(o.createdAt))
+        .filter((d) => !Number.isNaN(d.getTime()))
+      const formatYMD = (dt: Date) => {
+        const y = dt.getFullYear()
+        const m = String(dt.getMonth() + 1).padStart(2, '0')
+        const dd = String(dt.getDate()).padStart(2, '0')
+        return `${y}-${m}-${dd}`
+      }
+      let fileName = `orders_${new Date().toISOString().slice(0, 10)}.xlsx`
+      if (createdDates.length > 0) {
+        const minDate = new Date(Math.min(...createdDates.map((d) => d.getTime())))
+        const maxDate = new Date(Math.max(...createdDates.map((d) => d.getTime())))
+        const fromStr = formatYMD(minDate)
+        const toStr = formatYMD(maxDate)
+        const rangePart = `${fromStr}_to_${toStr}`
+        fileName = `orders_${rangePart}.xlsx`
+      }
+
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -1073,450 +1109,14 @@ export default function TestPage() {
       alert('ไม่สามารถส่งออกไฟล์ได้ กรุณาติดตั้งแพ็กเกจ exceljs และลองใหม่')
     }
   }
-  const exportAllFromShopify = async () => {
-    try {
-      setExportingAll(true)
-      const ExcelJS: any = await import('exceljs')
-      let after: string | null = null
-      let allOrders: OrderNode[] = []
-      const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
-      while (true) {
-        const response = await fetch('/api/shopify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: ordersQuery, variables: { after } }),
-        })
-        const json: ShopifyGraphQLResponse<OrdersResponse> = await response.json()
-        if (!response.ok) throw new Error(`API ${response.status}`)
-        if (json.errors?.length) throw new Error(json.errors.map((e) => e.message).join(' | '))
-        const batch = json.data?.orders.edges.map((e) => e.node) ?? []
-        allOrders = allOrders.concat(batch)
-        const pi = json.data?.orders.pageInfo
-        if (!pi?.hasNextPage) break
-        after = pi.endCursor
-        await delay(200)
-      }
-      const orders = allOrders
-      const ordersRows: any[] = []
-      orders.forEach((o) => {
-        const customerName = o.customer?.displayName || o.customer?.email || ''
-        const ship = (o.shippingLines as any)?.edges?.[0]?.node
-        const tracking = Array.isArray(o.fulfillments)
-          ? o.fulfillments.flatMap((f: any) =>
-              Array.isArray(f?.trackingInfo)
-                ? f.trackingInfo.map((t: any) => t?.number).filter(Boolean)
-                : []
-            )
-          : []
-        const shippingAddress = o.shippingAddress || {}
-        const _billingAddress = o.billingAddress || {}
-        // Consolidated summaries (Option A)
-        const itemEdges: any[] = (o.lineItems as any)?.edges || []
-        const formatItem = (it: any) => {
-          const name = it?.name || ''
-          // For per-unit rows, display only the product name (no SKU/qty summary)
-          return `${name}`
-        }
-        const _itemsCount = itemEdges.reduce(
-          (n: number, e: any) => n + Number(e?.node?.quantity ?? 0),
-          0
-        )
-        const _itemsSkus = itemEdges
-          .map((e: any) => e?.node?.sku || e?.node?.variant?.sku)
-          .filter(Boolean)
-          .join(' | ')
 
-        const shipEdges: any[] = (o.shippingLines as any)?.edges || []
-        const _shippingSummary = shipEdges
-          .map((e: any) => {
-            const s = e.node
-            const title = s?.title || s?.source || ''
-            const code = s?.code || ''
-            const before = s?.originalPriceSet?.shopMoney?.amount || ''
-            const after = s?.discountedPriceSet?.shopMoney?.amount || ''
-            return `${title}${code ? ` (${code})` : ''} before:${before} after:${after}`
-          })
-          .join(' | ')
-
-        const discEdges: any[] = (o.discountApplications as any)?.edges || []
-        const discountSummary = discEdges
-          .map((e: any) => {
-            const d = e.node
-            const type = d?.__typename || ''
-            const codeOrTitle = d?.code || d?.title || ''
-            const amount = d?.value?.amount || ''
-            const pct =
-              typeof d?.value?.percentage !== 'undefined' ? `${d?.value?.percentage}%` : ''
-            return `${type}${codeOrTitle ? `:${codeOrTitle}` : ''}${amount ? ` amount:${amount}` : ''}${pct ? ` pct:${pct}` : ''}`
-          })
-          .join(' | ')
-
-        const txEdges: any[] = (o.transactions as any)?.edges || []
-        const _transactionsSummary = txEdges
-          .map((e: any) => {
-            const t = e.node
-            const feeSum = Array.isArray(t?.fees)
-              ? t.fees.reduce(
-                  (sum: number, f: any) => sum + parseFloat(f?.amount?.amount || '0'),
-                  0
-                )
-              : 0
-            const when = t?.processedAt ? new Date(t.processedAt).toLocaleString('th-TH') : ''
-            const bank = t?.paymentDetails?.company || ''
-            return `${t?.gateway || ''}/${t?.kind || ''}/${t?.status || ''} amount:${t?.amountSet?.shopMoney?.amount || ''} fee:${feeSum} ${when}${bank ? ` ${bank}` : ''}`
-          })
-          .join(' | ')
-
-        const refEdges: any[] = (o.refunds as any)?.edges || []
-        const _refundsSummary = refEdges
-          .map((e: any) => {
-            const r = e.node
-            const when = r?.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : ''
-            return `${r?.id || ''} amount:${r?.totalRefundedSet?.shopMoney?.amount || ''}${when ? ` @ ${when}` : ''}${r?.note ? ` (${r.note})` : ''}`
-          })
-          .join(' | ')
-
-        const caList: any[] = o.customAttributes || []
-        const _customAttrSummary = caList
-          .map((c: any) => `${c?.key || ''}:${c?.value || ''}`)
-          .join(' | ')
-
-        // Tax invoice fields
-        const mlist = nodesFrom((o as any).metafields)
-        const getMf = (candidates: string[]): string => {
-          for (const cand of candidates) {
-            const [ns, key] = String(cand).split('.')
-            const found = (mlist as any[]).find(
-              (m: any) => String(m?.namespace) === ns && String(m?.key) === key
-            )
-            if (found && typeof found.value !== 'undefined' && String(found.value).trim() !== '')
-              return String(found.value)
-          }
-          return ''
-        }
-
-        // Determine shipping option display and delivery method per checkout mapping
-        const shippingOptionRaw2 = String(ship?.title || ship?.source || '')
-        const shippingOptionDisplay2 =
-          shippingOptionRaw2 === 'Thailand Shipping'
-            ? `${shippingOptionRaw2} (รับสินค้าเองที่ร้าน)`
-            : shippingOptionRaw2
-        const deliveryMethodText2 =
-          shippingOptionDisplay2 === 'Thailand Shipping (รับสินค้าเองที่ร้าน)'
-            ? 'รับสินค้าเองที่ร้าน'
-            : 'จัดส่งตามที่อยู่'
-
-        // Determine whether buyer requested a tax invoice based on presence of key TI metafields
-        const requestedTaxInvoice2 = !!(
-          getMf(['custom.customer_type', 'custom.custom_customer_type']) ||
-          getMf(['custom.company_name', 'custom.custom_company_name']) ||
-          getMf([
-            'custom.tax_id',
-            'custom.custom_tax_id',
-            'custom.tax_id_formatted',
-            'custom.custom_tax_id_formatted',
-          ]) ||
-          getMf(['custom.full_address', 'custom.custom_full_address'])
-        )
-
-        const baseRow = {
-          หมายเลขคำสั่งซื้อ: o.name,
-          วันที่: o.createdAt ? new Date(o.createdAt).toLocaleString('th-TH') : '',
-          สถานะการชำระเงิน: o.displayFinancialStatus || '',
-          สถานะการจัดส่ง: o.displayFulfillmentStatus || '',
-          'ชื่อผู้ใช้ (ผู้ซื้อ)': customerName,
-          อีเมล: o.customer?.email || o.email || '',
-          เบอร์โทร: o.customer?.phone || '',
-          ยอดรวม: o.currentTotalPriceSet?.shopMoney?.amount || '',
-          ยอดสินค้า: o.currentSubtotalPriceSet?.shopMoney?.amount || '',
-          ค่าส่ง: o.currentShippingPriceSet?.shopMoney?.amount || '',
-          ภาษี: o.currentTotalTaxSet?.shopMoney?.amount || '',
-          ส่วนลดรวม: o.currentTotalDiscountsSet?.shopMoney?.amount || '',
-          ตัวเลือกการจัดส่ง: shippingOptionDisplay2,
-          วิธีการจัดส่ง: deliveryMethodText2,
-          หมายเลขติดตามพัสดุ: tracking.join(', '),
-          ชื่อผู้รับ: shippingAddress?.name || '',
-          เบอร์โทรผู้รับ: shippingAddress?.phone || '',
-          ที่อยู่ผู้รับ: shippingAddress?.address1 || '',
-          'ตำบล/แขวง': shippingAddress?.address2 || '',
-          'อำเภอ/เขต': shippingAddress?.city || '',
-          จังหวัด: shippingAddress?.province || '',
-          ประเทศ: shippingAddress?.country || '',
-          รหัสไปรษณีย์: shippingAddress?.zip || '',
-
-          // Consolidated columns (one item per row)
-          รายการสินค้า: '',
-          จำนวนสินค้า: 0,
-          SKU: '',
-          ราคาตั้งต้น: '',
-          ราคาขาย: '',
-          ราคาขายสุทธิ: '',
-          ส่วนลด: discountSummary,
-          ร้องขอใบกำกับภาษี: requestedTaxInvoice2 ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
-
-          // Tax invoice (TI) fields
-          'TI: ประเภท': getMf(['custom.customer_type', 'custom.custom_customer_type']),
-          'TI: ชื่อบริษัท': getMf(['custom.company_name', 'custom.custom_company_name']),
-          'TI: สาขา': getMf(['custom.branch_type', 'custom.custom_branch_type']),
-          'TI: รหัสสาขา': getMf(['custom.branch_code', 'custom.custom_branch_code']),
-          'TI: เลขผู้เสียภาษี': getMf([
-            'custom.tax_id',
-            'custom.custom_tax_id',
-            'custom.tax_id_formatted',
-            'custom.custom_tax_id_formatted',
-          ]),
-          'TI: โทรศัพท์': getMf(['custom.phone_number', 'custom.custom_phone_number']),
-          'TI: โทรศัพท์สำรอง': getMf(['custom.alt_phone_number', 'custom.custom_alt_phone_number']),
-          'TI: จังหวัด': getMf(['custom.province', 'custom.custom_province']),
-          'TI: อำเภอ/เขต': getMf(['custom.district', 'custom.custom_district']),
-          'TI: ตำบล/แขวง': getMf(['custom.sub_district', 'custom.custom_sub_district']),
-          'TI: ไปรษณีย์': getMf(['custom.postal_code', 'custom.custom_postal_code']),
-          'TI: ที่อยู่': getMf(['custom.full_address', 'custom.custom_full_address']),
-        }
-
-        if (itemEdges.length > 0) {
-          // Group same items together (by SKU if present, otherwise by name + variant + unit price)
-          const groups = new Map<string, { it: any; qty: number }>()
-          itemEdges.forEach((e: any) => {
-            const it = e.node
-            const qty = Number(it?.quantity ?? 0)
-            const sku = it?.sku || it?.variant?.sku || ''
-            const name = it?.name || ''
-            const variantTitle = it?.variant?.title || ''
-            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-            const key = sku
-              ? `SKU:${sku}|PRICE:${unit.toFixed(2)}`
-              : `NAME:${name}|VAR:${variantTitle}|PRICE:${unit.toFixed(2)}`
-            const existed = groups.get(key)
-            if (existed) {
-              existed.qty += qty
-            } else {
-              groups.set(key, { it, qty })
-            }
-          })
-          Array.from(groups.values()).forEach(({ it, qty }) => {
-            const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
-            ordersRows.push({
-              ...baseRow,
-              รายการสินค้า: formatItem(it),
-              จำนวนสินค้า: qty,
-              SKU: it?.sku || it?.variant?.sku || '',
-              ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-              ราคาขายสุทธิ: (unit * qty).toFixed(2),
-            })
-          })
-        } else {
-          ordersRows.push({
-            ...baseRow,
-            รายการสินค้า: '-',
-            จำนวนสินค้า: 0,
-            SKU: '',
-            ราคาตั้งต้น: '',
-            ราคาขาย: '',
-            ราคาขายสุทธิ: '',
-          })
-        }
-      })
-      const itemsRows: any[] = []
-      orders.forEach((o) => {
-        const items = (o.lineItems as any)?.edges || []
-        items.forEach((edge: any) => {
-          const it = edge.node
-          itemsRows.push({
-            เลขที่ออเดอร์: o.name,
-            สินค้า: it?.name || '',
-            SKU: it?.sku || it?.variant?.sku || '',
-            จำนวน: it?.quantity ?? '',
-            จำนวนที่คืนได้: it?.refundableQuantity ?? '',
-            'ราคาต่อหน่วย (เดิม)': it?.originalUnitPriceSet?.shopMoney?.amount || '',
-            'ราคาต่อหน่วย (หลังส่วนลด)': it?.discountedUnitPriceSet?.shopMoney?.amount || '',
-            ส่วนลดรวม: it?.totalDiscountSet?.shopMoney?.amount || '',
-          })
-        })
-      })
-      const shippingRows: any[] = []
-      orders.forEach((o) => {
-        const lines = (o.shippingLines as any)?.edges || []
-        lines.forEach((e: any) => {
-          const s = e.node
-          shippingRows.push({
-            เลขที่ออเดอร์: o.name,
-            ชื่อบริการ: s?.title || '',
-            รหัส: s?.code || '',
-            ราคาก่อนส่วนลด: s?.originalPriceSet?.shopMoney?.amount || '',
-            ราคาหลังส่วนลด: s?.discountedPriceSet?.shopMoney?.amount || '',
-          })
-        })
-      })
-      const discountRows: any[] = []
-      orders.forEach((o) => {
-        const dapps = (o.discountApplications as any)?.edges || []
-        dapps.forEach((e: any) => {
-          const d = e.node
-          discountRows.push({
-            เลขที่ออเดอร์: o.name,
-            ประเภทส่วนลด: d?.__typename || '',
-            'โค้ด/ชื่อ': d?.code || d?.title || '',
-            จำนวนเงิน: d?.value?.amount || '',
-            เปอร์เซ็นต์: d?.value?.percentage ?? '',
-          })
-        })
-      })
-      const transactionRows: any[] = []
-      orders.forEach((o) => {
-        const txs = (o.transactions as any)?.edges || []
-        txs.forEach((e: any) => {
-          const t = e.node
-          const feeSum = Array.isArray(t?.fees)
-            ? t.fees.reduce((sum: number, f: any) => sum + parseFloat(f?.amount?.amount || '0'), 0)
-            : 0
-          transactionRows.push({
-            เลขที่ออเดอร์: o.name,
-            ช่องทางชำระเงิน: t?.gateway || '',
-            ประเภท: t?.kind || '',
-            สถานะ: t?.status || '',
-            จำนวนเงิน: t?.amountSet?.shopMoney?.amount || '',
-            ค่าธรรมเนียม: feeSum || '',
-            เวลาทำรายการ: t?.processedAt ? new Date(t.processedAt).toLocaleString('th-TH') : '',
-            'ผู้ออกบัตร/ธนาคาร': t?.paymentDetails?.company || '',
-          })
-        })
-      })
-      const refundRows: any[] = []
-      orders.forEach((o) => {
-        const refs = (o.refunds as any)?.edges || []
-        refs.forEach((e: any) => {
-          const r = e.node
-          refundRows.push({
-            เลขที่ออเดอร์: o.name,
-            รหัสการคืน: r?.id || '',
-            เวลาคืนเงิน: r?.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : '',
-            จำนวนเงิน: r?.totalRefundedSet?.shopMoney?.amount || '',
-            หมายเหตุ: r?.note || '',
-          })
-        })
-      })
-      const metafieldRows: any[] = []
-      const customAttrRows: any[] = []
-      orders.forEach((o) => {
-        const mfs = (o.metafields as any)?.edges || []
-        mfs.forEach((e: any) => {
-          const m = e.node
-          metafieldRows.push({
-            เลขที่ออเดอร์: o.name,
-            เนมสเปซ: m?.namespace || '',
-            คีย์: m?.key || '',
-            ค่า: m?.value || '',
-          })
-        })
-        const cas = o.customAttributes || []
-        cas.forEach((c: any) => {
-          customAttrRows.push({ เลขที่ออเดอร์: o.name, คีย์: c?.key || '', ค่า: c?.value || '' })
-        })
-      })
-      // Build structured tax invoice sheet from metafields (custom.*) for ALL export
-      const taxInvoiceRows: any[] = []
-      orders.forEach((o) => {
-        const mlist = nodesFrom((o as any).metafields)
-        const getMf = (candidates: string[]): string => {
-          for (const cand of candidates) {
-            const [ns, key] = String(cand).split('.')
-            const found = (mlist as any[]).find(
-              (m: any) => String(m?.namespace) === ns && String(m?.key) === key
-            )
-            if (found && typeof found.value !== 'undefined' && String(found.value).trim() !== '') {
-              return String(found.value)
-            }
-          }
-          return ''
-        }
-        taxInvoiceRows.push({
-          เลขที่ออเดอร์: o.name,
-          'ประเภท (นิติบุคคล/บุคคลธรรมดา)': getMf([
-            'custom.customer_type',
-            'custom.custom_customer_type',
-          ]),
-          ชื่อบริษัท: getMf(['custom.company_name', 'custom.custom_company_name']),
-          สาขา: getMf(['custom.branch_type', 'custom.custom_branch_type']),
-          รหัสสาขา: getMf(['custom.branch_code', 'custom.custom_branch_code']),
-          หมายเลขประจำตัวผู้เสียภาษี: getMf([
-            'custom.tax_id',
-            'custom.custom_tax_id',
-            'custom.tax_id_formatted',
-            'custom.custom_tax_id_formatted',
-          ]),
-          หมายเลขโทรศัพท์: getMf(['custom.phone_number', 'custom.custom_phone_number']),
-          หมายเลขโทรศัพท์สำรอง: getMf(['custom.alt_phone_number', 'custom.custom_alt_phone_number']),
-          จังหวัด: getMf(['custom.province', 'custom.custom_province']),
-          'อำเภอ/เขต': getMf(['custom.district', 'custom.custom_district']),
-          'ตำบล/แขวง': getMf(['custom.sub_district', 'custom.custom_sub_district']),
-          ไปรษณีย์: getMf(['custom.postal_code', 'custom.custom_postal_code']),
-          ที่อยู่: getMf(['custom.full_address', 'custom.custom_full_address']),
-        })
-      })
-      const wb = new ExcelJS.Workbook()
-      const addSheetFromRows = (
-        name: string,
-        rows: any[]
-      ): { ws: any; headers: string[] } | null => {
-        const ws = wb.addWorksheet(name)
-        if (!rows || rows.length === 0) return { ws, headers: [] }
-        const headers = Object.keys(rows[0])
-        ws.columns = headers.map((h) => ({
-          header: h,
-          key: h,
-          width: Math.min(40, Math.max(12, String(h).length + 2)),
-        }))
-        rows.forEach((r) => {
-          ws.addRow(r)
-        })
-        return { ws, headers }
-      }
-      const main = addSheetFromRows('คำสั่งซื้อ', ordersRows)
-      addSheetFromRows('รายการสินค้า', itemsRows)
-      addSheetFromRows('การจัดส่ง', shippingRows)
-      addSheetFromRows('ส่วนลด', discountRows)
-      addSheetFromRows('ธุรกรรม', transactionRows)
-      addSheetFromRows('การคืนเงิน', refundRows)
-      addSheetFromRows('คุณสมบัติที่กำหนดเอง', customAttrRows)
-      addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
-
-      if (main?.headers.length) {
-        const colIdx = main.headers.indexOf('ร้องขอใบกำกับภาษี') + 1
-        if (colIdx > 0) {
-          const ws = main.ws
-          for (let r = 2; r <= ws.rowCount; r++) {
-            const cell = ws.getRow(r).getCell(colIdx)
-            const val = String(cell.value ?? '')
-            const isRequested = val === 'ขอใบกำกับภาษี'
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: isRequested ? 'FFC6F6D5' : 'FFFECACA' },
-            }
-          }
-        }
-      }
-
-      const fileName = `orders_all_${new Date().toISOString().slice(0, 10)}.xlsx`
-      const buffer = await wb.xlsx.writeBuffer()
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error('Export all failed', err)
-      alert('ไม่สามารถส่งออกทั้งหมดได้ กรุณาลองใหม่อีกครั้ง')
-    } finally {
-      setExportingAll(false)
-    }
+  // Temporary stub to avoid reference error from the hidden button
+  const exportAllFromShopify = () => {
+    // This button is currently hidden (display: 'none').
+    // Implement full export-all logic here if enabling the button in the future.
+    console.warn('exportAllFromShopify is currently disabled')
   }
+
   useEffect(() => {
     if (selectedId) {
       // wait for DOM to paint, then scroll
@@ -1855,7 +1455,7 @@ export default function TestPage() {
       // Fetch the first page automatically
       fetchOrders(null)
     }
-  }, [isAuthenticated, showAuthPopup])
+  }, [isAuthenticated, showAuthPopup, loading, data.length, fetchOrders])
 
   // Auto-fetch subsequent pages while there are more pages
   useEffect(() => {
@@ -1865,7 +1465,14 @@ export default function TestPage() {
       // Keep fetching next pages until exhausted
       fetchOrders(pageInfo.endCursor)
     }
-  }, [isAuthenticated, showAuthPopup, pageInfo?.hasNextPage, loading])
+  }, [
+    isAuthenticated,
+    showAuthPopup,
+    pageInfo?.hasNextPage,
+    loading,
+    pageInfo?.endCursor,
+    fetchOrders,
+  ])
 
   // Handle authentication
   const handleAuth = async () => {
@@ -1990,96 +1597,108 @@ export default function TestPage() {
     <div className={'min-h-screen bg-white p-4 sm:p-6 lg:p-8'}>
       <div className="max-w-[1920px] mx-auto">
         <div className="bg-white rounded-2xl shadow-xl border border-red-100 p-6 lg:p-8">
-          <div className="mb-8 flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
-                รายงานคำสั่งซื้อ LCDTV Thailand
-              </h1>
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                เข้าสู่ระบบแล้ว
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
+                  รายงานคำสั่งซื้อ LCDTV Thailand
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  เข้าสู่ระบบแล้ว
+                </div>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2"
-                title="ออกจากระบบ"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                ออกจากระบบ
-              </button>
-              <button
-                type="button"
-                onClick={() => fetchOrders(null)}
-                disabled={loading}
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-red-300 disabled:to-red-300 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:shadow-md transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
+                  title="ออกจากระบบ"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">ออกจากระบบ</span>
+                  <span className="sm:hidden">ออก</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fetchOrders(null)}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-red-300 disabled:to-red-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-xl shadow-lg hover:shadow-xl disabled:shadow-md transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center justify-center gap-2 text-sm"
+                  style={{ display: 'none' }}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span className="hidden sm:inline">กำลังโหลด...</span>
+                      <span className="sm:hidden">โหลด</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    กำลังโหลด...
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    ดึงคำสั่งซื้อ
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => exportToXlsx()}
-                disabled={loading || data.length === 0}
-                className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 disabled:from-red-300 disabled:to-red-300 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:shadow-md transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center gap-2"
-                title={data.length === 0 ? 'ยังไม่มีข้อมูลให้ส่งออก' : 'ส่งออกข้อมูลเป็น Excel'}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                ส่งออก XLSX
-              </button>
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      <span className="hidden sm:inline">ดึงคำสั่งซื้อ</span>
+                      <span className="sm:hidden">ดึงข้อมูล</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => exportToXlsx()}
+                  disabled={loading || data.length === 0}
+                  className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 disabled:from-red-300 disabled:to-red-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-xl shadow-lg hover:shadow-xl disabled:shadow-md transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center justify-center gap-2 text-sm"
+                  title={data.length === 0 ? 'ยังไม่มีข้อมูลให้ส่งออก' : 'ส่งออกข้อมูลเป็น Excel'}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">ส่งออก XLSX</span>
+                  <span className="sm:hidden">ส่งออก</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2225,7 +1844,8 @@ export default function TestPage() {
                 dateQuickFilter={dateQuickFilter}
                 setDateQuickFilter={(v) => setDateQuickFilter(v)}
               />
-              <div className="overflow-x-auto">
+              {/* Desktop Table View - Show on very large screens (1440px+) */}
+              <div className="hidden 2xl:block overflow-x-auto">
                 <div className="bg-white border border-red-200 rounded-xl shadow-lg overflow-hidden">
                   <table className="min-w-full">
                     <thead className="bg-gradient-to-r from-red-50 to-red-100">
@@ -2367,7 +1987,7 @@ export default function TestPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-red-100">
-                      {pageData.map((order, index) => {
+                      {pageData.map((order, _index) => {
                         const customerName =
                           order.customer?.displayName || order.customer?.email || '-'
                         const _total = order.currentTotalPriceSet?.shopMoney?.amount || '0'
@@ -2456,7 +2076,7 @@ export default function TestPage() {
                                 orderRowRefs.current[order.name] = el
                               }
                             }}
-                            className={`${index % 2 === 0 ? 'bg-white' : 'bg-white'} ${selectedId === order.id ? 'ring-2 ring-red-500 bg-white' : ''} hover:bg-white transition-colors duration-200`}
+                            className={`${_index % 2 === 0 ? 'bg-white' : 'bg-white'} ${selectedId === order.id ? 'ring-2 ring-red-500 bg-white' : ''} hover:bg-white transition-colors duration-200`}
                           >
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
                               <div className="flex items-center gap-2">
@@ -2548,11 +2168,6 @@ export default function TestPage() {
                                     <span>{tracking.join(', ')}</span>
                                   </div>
                                 )}
-                                <div className="pt-2">
-                                  <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
-                                    {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
-                                  </Badge>
-                                </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-xs text-gray-700">
@@ -2606,6 +2221,11 @@ export default function TestPage() {
                                     </div>
                                   )
                                 })}
+                                <div className="pt-2">
+                                  <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
+                                    {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
+                                  </Badge>
+                                </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">
@@ -2670,6 +2290,308 @@ export default function TestPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Card View - Show on all screens except very large desktops */}
+              <div className="2xl:hidden space-y-4 md:space-y-6">
+                {pageData.map((order, _index) => {
+                  const customerName = order.customer?.displayName || order.customer?.email || '-'
+                  const total = order.currentTotalPriceSet?.shopMoney?.amount || '0'
+                  const _lineCount = order.lineItems?.edges?.length || 0
+                  const shippingAddress: any = (order as any).shippingAddress || {}
+                  const shipLine: any = ((order as any).shippingLines?.edges || [])[0]?.node || {}
+                  const shippingMethod: string = shipLine?.title || shipLine?.source || ''
+                  const shippingOptionRaw = String(shippingMethod || '')
+                  const shippingOptionDisplay =
+                    shippingOptionRaw === 'Thailand Shipping'
+                      ? `${shippingOptionRaw} (รับสินค้าเองที่ร้าน)`
+                      : shippingOptionRaw
+                  const _tracking: string[] = Array.isArray((order as any).fulfillments)
+                    ? ((order as any).fulfillments as any[]).flatMap((f: any) =>
+                        Array.isArray(f?.trackingInfo)
+                          ? f.trackingInfo.map((t: any) => t?.number).filter(Boolean)
+                          : []
+                      )
+                    : []
+                  const allItems: any[] = ((order as any).lineItems?.edges || [])
+                    .map((e: any) => e?.node)
+                    .filter(Boolean)
+                  const mfList: any[] = nodesFrom((order as any).metafields)
+                  const tiKeys = new Set([
+                    'customer_type',
+                    'custom_customer_type',
+                    'company_name',
+                    'custom_company_name',
+                    'branch_type',
+                    'custom_branch_type',
+                    'branch_code',
+                    'custom_branch_code',
+                    'tax_id',
+                    'custom_tax_id',
+                    'tax_id_formatted',
+                    'custom_tax_id_formatted',
+                    'phone_number',
+                    'custom_phone_number',
+                    'alt_phone_number',
+                    'custom_alt_phone_number',
+                    'province',
+                    'custom_province',
+                    'district',
+                    'custom_district',
+                    'sub_district',
+                    'custom_sub_district',
+                    'postal_code',
+                    'custom_postal_code',
+                    'full_address',
+                    'custom_full_address',
+                  ])
+                  const hasTaxInvoice = mfList.some(
+                    (m: any) =>
+                      String(m?.namespace) === 'custom' &&
+                      tiKeys.has(String(m?.key)) &&
+                      String(m?.value ?? '').trim() !== ''
+                  )
+
+                  return (
+                    <div
+                      key={order.id}
+                      className={`bg-white border border-red-200 rounded-xl shadow-lg p-6 ${selectedId === order.id ? 'ring-2 ring-red-500' : ''}`}
+                    >
+                      {/* Header with Order Number and Status */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-xl">{order.name}</h3>
+                            <p className="text-sm text-gray-600">{fmtDateTime(order.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge
+                            tone={
+                              order.displayFinancialStatus === 'PAID'
+                                ? 'green'
+                                : order.displayFinancialStatus === 'PENDING'
+                                  ? 'yellow'
+                                  : 'gray'
+                            }
+                          >
+                            {order.displayFinancialStatus === 'PAID'
+                              ? 'PAID'
+                              : order.displayFinancialStatus === 'PENDING'
+                                ? 'PENDING'
+                                : order.displayFinancialStatus || '-'}
+                          </Badge>
+                          <Badge
+                            tone={
+                              order.displayFulfillmentStatus === 'FULFILLED'
+                                ? 'green'
+                                : order.displayFulfillmentStatus === 'UNFULFILLED'
+                                  ? 'yellow'
+                                  : 'gray'
+                            }
+                          >
+                            {order.displayFulfillmentStatus === 'FULFILLED'
+                              ? 'FULFILLED'
+                              : order.displayFulfillmentStatus === 'UNFULFILLED'
+                                ? 'UNFULFILLED'
+                                : order.displayFulfillmentStatus || '-'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Main Content - 2 Column Layout */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                        {/* Left Column - Customer Info */}
+                        <div>
+                          <div className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+                            <svg
+                              className="h-5 w-5 text-red-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            ข้อมูลลูกค้า
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-600">ชื่อ:</span>{' '}
+                              <span className="font-medium text-gray-900">{customerName}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">อีเมล:</span>{' '}
+                              <span className="text-gray-900">
+                                {order.customer?.email || order.email || '-'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">โทร:</span>{' '}
+                              <span>{order.customer?.phone || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Column - Shipping Info */}
+                        <div>
+                          <div className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+                            <svg
+                              className="h-5 w-5 text-red-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                              />
+                            </svg>
+                            ข้อมูลจัดส่ง
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-600">ผู้รับ:</span>{' '}
+                              <span className="font-medium text-gray-900">
+                                {shippingAddress?.name || '-'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">โทร:</span>{' '}
+                              <span>{shippingAddress?.phone || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">จังหวัด:</span>{' '}
+                              <span className="text-gray-900">
+                                {shippingAddress?.province || '-'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">อำเภอ/เขต:</span>{' '}
+                              <span className="text-gray-900">{shippingAddress?.city || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">วิธีจัดส่ง:</span>{' '}
+                              <span className="font-medium text-gray-900">
+                                {shippingOptionDisplay === 'Thailand Shipping (รับสินค้าเองที่ร้าน)'
+                                  ? 'จัดส่งแบบปกติ โดยไม่มีค่าใช้จ่าย'
+                                  : shippingOptionDisplay || '-'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Items Section */}
+                      {allItems.length > 0 && (
+                        <div className="mb-6">
+                          <div className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+                            <svg
+                              className="h-5 w-5 text-red-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                              />
+                            </svg>
+                            รายการสินค้า ({allItems.length} รายการ)
+                          </div>
+                          <div className="space-y-3">
+                            {allItems.map((item: any, idx: number) => {
+                              const name = item?.name || '-'
+                              const sku = item?.sku || item?.variant?.sku || '-'
+                              const qty = Number(item?.quantity ?? 0)
+                              const sale = item?.discountedUnitPriceSet?.shopMoney?.amount
+                              const _orig = item?.originalUnitPriceSet?.shopMoney?.amount
+                              return (
+                                <div
+                                  key={`item-${item?.id || idx}`}
+                                  className="border-b border-gray-100 pb-3 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900 mb-1">{name}</div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <div>
+                                      SKU: <span className="text-gray-900">{sku}</span>
+                                    </div>
+                                    <div>
+                                      จำนวน:{' '}
+                                      <span className="font-medium text-gray-900">{qty}</span>
+                                    </div>
+                                    {sale && (
+                                      <div>
+                                        ราคา:{' '}
+                                        <span className="font-semibold text-gray-900">
+                                          {sale} THB
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <div className="mb-6">
+                            <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
+                              {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between pt-6 border-t border-red-100">
+                        <div className="text-2xl font-bold text-gray-900">
+                          ฿{parseFloat(total).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedId(selectedId === order.id ? null : order.id)
+                              if (selectedId !== order.id) {
+                                setTimeout(scrollToDetails, 100)
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                            {selectedId === order.id ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
               <PaginationControls
                 startIndex={startIndex}
