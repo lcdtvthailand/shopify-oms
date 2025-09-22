@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import OrbitalLoader from '@/app/components/ui/OrbitalLoader'
 import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
 // Minimal types for Orders response used on the page
@@ -327,8 +328,8 @@ const PaginationControls = ({
     </div>
   ) : (
     <div className="bg-white border border-red-200 rounded-xl px-4 sm:px-6 py-4 shadow-lg">
-      {/* Mobile-first layout */}
-      <div className="flex flex-col gap-4">
+      {/* Mobile-first layout; on xl+ keep header and controls in one row (iPad Pro = stacked) */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between xl:gap-4">
         {/* Stats row - always visible */}
         <div className="flex items-center gap-3">
           <div className="p-2 bg-red-100 rounded-lg">
@@ -363,37 +364,39 @@ const PaginationControls = ({
         </div>
 
         {/* Controls row - responsive layout */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between xl:flex-nowrap xl:justify-start xl:items-center xl:gap-2">
           {/* Date filters - mobile responsive */}
           {typeof dateQuickFilter !== 'undefined' && typeof setDateQuickFilter !== 'undefined' && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-              <label className="text-sm text-red-700 font-medium whitespace-nowrap">ช่วงวันที่</label>
-              <div className="grid grid-cols-2 sm:flex gap-2 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full xl:flex-1 xl:items-center">
+              <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[68px] xl:hidden">
+                ช่วงวันที่
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 xl:flex gap-2 xl:gap-2 w-full sm:max-w-[520px] xl:max-w-none">
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('today')}
-                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   วันนี้
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('yesterday')}
-                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   เมื่อวาน
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('last7')}
-                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   7 วันล่าสุด
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('all')}
-                  className={`w-full sm:w-auto text-center px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                   title="ล้างตัวกรองวันที่แบบด่วน"
                 >
                   ทั้งหมด
@@ -401,15 +404,17 @@ const PaginationControls = ({
               </div>
             </div>
           )}
-          {/* Month/Year filters - mobile responsive */}
-          <div className="grid grid-cols-1 sm:flex gap-3 w-full">
+          {/* Month/Year/PageSize - mobile responsive (tablet: 3 columns, xl+: inline) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:flex-none xl:items-center gap-3 xl:gap-2 w-full sm:items-end">
             {typeof monthFilter !== 'undefined' &&
               typeof setMonthFilter !== 'undefined' &&
               thaiMonths && (
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-red-700 font-medium whitespace-nowrap">เดือน</label>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[48px]">
+                    เดือน
+                  </label>
                   <select
-                    className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[6rem] sm:min-w-[8rem]"
+                    className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[8rem]"
                     value={monthFilter}
                     onChange={(e) => {
                       setDateQuickFilter?.('all')
@@ -428,10 +433,12 @@ const PaginationControls = ({
                 </div>
               )}
             {typeof yearFilter !== 'undefined' && typeof setYearFilter !== 'undefined' && years && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-red-700 font-medium whitespace-nowrap">ปี</label>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[28px] xl:min-w-0">
+                  ปี
+                </label>
                 <select
-                  className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[5rem] sm:min-w-[6rem]"
+                  className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
                   value={yearFilter}
                   onChange={(e) => {
                     setDateQuickFilter?.('all')
@@ -449,23 +456,25 @@ const PaginationControls = ({
                 </select>
               </div>
             )}
-          </div>
-          {/* Page size selector */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <label className="text-sm text-red-700 font-medium whitespace-nowrap">แสดงต่อหน้า</label>
-            <select
-              className="w-full sm:w-auto text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
-              value={pageSize}
-              onChange={(e) => {
-                setPage(() => 1)
-                setPageSize(parseInt(e.target.value, 10))
-              }}
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
+            {/* Page size selector - moved into same grid row */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
+                แสดงต่อหน้า
+              </label>
+              <select
+                className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                value={pageSize}
+                onChange={(e) => {
+                  setPage(() => 1)
+                  setPageSize(parseInt(e.target.value, 10))
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -896,17 +905,22 @@ export default function TestPage() {
           const unitAfterDisc = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
           const qty = Number(it?.quantity ?? 0)
           const netPerItem = unitAfterDisc * qty
+          const variantTitleRaw = (it?.variant?.title || '').trim()
+          const optionName =
+            variantTitleRaw && variantTitleRaw.toLowerCase() !== 'default title'
+              ? variantTitleRaw
+              : ''
           itemsRows.push({
             หมายเลขคำสั่งซื้อ: o.name,
             ชื่อสินค้า: it?.name || '',
             'เลขอ้างอิง SKU (SKU Reference No.)': it?.sku || it?.variant?.sku || '',
-            ชื่อตัวเลือก: it?.variant?.title || '',
-            ราคาตั้งต้น: it?.originalUnitPriceSet?.shopMoney?.amount || '',
-            ราคาขาย: it?.discountedUnitPriceSet?.shopMoney?.amount || '',
+            ชื่อตัวเลือก: optionName,
+            ราคาตั้งต้น: parseNumber(it?.originalUnitPriceSet?.shopMoney?.amount as string),
+            ราคาขาย: parseNumber(it?.discountedUnitPriceSet?.shopMoney?.amount as string),
             จำนวน: qty,
-            'ราคาขายสุทธิ (ต่อไอเท็ม)': netPerItem.toFixed(2),
+            'ราคาขายสุทธิ (ต่อไอเท็ม)': netPerItem,
             จำนวนที่คืนได้: it?.refundableQuantity ?? '',
-            ส่วนลดรวม: it?.totalDiscountSet?.shopMoney?.amount || '',
+            ส่วนลดรวม: parseNumber(it?.totalDiscountSet?.shopMoney?.amount as string),
           })
         })
       })
@@ -919,8 +933,8 @@ export default function TestPage() {
             เลขที่ออเดอร์: o.name,
             ชื่อบริการ: s?.title || '',
             รหัส: s?.code || '',
-            ราคาก่อนส่วนลด: s?.originalPriceSet?.shopMoney?.amount || '',
-            ราคาหลังส่วนลด: s?.discountedPriceSet?.shopMoney?.amount || '',
+            ราคาก่อนส่วนลด: parseNumber(s?.originalPriceSet?.shopMoney?.amount as string),
+            ราคาหลังส่วนลด: parseNumber(s?.discountedPriceSet?.shopMoney?.amount as string),
           })
         })
       })
@@ -1007,7 +1021,8 @@ export default function TestPage() {
           }
           return ''
         }
-        taxInvoiceRows.push({
+
+        const row = {
           เลขที่ออเดอร์: o.name,
           'ประเภท (นิติบุคคล/บุคคลธรรมดา)': getMf([
             'custom.customer_type',
@@ -1029,7 +1044,15 @@ export default function TestPage() {
           'ตำบล/แขวง': getMf(['custom.sub_district', 'custom.custom_sub_district']),
           ไปรษณีย์: getMf(['custom.postal_code', 'custom.custom_postal_code']),
           ที่อยู่: getMf(['custom.full_address', 'custom.custom_full_address']),
-        })
+        }
+
+        // Include only rows that have any non-empty field other than order number
+        const hasInfo = Object.entries(row).some(
+          ([k, v]) => k !== 'เลขที่ออเดอร์' && String(v ?? '').trim() !== ''
+        )
+        if (hasInfo) {
+          taxInvoiceRows.push(row)
+        }
       })
 
       const wb = new ExcelJS.Workbook()
@@ -1051,8 +1074,8 @@ export default function TestPage() {
         return { ws, headers }
       }
       const main = addSheetFromRows('คำสั่งซื้อ', ordersRows)
-      addSheetFromRows('รายการสินค้า', itemsRows)
-      addSheetFromRows('การจัดส่ง', shippingRows)
+      const items = addSheetFromRows('รายการสินค้า', itemsRows)
+      const shipping = addSheetFromRows('การจัดส่ง', shippingRows)
       addSheetFromRows('ส่วนลด', discountRows)
       addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
 
@@ -1071,6 +1094,30 @@ export default function TestPage() {
               fgColor: { argb: isRequested ? 'FFC6F6D5' : 'FFFECACA' }, // green-200 / red-200
             }
           }
+        }
+        // Format Tax column as number
+        const taxColIdx = main.headers.indexOf('ภาษี') + 1
+        if (taxColIdx > 0) {
+          const ws = main.ws
+          ws.getColumn(taxColIdx).numFmt = '#,##0.00'
+        }
+      }
+
+      // Format base price in Items sheet as currency/price
+      if (items?.headers.length) {
+        const priceColIdx = items.headers.indexOf('ราคาตั้งต้น') + 1
+        if (priceColIdx > 0) {
+          const ws = items.ws
+          ws.getColumn(priceColIdx).numFmt = '#,##0.00'
+        }
+      }
+
+      // Format price-before-discount in Shipping sheet as currency/price
+      if (shipping?.headers.length) {
+        const baseShipColIdx = shipping.headers.indexOf('ราคาก่อนส่วนลด') + 1
+        if (baseShipColIdx > 0) {
+          const ws = shipping.ws
+          ws.getColumn(baseShipColIdx).numFmt = '#,##0.00'
         }
       }
 
@@ -1264,53 +1311,56 @@ export default function TestPage() {
     }
   `
 
-  const fetchOrders = async (after: string | null = null) => {
-    setLoading(true)
-    setError(null)
+  const fetchOrders = useCallback(
+    async (after: string | null = null) => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      const response = await fetch('/api/shopify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: ordersQuery,
-          variables: { after },
-        }),
-      })
+      try {
+        const response = await fetch('/api/shopify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: ordersQuery,
+            variables: { after },
+          }),
+        })
 
-      const json: unknown = await response.json()
+        const json: unknown = await response.json()
 
-      // Handle API errors returned by our /api/shopify route
-      if (!response.ok) {
-        const api = (json as { error?: string; code?: string; details?: unknown }) || {}
-        const apiError = typeof api.error === 'string' ? api.error : 'Request failed'
-        const details = api.details ? ` Details: ${JSON.stringify(api.details)}` : ''
-        throw new Error(`API error ${response.status}: ${apiError}.${details}`)
+        // Handle API errors returned by our /api/shopify route
+        if (!response.ok) {
+          const api = (json as { error?: string; code?: string; details?: unknown }) || {}
+          const apiError = typeof api.error === 'string' ? api.error : 'Request failed'
+          const details = api.details ? ` Details: ${JSON.stringify(api.details)}` : ''
+          throw new Error(`API error ${response.status}: ${apiError}.${details}`)
+        }
+
+        const result = json as ShopifyGraphQLResponse<OrdersResponse>
+        if (result.errors && result.errors.length > 0) {
+          throw new Error(`GraphQL errors: ${result.errors.map((e) => e.message).join(' | ')}`)
+        }
+
+        if (!result.data) {
+          throw new Error('Empty response from Shopify (no data field)')
+        }
+
+        const responseData = result.data
+        const orders = responseData.orders.edges.map((edge) => edge.node)
+
+        // if after provided, append; else replace
+        setData((prev) => (after ? [...prev, ...orders] : orders))
+        setPageInfo(responseData.orders.pageInfo)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error occurred')
+      } finally {
+        setLoading(false)
       }
-
-      const result = json as ShopifyGraphQLResponse<OrdersResponse>
-      if (result.errors && result.errors.length > 0) {
-        throw new Error(`GraphQL errors: ${result.errors.map((e) => e.message).join(' | ')}`)
-      }
-
-      if (!result.data) {
-        throw new Error('Empty response from Shopify (no data field)')
-      }
-
-      const responseData = result.data
-      const orders = responseData.orders.edges.map((edge) => edge.node)
-
-      // if after provided, append; else replace
-      setData((prev) => (after ? [...prev, ...orders] : orders))
-      setPageInfo(responseData.orders.pageInfo)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred')
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+    [ordersQuery]
+  )
 
   const formatPrice = (price: string) => {
     return new Intl.NumberFormat('th-TH', {
@@ -1595,6 +1645,11 @@ export default function TestPage() {
 
   return (
     <div className={'min-h-screen bg-white p-4 sm:p-6 lg:p-8'}>
+      {/* Main Loading Overlay */}
+      {loading && data.length === 0 && (
+        <OrbitalLoader size="xl" text="กำลังดึงข้อมูลคำสั่งซื้อ..." showText={true} overlay={true} />
+      )}
+
       <div className="max-w-[1920px] mx-auto">
         <div className="bg-white rounded-2xl shadow-xl border border-red-100 p-6 lg:p-8">
           <div className="mb-8">
@@ -1712,24 +1767,7 @@ export default function TestPage() {
               style={{ display: 'none' }}
             >
               {exportingAll ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  กำลังส่งออกทั้งหมด…
-                </>
+                <OrbitalLoader size="sm" text="กำลังส่งออกทั้งหมด..." showText={true} />
               ) : (
                 <>
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1757,24 +1795,7 @@ export default function TestPage() {
                   className="bg-red-100 hover:bg-red-200 disabled:bg-gray-100 text-red-800 font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg disabled:shadow-sm transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center gap-2"
                 >
                   {loading ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      กำลังโหลด...
-                    </>
+                    <OrbitalLoader size="sm" text="กำลังโหลด..." showText={true} />
                   ) : (
                     <>
                       <svg
@@ -1819,6 +1840,74 @@ export default function TestPage() {
                 <div>
                   <h3 className="text-red-800 font-semibold mb-2 text-lg">เกิดข้อผิดพลาด</h3>
                   <p className="text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && data.length === 0 && !error && (
+            <div className="text-center py-16">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-12 border border-red-200 shadow-lg">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-12 h-12 text-red-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-4 h-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-red-800 mb-2">ยังไม่มีข้อมูลคำสั่งซื้อ</h3>
+                    <p className="text-red-600 mb-6 max-w-md">
+                      ระบบจะดึงข้อมูลคำสั่งซื้อโดยอัตโนมัติเมื่อเข้าสู่ระบบ หรือคุณสามารถดึงข้อมูลด้วยตนเองได้
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => fetchOrders(null)}
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mx-auto"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      ดึงข้อมูลคำสั่งซื้อ
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
