@@ -535,7 +535,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, formData.districtCode])
+  }, [formData.provinceCode, true])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -616,6 +616,12 @@ export default function TaxInvoiceForm() {
       setFormData((prev) => ({ ...prev, [name]: formatThaiPhone(value) }))
       return
     }
+    // Numeric-only postal code (max 5)
+    if (name === 'postalCode') {
+      const digits = value.replace(/\D/g, '').slice(0, 5)
+      setFormData((prev) => ({ ...prev, postalCode: digits }))
+      return
+    }
     // Helper: format 13-digit Thai ID/Tax ID -> keep only digits, no dashes
     const formatThaiId13 = (raw: string) => {
       const d = raw.replace(/\D/g, '').slice(0, 13)
@@ -623,6 +629,11 @@ export default function TaxInvoiceForm() {
     }
     if (name === 'branchCode') {
       setFormData((prev) => ({ ...prev, [name]: formatThaiId13(value) }))
+      return
+    }
+    // Allow sub-branch number to be alphanumeric (do not restrict to digits only)
+    if (name === 'branchNumber') {
+      setFormData((prev) => ({ ...prev, branchNumber: value }))
       return
     }
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -1294,6 +1305,28 @@ export default function TaxInvoiceForm() {
       return
     }
 
+    // Validate phone numbers: must start with 0 and be 9–10 digits (after stripping dashes)
+    const phoneDigits = (formData.companyName || '').replace(/\D/g, '')
+    if (!/^0\d{8,9}$/.test(phoneDigits)) {
+      setIsSaving(false)
+      setSaveError('กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง (ขึ้นต้นด้วย 0 และมี 9–10 หลัก)')
+      return
+    }
+    const altPhoneDigits = (formData.companyNameEng || '').replace(/\D/g, '')
+    if (altPhoneDigits && !/^0\d{8,9}$/.test(altPhoneDigits)) {
+      setIsSaving(false)
+      setSaveError('หมายเลขโทรศัพท์สำรองไม่ถูกต้อง (ขึ้นต้นด้วย 0 และมี 9–10 หลัก)')
+      return
+    }
+
+    // Validate postal code: exactly 5 digits
+    const postalDigits = (formData.postalCode || '').replace(/\D/g, '')
+    if (postalDigits.length !== 5) {
+      setIsSaving(false)
+      setSaveError('กรุณากรอกรหัสไปรษณีย์ 5 หลัก')
+      return
+    }
+
     // Map ชื่อจังหวัด/อำเภอ/ตำบลจาก code ที่เลือก
     const provinceName = provinces.find((p) => p.code === formData.provinceCode)?.nameTh || ''
     const districtName = districts.find((d) => d.code === formData.districtCode)?.nameTh || ''
@@ -1355,7 +1388,9 @@ export default function TaxInvoiceForm() {
     const province = provinceName
     const district = districtName
     const subDistrict = subdistrictName
-    const postalCode = formData.postalCode || ''
+    // Prefer postal code from the selected subdistrict; fallback to user input digits
+    const selectedSub = subdistricts.find((s) => s.code === formData.subdistrictCode)
+    const postalCode = selectedSub ? String(selectedSub.postalCode || '') : postalDigits
     const fullAddress = formData.address || ''
 
     const METAFIELDS_SET = `
@@ -2081,7 +2116,7 @@ export default function TaxInvoiceForm() {
                             ;(e.target as HTMLInputElement).setCustomValidity('')
                           }}
                           placeholder="รหัสสาขาย่อย"
-                          inputMode="numeric"
+                          maxLength={20}
                           required={formData.branchType === 'branch'}
                           className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         />
