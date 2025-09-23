@@ -608,7 +608,7 @@ export default function TestPage() {
     'all'
   )
   const detailsRef = useRef<HTMLDivElement>(null)
-  const orderRowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({})
+  const orderRowRefs = useRef<{ [key: string]: HTMLElement | null }>({})
   const thaiMonths: string[] = [
     'มกราคม',
     'กุมภาพันธ์',
@@ -2468,6 +2468,11 @@ export default function TestPage() {
                   return (
                     <div
                       key={order.id}
+                      ref={(el: HTMLDivElement | null) => {
+                        if (el) {
+                          orderRowRefs.current[order.name] = el
+                        }
+                      }}
                       className={`bg-white border border-red-200 rounded-xl shadow-lg p-6 ${selectedId === order.id ? 'ring-2 ring-red-500' : ''}`}
                     >
                       {/* Header with Order Number and Status */}
@@ -2674,9 +2679,10 @@ export default function TestPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedId(selectedId === order.id ? null : order.id)
-                              if (selectedId !== order.id) {
-                                setTimeout(scrollToDetails, 100)
+                              if (selectedId === order.id) {
+                                handleCloseDetails()
+                              } else {
+                                handleSelectOrder(order.id, order.name)
                               }
                             }}
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
@@ -2737,13 +2743,13 @@ export default function TestPage() {
                   return (
                     <div
                       ref={detailsRef}
-                      className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-2xl"
+                      className="mt-6 sm:mt-8 bg-white border border-red-200 rounded-2xl p-5 sm:p-8 shadow-2xl"
                     >
-                      <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg">
+                      <div className="flex items-center justify-between mb-5 sm:mb-8">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="p-2 sm:p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg">
                             <svg
-                              className="h-6 w-6 text-white"
+                              className="h-5 w-5 sm:h-6 sm:w-6 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -2757,8 +2763,12 @@ export default function TestPage() {
                             </svg>
                           </div>
                           <div>
-                            <h3 className="text-2xl font-bold text-red-800">รายละเอียดคำสั่งซื้อ</h3>
-                            <p className="text-red-600/70 font-medium">{o.name}</p>
+                            <h3 className="text-xl sm:text-2xl font-bold text-red-800">
+                              รายละเอียดคำสั่งซื้อ
+                            </h3>
+                            <p className="text-sm sm:text-base text-red-600/70 font-medium">
+                              {o.name}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -3342,10 +3352,11 @@ export default function TestPage() {
                                 },
                               ]
                               return (
-                                <div className="space-y-4">
+                                <div className="space-y-4 flex flex-col items-center sm:block">
                                   <div className="text-sm font-semibold text-gray-800 flex items-center gap-2"></div>
-                                  <div className="border border-red-200 rounded-xl p-4 bg-white shadow-inner">
-                                    <table className="w-full text-sm">
+                                  <div className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-inner w-fit max-w-[100%] sm:w-auto sm:max-w-none">
+                                    {/* Desktop table layout (hidden on mobile) */}
+                                    <table className="hidden sm:table w-full text-sm">
                                       <tbody className="divide-y divide-gray-200">
                                         {items.map((p, idx) => (
                                           <tr key={`${p.k}-${idx}`} className="hover:bg-gray-50">
@@ -3354,13 +3365,36 @@ export default function TestPage() {
                                             </td>
                                             <td className="align-top py-3 text-sm text-gray-900 break-words">
                                               <span className="bg-gray-100 px-2 py-1 rounded-md font-medium">
-                                                {p.v}
+                                                {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
+                                                  ? String(p.v || '').replace(/-/g, '')
+                                                  : p.v}
                                               </span>
                                             </td>
                                           </tr>
                                         ))}
                                       </tbody>
                                     </table>
+
+                                    {/* Mobile 2-line layout (visible only on mobile) */}
+                                    <div className="block sm:hidden space-y-3">
+                                      {items.map((p, idx) => (
+                                        <div
+                                          key={`${p.k}-${idx}`}
+                                          className="pb-3 border-b border-gray-200 last:border-b-0 last:pb-0"
+                                        >
+                                          <div className="text-xs font-semibold text-gray-700 mb-1 text-left">
+                                            {p.k}
+                                          </div>
+                                          <div className="pl-4">
+                                            <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-sm text-gray-900 inline-block text-left break-all">
+                                              {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
+                                                ? String(p.v || '').replace(/-/g, '')
+                                                : p.v}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
                               )
