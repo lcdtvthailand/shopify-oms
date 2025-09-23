@@ -2269,6 +2269,12 @@ export default function TestPage() {
                                     </span>
                                   </div>
                                 )}
+                                {/* Tax invoice badge moved here to be under shipping method */}
+                                <div className="pt-1">
+                                  <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
+                                    {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
+                                  </Badge>
+                                </div>
                                 {tracking.length > 0 && (
                                   <div className="break-words">
                                     <span className="text-[11px] text-gray-500">ติดตาม</span>
@@ -2329,11 +2335,6 @@ export default function TestPage() {
                                     </div>
                                   )
                                 })}
-                                <div className="pt-2">
-                                  <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
-                                    {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
-                                  </Badge>
-                                </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">
@@ -2597,6 +2598,12 @@ export default function TestPage() {
                                   : shippingOptionDisplay || '-'}
                               </span>
                             </div>
+                            {/* Tax invoice badge moved here to be under shipping method */}
+                            <div>
+                              <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
+                                {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2654,11 +2661,7 @@ export default function TestPage() {
                               )
                             })}
                           </div>
-                          <div className="mb-6">
-                            <Badge tone={hasTaxInvoice ? 'green' : 'red'}>
-                              {hasTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี'}
-                            </Badge>
-                          </div>
+                          {/* Badge removed from here; now shown under shipping method */}
                         </div>
                       )}
 
