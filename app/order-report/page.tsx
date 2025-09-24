@@ -1056,7 +1056,6 @@ export default function TestPage() {
             'custom.custom_tax_id_formatted',
           ]),
           หมายเลขโทรศัพท์: getMf(['custom.phone_number', 'custom.custom_phone_number']),
-          หมายเลขโทรศัพท์สำรอง: getMf(['custom.alt_phone_number', 'custom.custom_alt_phone_number']),
           จังหวัด: getMf(['custom.province', 'custom.custom_province']),
           'อำเภอ/เขต': getMf(['custom.district', 'custom.custom_district']),
           'ตำบล/แขวง': getMf(['custom.sub_district', 'custom.custom_sub_district']),
@@ -3322,13 +3321,6 @@ export default function TestPage() {
                                 {
                                   k: 'หมายเลขโทรศัพท์',
                                   v: getMf(['custom.phone_number', 'custom.custom_phone_number']),
-                                },
-                                {
-                                  k: 'หมายเลขโทรศัพท์สำรอง',
-                                  v: getMf([
-                                    'custom.alt_phone_number',
-                                    'custom.custom_alt_phone_number',
-                                  ]),
                                 },
                                 {
                                   k: 'จังหวัด',

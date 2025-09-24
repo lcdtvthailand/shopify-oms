@@ -107,7 +107,6 @@ interface FormData {
   documentNumber: string
   branchCode: string
   companyName: string
-  companyNameEng: string
   provinceCode: number | null
   districtCode: number | null
   subdistrictCode: number | null
@@ -154,7 +153,6 @@ export default function TaxInvoiceForm() {
     documentNumber: '',
     branchCode: '',
     companyName: '',
-    companyNameEng: '',
     provinceCode: null,
     districtCode: null,
     subdistrictCode: null,
@@ -197,6 +195,11 @@ export default function TaxInvoiceForm() {
   // Overlay form states
   const [showFormOverlay, setShowFormOverlay] = useState(false)
   const [validationInProgress, setValidationInProgress] = useState(false)
+  // Tax ID validation state
+  const [taxIdError, setTaxIdError] = useState('')
+  // Multiple validation errors state
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [showValidationErrors, setShowValidationErrors] = useState(false)
 
   const searchParams = useSearchParams()
 
@@ -535,7 +538,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, true])
+  }, [formData.provinceCode, formData.districtCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -581,6 +584,22 @@ export default function TaxInvoiceForm() {
     })
   }, [formData.subdistrictCode])
 
+  // Real-time tax ID validation function
+  const validateTaxId = (value: string) => {
+    const digits = value.replace(/\D/g, '')
+    if (!digits) {
+      setTaxIdError('')
+      return
+    }
+    if (digits.length < 13) {
+      const fieldName =
+        formData.documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'
+      setTaxIdError(`${fieldName}ต้องมี 13 หลัก`)
+    } else {
+      setTaxIdError('')
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     // Helper: format Thai phone number with dashes as user types
@@ -612,7 +631,7 @@ export default function TaxInvoiceForm() {
       return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`
     }
 
-    if (name === 'companyName' || name === 'companyNameEng') {
+    if (name === 'companyName') {
       setFormData((prev) => ({ ...prev, [name]: formatThaiPhone(value) }))
       return
     }
@@ -628,108 +647,20 @@ export default function TaxInvoiceForm() {
       return d
     }
     if (name === 'branchCode') {
-      setFormData((prev) => ({ ...prev, [name]: formatThaiId13(value) }))
+      const formattedValue = formatThaiId13(value)
+      setFormData((prev) => ({ ...prev, [name]: formattedValue }))
+      // Real-time validation for tax ID
+      validateTaxId(formattedValue)
       return
     }
-    // Allow sub-branch number to be alphanumeric (do not restrict to digits only)
+    // Enforce sub-branch number to be numeric only (5 digits)
     if (name === 'branchNumber') {
-      setFormData((prev) => ({ ...prev, branchNumber: value }))
+      // Enforce digits only and max length 5 for branch sub-code
+      const digits = value.replace(/\D/g, '').slice(0, 5)
+      setFormData((prev) => ({ ...prev, branchNumber: digits }))
       return
     }
     setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const _handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Basic validation
-    if (formData.documentType === 'tax') {
-      if (!formData.fullName.trim()) {
-        alert('กรุณากรอกชื่อ-นามสกุล')
-        return
-      }
-    } else if (!formData.companyNameText.trim()) {
-      alert('กรุณากรอกชื่อบริษัท')
-      return
-    }
-
-    if (!formData.branchCode.trim()) {
-      alert('กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี')
-      return
-    }
-
-    if (formData.branchCode.length !== 13) {
-      alert('หมายเลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก')
-      return
-    }
-
-    if (!formData.companyName.trim()) {
-      alert('กรุณากรอกหมายเลขโทรศัพท์')
-      return
-    }
-
-    if (!formData.provinceCode) {
-      alert('กรุณาเลือกจังหวัด')
-      return
-    }
-
-    if (!formData.districtCode) {
-      alert('กรุณาเลือกอำเภอ/เขต')
-      return
-    }
-
-    if (!formData.subdistrictCode) {
-      alert('กรุณาเลือกตำบล/แขวง')
-      return
-    }
-
-    if (!formData.address.trim()) {
-      alert('กรุณากรอกที่อยู่')
-      return
-    }
-
-    if (formData.documentType === 'receipt' && formData.branchType === 'branch') {
-      if (!formData.branchNumber || !formData.branchNumber.trim()) {
-        alert('กรุณากรอกรหัสสาขาย่อย')
-        return
-      }
-    }
-
-    // Save to localStorage
-    const savedData = {
-      ...formData,
-      savedAt: new Date().toISOString(),
-      id: Date.now().toString(),
-    }
-
-    const existingData = JSON.parse(localStorage.getItem('taxInvoiceData') || '[]')
-    existingData.push(savedData)
-    localStorage.setItem('taxInvoiceData', JSON.stringify(existingData))
-
-    alert('บันทึกข้อมูลเรียบร้อยแล้ว!')
-
-    // Reset form
-    setFormData({
-      documentType: 'tax',
-      titleName: '',
-      fullName: '',
-      companyNameText: '',
-      documentNumber: '',
-      branchCode: '',
-      companyName: '',
-      companyNameEng: '',
-      provinceCode: null,
-      districtCode: null,
-      subdistrictCode: null,
-      postalCode: '',
-      address: '',
-      branchType: null,
-      branchNumber: '',
-    })
-
-    setProvinces([])
-    setDistricts([])
-    setSubdistricts([])
   }
 
   const handleRadioChange = (value: 'tax' | 'receipt') => {
@@ -743,6 +674,10 @@ export default function TaxInvoiceForm() {
       branchType: value === 'receipt' ? (prev.branchType ?? 'head') : null,
       branchNumber: value === 'receipt' ? prev.branchNumber : '',
     }))
+    // Re-validate tax ID with new document type context
+    if (formData.branchCode) {
+      setTimeout(() => validateTaxId(formData.branchCode), 0)
+    }
   }
 
   const handleGoBack = () => {
@@ -814,7 +749,6 @@ export default function TaxInvoiceForm() {
         const branchCode = metaMap.branch_code || metaMap.custom_branch_code || ''
         const taxId = metaMap.tax_id || metaMap.custom_tax_id || ''
         const phoneNumber = metaMap.phone_number || metaMap.custom_phone_number || ''
-        const altPhoneNumber = metaMap.alt_phone_number || metaMap.custom_alt_phone_number || ''
         const province =
           metaMap.province ||
           metaMap.custom_province ||
@@ -881,7 +815,6 @@ export default function TaxInvoiceForm() {
           companyNameText: customerType === 'นิติบุคคล' ? documentName : '',
           branchCode: fmtId(taxId),
           companyName: phoneNumber,
-          companyNameEng: altPhoneNumber,
           address: fullAddress,
           postalCode: postalCode,
           branchType:
@@ -1247,84 +1180,64 @@ export default function TaxInvoiceForm() {
   const handleSaveTaxInfo = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Debug: Log validation status
+    console.log('isValidated:', isValidated, 'orderData?.id:', orderData?.id)
+
     if (!isValidated || !orderData?.id) {
       setShowValidationPopup(true)
       setValidationMessage('กรุณาตรวจสอบ Order ID และ Email ให้ถูกต้องก่อนบันทึก')
       return
     }
 
-    setIsSaving(true)
-    setSaveMessage('')
-    setSaveError('')
+    // Collect all validation errors
+    const errors: string[] = []
 
     // Required field validations (general)
     if (formData.documentType === 'tax') {
       if (!formData.fullName.trim()) {
-        setIsSaving(false)
-        setSaveError('กรุณากรอกชื่อ-นามสกุล')
-        return
+        errors.push('กรุณากรอกชื่อ-นามสกุล')
       }
       if (!formData.titleName.trim()) {
-        setIsSaving(false)
-        setSaveError('กรุณาเลือกคำนำหน้าชื่อ')
-        return
+        errors.push('กรุณาเลือกคำนำหน้าชื่อ')
       }
     } else if (!formData.companyNameText.trim()) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกชื่อบริษัท')
-      return
-    }
-    if (!formData.companyName.trim()) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกหมายเลขโทรศัพท์')
-      return
-    }
-    if (!formData.provinceCode) {
-      setIsSaving(false)
-      setSaveError('กรุณาเลือกจังหวัด')
-      return
-    }
-    if (!formData.districtCode) {
-      setIsSaving(false)
-      setSaveError('กรุณาเลือกอำเภอ/เขต')
-      return
-    }
-    if (!formData.subdistrictCode) {
-      setIsSaving(false)
-      setSaveError('กรุณาเลือกตำบล/แขวง')
-      return
-    }
-    if (!formData.postalCode.trim()) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกรหัสไปรษณีย์')
-      return
-    }
-    if (!formData.address.trim()) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกที่อยู่')
-      return
+      errors.push('กรุณากรอกชื่อบริษัท')
     }
 
-    // Validate phone numbers: must start with 0 and be 9–10 digits (after stripping dashes)
-    const phoneDigits = (formData.companyName || '').replace(/\D/g, '')
-    if (!/^0\d{8,9}$/.test(phoneDigits)) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง (ขึ้นต้นด้วย 0 และมี 9–10 หลัก)')
-      return
+    if (!formData.companyName.trim()) {
+      errors.push('กรุณากรอกหมายเลขโทรศัพท์')
     }
-    const altPhoneDigits = (formData.companyNameEng || '').replace(/\D/g, '')
-    if (altPhoneDigits && !/^0\d{8,9}$/.test(altPhoneDigits)) {
-      setIsSaving(false)
-      setSaveError('หมายเลขโทรศัพท์สำรองไม่ถูกต้อง (ขึ้นต้นด้วย 0 และมี 9–10 หลัก)')
-      return
+
+    if (!formData.provinceCode) {
+      errors.push('กรุณาเลือกจังหวัด')
+    }
+
+    if (!formData.districtCode) {
+      errors.push('กรุณาเลือกอำเภอ/เขต')
+    }
+
+    if (!formData.subdistrictCode) {
+      errors.push('กรุณาเลือกตำบล/แขวง')
+    }
+
+    if (!formData.postalCode.trim()) {
+      errors.push('กรุณากรอกรหัสไปรษณีย์')
+    }
+
+    if (!formData.address.trim()) {
+      errors.push('กรุณากรอกที่อยู่')
+    }
+
+    // Validate phone numbers: must start with 0 and be 9–10 digits (after stripping dashes) - only if provided
+    const phoneDigits = (formData.companyName || '').replace(/\D/g, '')
+    if (formData.companyName.trim() && !/^0\d{8,9}$/.test(phoneDigits)) {
+      errors.push('กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง (ขึ้นต้นด้วย 0 และมี 9–10 หลัก)')
     }
 
     // Validate postal code: exactly 5 digits
     const postalDigits = (formData.postalCode || '').replace(/\D/g, '')
-    if (postalDigits.length !== 5) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกรหัสไปรษณีย์ 5 หลัก')
-      return
+    if (formData.postalCode.trim() && postalDigits.length !== 5) {
+      errors.push('กรุณากรอกรหัสไปรษณีย์ 5 หลัก')
     }
 
     // Map ชื่อจังหวัด/อำเภอ/ตำบลจาก code ที่เลือก
@@ -1343,36 +1256,45 @@ export default function TaxInvoiceForm() {
           ? 'สาขาย่อย'
           : 'สำนักงานใหญ่'
         : ''
-    // Validate branch number when "สาขาย่อย"
-    if (
-      formData.documentType === 'receipt' &&
-      formData.branchType === 'branch' &&
-      !(formData.branchNumber || '').trim()
-    ) {
-      setIsSaving(false)
-      setSaveError('กรุณากรอกรหัสสาขาย่อย')
-      return
+    // Validate branch number when "สาขาย่อย" => must be 5 digits
+    if (formData.documentType === 'receipt' && formData.branchType === 'branch') {
+      const branchDigitsForSave = (formData.branchNumber || '').replace(/\D/g, '')
+      if (branchDigitsForSave.length !== 5) {
+        errors.push('กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)')
+      }
     }
-
-    const branchCode = formData.branchType === 'branch' ? formData.branchNumber || '' : ''
 
     // Normalize and validate 13-digit tax ID (required for all)
     const taxIdDigits = (formData.branchCode || '').replace(/\D/g, '')
     if (!taxIdDigits || taxIdDigits.length !== 13) {
-      setIsSaving(false)
-      setSaveError(
+      errors.push(
         formData.documentType === 'receipt'
           ? 'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษีให้ครบ 13 หลัก'
           : 'กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลัก'
       )
-      return
     }
+
     // Still require branch type selection for juristic
     if (formData.documentType === 'receipt' && !formData.branchType) {
-      setIsSaving(false)
-      setSaveError('กรุณาเลือกประเภทสาขา')
+      errors.push('กรุณาเลือกประเภทสาขา')
+    }
+
+    // If there are validation errors, show them all and return
+    if (errors.length > 0) {
+      console.log('Found validation errors:', errors)
+      setValidationErrors(errors)
+      setShowValidationErrors(true)
       return
     }
+
+    setIsSaving(true)
+    setSaveMessage('')
+    setSaveError('')
+
+    const branchCode =
+      formData.branchType === 'branch'
+        ? (formData.branchNumber || '').replace(/\D/g, '').slice(0, 5)
+        : ''
     // build dashed variant for display in metafields panel
     const taxIdFormatted = (() => {
       const d = taxIdDigits
@@ -1384,7 +1306,6 @@ export default function TaxInvoiceForm() {
       return [p1, p2, p3, p4, p5].join('-')
     })()
     const phoneNumber = formData.companyName || ''
-    const altPhoneNumber = formData.companyNameEng || ''
     const province = provinceName
     const district = districtName
     const subDistrict = subdistrictName
@@ -1421,7 +1342,6 @@ export default function TaxInvoiceForm() {
       { key: 'tax_id', value: taxIdFormatted, type: 'single_line_text_field' },
       { key: 'tax_id_formatted', value: taxIdFormatted, type: 'single_line_text_field' },
       { key: 'phone_number', value: phoneNumber, type: 'single_line_text_field' },
-      { key: 'alt_phone_number', value: altPhoneNumber, type: 'single_line_text_field' },
       { key: 'province', value: province, type: 'single_line_text_field' },
       { key: 'district', value: district, type: 'single_line_text_field' },
       { key: 'sub_district', value: subDistrict, type: 'single_line_text_field' },
@@ -1558,7 +1478,6 @@ export default function TaxInvoiceForm() {
         tax_id: taxIdDigits,
         tax_id_formatted: taxIdFormatted,
         phone_number: phoneNumber,
-        alt_phone_number: altPhoneNumber,
         province,
         district,
         sub_district: subDistrict,
@@ -1932,7 +1851,7 @@ export default function TaxInvoiceForm() {
                 </div>
               )}
 
-              <form onSubmit={handleSaveTaxInfo} className="space-y-6">
+              <form onSubmit={handleSaveTaxInfo} noValidate className="space-y-6">
                 {/* Document Type Radio Buttons */}
                 <div className="space-y-3">
                   <div className="radio-group flex flex-wrap items-center gap-4">
@@ -2066,62 +1985,70 @@ export default function TaxInvoiceForm() {
                 {formData.documentType === 'receipt' && (
                   <div className="space-y-2">
                     <label className="block text-gray-700 font-medium">สาขา</label>
-                    <div className="flex items-center space-x-6 gap-4">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="branchType"
-                          value="head"
-                          checked={formData.branchType === 'head'}
-                          onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
-                          required={formData.documentType === 'receipt' && !formData.branchType}
-                          className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-                        />
-                        <span
-                          className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-                        >
-                          สำนักงานใหญ่
-                        </span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="branchType"
-                          value="branch"
-                          checked={formData.branchType === 'branch'}
-                          onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
-                          className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
-                        />
-                        <span
-                          className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
-                        >
-                          สาขาย่อย
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Sub-branch code input */}
-                    {formData.branchType === 'branch' && (
-                      <div className="space-y-2 pt-2">
-                        <label className="block text-gray-700">รหัสสาขาย่อย</label>
-                        <input
-                          type="text"
-                          name="branchNumber"
-                          value={formData.branchNumber || ''}
-                          onChange={handleInputChange}
-                          onInvalid={(e) => {
-                            ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
-                          }}
-                          onInput={(e) => {
-                            ;(e.target as HTMLInputElement).setCustomValidity('')
-                          }}
-                          placeholder="รหัสสาขาย่อย"
-                          maxLength={20}
-                          required={formData.branchType === 'branch'}
-                          className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        />
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="flex items-center space-x-6 gap-4">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="branchType"
+                            value="head"
+                            checked={formData.branchType === 'head'}
+                            onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
+                            required={formData.documentType === 'receipt' && !formData.branchType}
+                            className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                          />
+                          <span
+                            className={`${formData.branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                          >
+                            สำนักงานใหญ่
+                          </span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="branchType"
+                            value="branch"
+                            checked={formData.branchType === 'branch'}
+                            onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
+                            className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
+                          />
+                          <span
+                            className={`${formData.branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
+                          >
+                            สาขาย่อย
+                          </span>
+                        </label>
                       </div>
-                    )}
+
+                      {/* Sub-branch code input - now on same line */}
+                      {formData.branchType === 'branch' && (
+                        <div className="flex flex-col md:flex-row md:items-center gap-2">
+                          <label className="text-gray-700 text-sm md:whitespace-nowrap">
+                            รหัสสาขาย่อย:
+                          </label>
+                          <input
+                            type="text"
+                            name="branchNumber"
+                            value={formData.branchNumber || ''}
+                            onChange={handleInputChange}
+                            onInvalid={(e) => {
+                              ;(e.target as HTMLInputElement).setCustomValidity(
+                                'กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)'
+                              )
+                            }}
+                            onInput={(e) => {
+                              ;(e.target as HTMLInputElement).setCustomValidity('')
+                            }}
+                            placeholder="รหัสสาขาย่อย"
+                            inputMode="numeric"
+                            pattern="\\d{5}"
+                            maxLength={5}
+                            required={formData.branchType === 'branch'}
+                            className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -2160,42 +2087,52 @@ export default function TaxInvoiceForm() {
                       setFormData((prev) => ({ ...prev, branchCode: d }))
                     }}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                      taxIdError
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-red-500'
+                    }`}
                   />
+                  {/* Real-time validation error message */}
+                  {taxIdError && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{taxIdError}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Phone Numbers Row - Two Columns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-gray-700 font-medium">หมายเลขโทรศัพท์</label>
+                    <label className="block text-gray-700 font-medium">
+                      หมายเลขโทรศัพท์
+                      <span className="ml-2 text-gray-500 text-sm">(ไม่บังคับ)</span>
+                    </label>
                     <input
                       type="text"
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleInputChange}
                       onInvalid={(e) => {
-                        ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกหมายเลขโทรศัพท์')
+                        ;(e.target as HTMLInputElement).setCustomValidity(
+                          'กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง'
+                        )
                       }}
                       onInput={(e) => {
                         ;(e.target as HTMLInputElement).setCustomValidity('')
                       }}
-                      placeholder="หมายเลขโทรศัพท์"
-                      inputMode="tel"
-                      maxLength={12}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 font-medium">
-                      หมายเลขโทรศัพท์สำรอง (ถ้ามี)
-                    </label>
-                    <input
-                      type="text"
-                      name="companyNameEng"
-                      value={formData.companyNameEng}
-                      onChange={handleInputChange}
-                      placeholder="หมายเลขโทรศัพท์สำรอง"
+                      placeholder="หมายเลขโทรศัพท์ (ไม่บังคับ)"
                       inputMode="tel"
                       maxLength={12}
                       className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -2572,6 +2509,44 @@ export default function TaxInvoiceForm() {
             </svg>
             <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
             <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
+          </div>
+        </div>
+      )}
+
+      {/* Validation Errors Popup */}
+      {showValidationErrors && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-50 p-4 pointer-events-none">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200 pointer-events-auto">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-red-100">
+                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-red-800">กรุณาตรวจสอบข้อมูล</h3>
+            </div>
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4 text-base">พบข้อผิดพลาดในการกรอกข้อมูล:</p>
+              <ul className="space-y-3">
+                {validationErrors.map((error) => (
+                  <li key={error} className="flex items-start">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <span className="text-red-700 text-sm leading-relaxed">{error}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowValidationErrors(false)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              ตกลง
+            </button>
           </div>
         </div>
       )}
