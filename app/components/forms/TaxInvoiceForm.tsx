@@ -1966,9 +1966,12 @@ export default function TaxInvoiceForm() {
 
                 {/* Head office / Branch for juristic person */}
                 {formData.documentType === 'receipt' && (
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 font-medium">สาขา</label>
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div
+                    className={`grid grid-cols-1 ${formData.branchType === 'branch' ? 'md:grid-cols-2' : ''} gap-6`}
+                  >
+                    {/* Left: Branch radios */}
+                    <div className="space-y-2">
+                      <label className="block text-gray-700 font-medium">สาขา</label>
                       <div className="flex items-center space-x-6 gap-4">
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <input
@@ -2002,36 +2005,33 @@ export default function TaxInvoiceForm() {
                           </span>
                         </label>
                       </div>
-
-                      {/* Sub-branch code input - now on same line */}
-                      {formData.branchType === 'branch' && (
-                        <div className="flex flex-col md:flex-row md:items-center gap-2">
-                          <label className="text-gray-700 text-sm md:whitespace-nowrap">
-                            รหัสสาขาย่อย:
-                          </label>
-                          <input
-                            type="text"
-                            name="branchNumber"
-                            value={formData.branchNumber || ''}
-                            onChange={handleInputChange}
-                            onInvalid={(e) => {
-                              ;(e.target as HTMLInputElement).setCustomValidity(
-                                'กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)'
-                              )
-                            }}
-                            onInput={(e) => {
-                              ;(e.target as HTMLInputElement).setCustomValidity('')
-                            }}
-                            placeholder="รหัสสาขาย่อย"
-                            inputMode="numeric"
-                            pattern="\\d{5}"
-                            maxLength={5}
-                            required={formData.branchType === 'branch'}
-                            className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                      )}
                     </div>
+                    {/* Right: Sub-branch code input (show only when selecting branch) */}
+                    {formData.branchType === 'branch' && (
+                      <div className="space-y-2">
+                        <label className="block text-gray-700 font-medium">รหัสสาขาย่อย</label>
+                        <input
+                          type="text"
+                          name="branchNumber"
+                          value={formData.branchNumber || ''}
+                          onChange={handleInputChange}
+                          onInvalid={(e) => {
+                            ;(e.target as HTMLInputElement).setCustomValidity(
+                              'กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)'
+                            )
+                          }}
+                          onInput={(e) => {
+                            ;(e.target as HTMLInputElement).setCustomValidity('')
+                          }}
+                          placeholder="รหัสสาขาย่อย"
+                          inputMode="numeric"
+                          pattern="\\d{5}"
+                          maxLength={5}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
