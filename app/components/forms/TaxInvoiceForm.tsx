@@ -1703,25 +1703,8 @@ export default function TaxInvoiceForm() {
             </span>
 
             <div className="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">เพิ่มข้อมูลสำหรับออกใบกำกับภาษี</h2>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowFormOverlay(false)
-                    handleGoBack()
-                  }}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
               </div>
 
               {/* Order Status Alert */}
@@ -1888,10 +1871,10 @@ export default function TaxInvoiceForm() {
                   </div>
                 </div>
 
-                {/* Title Name and Name/Company Name Row */}
+                {/* Title Name and Name/Company Name Row - Half bit (50/50 split) */}
                 {formData.documentType === 'tax' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Title Name - 1/3 width */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Title Name - Half width */}
                     <div className="space-y-2">
                       <label className="block text-gray-700 font-medium">คำนำหน้าชื่อ</label>
                       <div className="relative">
@@ -1935,8 +1918,8 @@ export default function TaxInvoiceForm() {
                       </div>
                     </div>
 
-                    {/* Name - 2/3 width */}
-                    <div className="md:col-span-2 space-y-2">
+                    {/* Name - Half width */}
+                    <div className="space-y-2">
                       <label className="block text-gray-700 font-medium">ชื่อ-นามสกุล</label>
                       <input
                         key={`fullName-${formData.documentType}`}
