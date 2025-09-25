@@ -197,9 +197,20 @@ export default function TaxInvoiceForm() {
   const [validationInProgress, setValidationInProgress] = useState(false)
   // Tax ID validation state
   const [taxIdError, setTaxIdError] = useState('')
-  // Multiple validation errors state
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
-  const [showValidationErrors, setShowValidationErrors] = useState(false)
+  // Multiple validation errors state (legacy - kept for compatibility)
+  const [_validationErrors, _setValidationErrors] = useState<string[]>([])
+  const [_showValidationErrors, _setShowValidationErrors] = useState(false)
+  // Field-specific error states
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  // Helper function to clear field errors
+  const clearFieldError = (fieldName: string) => {
+    setFieldErrors((prev) => {
+      const newErrors = { ...prev }
+      delete newErrors[fieldName]
+      return newErrors
+    })
+  }
 
   const searchParams = useSearchParams()
 
@@ -538,7 +549,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode])
+  }, [formData.provinceCode, formData.districtCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -602,6 +613,15 @@ export default function TaxInvoiceForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
     // Helper: format Thai phone number with dashes as user types
     const formatThaiPhone = (raw: string) => {
       const digits = raw.replace(/\D/g, '').slice(0, 10)
@@ -664,6 +684,17 @@ export default function TaxInvoiceForm() {
   }
 
   const handleRadioChange = (value: 'tax' | 'receipt') => {
+    // Clear related field errors when switching document type
+    setFieldErrors((prev) => {
+      const newErrors = { ...prev }
+      delete newErrors.fullName
+      delete newErrors.companyNameText
+      delete newErrors.titleName
+      delete newErrors.branchType
+      delete newErrors.branchNumber
+      return newErrors
+    })
+
     setFormData((prev) => ({
       ...prev,
       documentType: value,
@@ -1274,11 +1305,42 @@ export default function TaxInvoiceForm() {
       errors.push('กรุณาเลือกประเภทสาขา')
     }
 
-    // If there are validation errors, show them all and return
+    // If there are validation errors, map them to specific fields and return
     if (errors.length > 0) {
       console.log('Found validation errors:', errors)
-      setValidationErrors(errors)
-      setShowValidationErrors(true)
+
+      // Map errors to specific fields
+      const newFieldErrors: Record<string, string> = {}
+
+      errors.forEach((error) => {
+        if (error.includes('ชื่อ-นามสกุล')) {
+          newFieldErrors.fullName = error
+        } else if (error.includes('คำนำหน้าชื่อ')) {
+          newFieldErrors.titleName = error
+        } else if (error.includes('ชื่อบริษัท')) {
+          newFieldErrors.companyNameText = error
+        } else if (error.includes('จังหวัด')) {
+          newFieldErrors.provinceCode = error
+        } else if (error.includes('อำเภอ/เขต')) {
+          newFieldErrors.districtCode = error
+        } else if (error.includes('ตำบล/แขวง')) {
+          newFieldErrors.subdistrictCode = error
+        } else if (error.includes('รหัสไปรษณีย์')) {
+          newFieldErrors.postalCode = error
+        } else if (error.includes('ที่อยู่')) {
+          newFieldErrors.address = error
+        } else if (error.includes('หมายเลขโทรศัพท์')) {
+          newFieldErrors.companyName = error
+        } else if (error.includes('หมายเลขประจำตัวผู้เสียภาษี') || error.includes('เลขประจำตัวประชาชน')) {
+          newFieldErrors.branchCode = error
+        } else if (error.includes('รหัสสาขาย่อย')) {
+          newFieldErrors.branchNumber = error
+        } else if (error.includes('ประเภทสาขา')) {
+          newFieldErrors.branchType = error
+        }
+      })
+
+      setFieldErrors(newFieldErrors)
       return
     }
 
@@ -1876,12 +1938,13 @@ export default function TaxInvoiceForm() {
                         <select
                           name="titleName"
                           value={formData.titleName}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            clearFieldError('titleName')
                             setFormData((p) => ({
                               ...p,
                               titleName: e.target.value,
                             }))
-                          }
+                          }}
                           onInvalid={(e) => {
                             ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกคำนำหน้าชื่อ')
                           }}
@@ -1889,7 +1952,11 @@ export default function TaxInvoiceForm() {
                             ;(e.target as HTMLSelectElement).setCustomValidity('')
                           }}
                           required={formData.documentType === 'tax'}
-                          className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                          className={`w-full px-4 pr-10 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent appearance-none bg-white cursor-pointer ${
+                            fieldErrors.titleName
+                              ? 'border-red-500 focus:ring-red-500'
+                              : 'border-gray-300 focus:ring-red-500'
+                          }`}
                         >
                           <option value="">เลือกคำนำหน้าชื่อ</option>
                           <option value="นาย">นาย</option>
@@ -1911,6 +1978,23 @@ export default function TaxInvoiceForm() {
                           </svg>
                         </span>
                       </div>
+                      {/* Inline error message for title name */}
+                      {fieldErrors.titleName && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.titleName}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Name - Half width */}
@@ -1931,8 +2015,29 @@ export default function TaxInvoiceForm() {
                         }}
                         placeholder="ชื่อ-นามสกุล"
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                          fieldErrors.fullName
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-red-500'
+                        }`}
                       />
+                      {/* Inline error message for full name */}
+                      {fieldErrors.fullName && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.fullName}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1954,8 +2059,29 @@ export default function TaxInvoiceForm() {
                       }}
                       placeholder="ชื่อบริษัท"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                        fieldErrors.companyNameText
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-red-500'
+                      }`}
                     />
+                    {/* Inline error message for company name */}
+                    {fieldErrors.companyNameText && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                        <svg
+                          className="w-4 h-4 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>{fieldErrors.companyNameText}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1974,7 +2100,10 @@ export default function TaxInvoiceForm() {
                             name="branchType"
                             value="head"
                             checked={formData.branchType === 'head'}
-                            onChange={() => setFormData((p) => ({ ...p, branchType: 'head' }))}
+                            onChange={() => {
+                              clearFieldError('branchType')
+                              setFormData((p) => ({ ...p, branchType: 'head' }))
+                            }}
                             required={formData.documentType === 'receipt' && !formData.branchType}
                             className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
                           />
@@ -1990,7 +2119,10 @@ export default function TaxInvoiceForm() {
                             name="branchType"
                             value="branch"
                             checked={formData.branchType === 'branch'}
-                            onChange={() => setFormData((p) => ({ ...p, branchType: 'branch' }))}
+                            onChange={() => {
+                              clearFieldError('branchType')
+                              setFormData((p) => ({ ...p, branchType: 'branch' }))
+                            }}
                             className="w-4 h-4 accent-red-600 border-gray-300 focus:ring-red-500"
                           />
                           <span
@@ -2000,6 +2132,23 @@ export default function TaxInvoiceForm() {
                           </span>
                         </label>
                       </div>
+                      {/* Inline error message for branch type */}
+                      {fieldErrors.branchType && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.branchType}</span>
+                        </div>
+                      )}
                     </div>
                     {/* Right: Sub-branch code input (show only when selecting branch) */}
                     {formData.branchType === 'branch' && (
@@ -2011,9 +2160,7 @@ export default function TaxInvoiceForm() {
                           value={formData.branchNumber || ''}
                           onChange={handleInputChange}
                           onInvalid={(e) => {
-                            ;(e.target as HTMLInputElement).setCustomValidity(
-                              'กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)'
-                            )
+                            ;(e.target as HTMLInputElement).setCustomValidity('กรุณากรอกรหัสสาขาย่อย')
                           }}
                           onInput={(e) => {
                             ;(e.target as HTMLInputElement).setCustomValidity('')
@@ -2023,8 +2170,29 @@ export default function TaxInvoiceForm() {
                           pattern="\\d{5}"
                           maxLength={5}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                            fieldErrors.branchNumber
+                              ? 'border-red-500 focus:ring-red-500'
+                              : 'border-gray-300 focus:ring-red-500'
+                          }`}
                         />
+                        {/* Inline error message for branch number */}
+                        {fieldErrors.branchNumber && (
+                          <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                            <svg
+                              className="w-4 h-4 flex-shrink-0"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>{fieldErrors.branchNumber}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2066,14 +2234,14 @@ export default function TaxInvoiceForm() {
                     }}
                     required
                     className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
-                      taxIdError
+                      fieldErrors.branchCode || taxIdError
                         ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-red-500'
                     }`}
                   />
-                  {/* Real-time validation error message */}
-                  {taxIdError && (
-                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                  {/* Inline error message for tax ID */}
+                  {(fieldErrors.branchCode || taxIdError) && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
                       <svg
                         className="w-4 h-4 flex-shrink-0"
                         fill="currentColor"
@@ -2085,7 +2253,7 @@ export default function TaxInvoiceForm() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>{taxIdError}</span>
+                      <span>{fieldErrors.branchCode || taxIdError}</span>
                     </div>
                   )}
                 </div>
@@ -2113,8 +2281,29 @@ export default function TaxInvoiceForm() {
                       placeholder="หมายเลขโทรศัพท์ (ไม่บังคับ)"
                       inputMode="tel"
                       maxLength={12}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                        fieldErrors.companyName
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-red-500'
+                      }`}
                     />
+                    {/* Inline error message for phone number */}
+                    {fieldErrors.companyName && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                        <svg
+                          className="w-4 h-4 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>{fieldErrors.companyName}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2141,8 +2330,29 @@ export default function TaxInvoiceForm() {
                     placeholder="ที่อยู่"
                     rows={1}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
+                      fieldErrors.address
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-red-500'
+                    }`}
                   />
+                  {/* Inline error message for address */}
+                  {fieldErrors.address && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{fieldErrors.address}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Province and District Row - Two Columns */}
@@ -2155,6 +2365,7 @@ export default function TaxInvoiceForm() {
                         value={formData.provinceCode != null ? String(formData.provinceCode) : ''}
                         onChange={async (e) => {
                           const value = e.target.value
+                          clearFieldError('provinceCode')
                           // Single state update for province + resets
                           setFormData((p) => ({
                             ...p,
@@ -2185,7 +2396,11 @@ export default function TaxInvoiceForm() {
                           ;(e.target as HTMLSelectElement).setCustomValidity('')
                         }}
                         required
-                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                        className={`w-full px-4 pr-10 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent appearance-none bg-white cursor-pointer ${
+                          fieldErrors.provinceCode
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-red-500'
+                        }`}
                       >
                         <option value="">เลือกจังหวัด</option>
                         {provinces.map((p) => (
@@ -2211,6 +2426,23 @@ export default function TaxInvoiceForm() {
                       {formData.provinceCode && districts.length === 0 ? (
                         <p className="mt-1 text-xs text-red-600">ไม่พบอำเภอสำหรับจังหวัดที่เลือก</p>
                       ) : null}
+                      {/* Inline error message for province */}
+                      {fieldErrors.provinceCode && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.provinceCode}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2221,6 +2453,7 @@ export default function TaxInvoiceForm() {
                         value={formData.districtCode != null ? String(formData.districtCode) : ''}
                         onChange={async (e) => {
                           const value = e.target.value
+                          clearFieldError('districtCode')
                           setFormData((p) => ({
                             ...p,
                             districtCode: value ? Number(value) : null,
@@ -2247,7 +2480,11 @@ export default function TaxInvoiceForm() {
                         }}
                         disabled={false}
                         required
-                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                        className={`w-full px-4 pr-10 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed ${
+                          fieldErrors.districtCode
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-red-500'
+                        }`}
                       >
                         <option value="">เลือกอำเภอ/เขต</option>
                         {districts.map((d) => (
@@ -2270,6 +2507,23 @@ export default function TaxInvoiceForm() {
                           />
                         </svg>
                       </span>
+                      {/* Inline error message for district */}
+                      {fieldErrors.districtCode && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.districtCode}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2284,12 +2538,13 @@ export default function TaxInvoiceForm() {
                         value={
                           formData.subdistrictCode != null ? String(formData.subdistrictCode) : ''
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          clearFieldError('subdistrictCode')
                           setFormData((p) => ({
                             ...p,
                             subdistrictCode: e.target.value ? Number(e.target.value) : null,
                           }))
-                        }
+                        }}
                         onInvalid={(e) => {
                           ;(e.target as HTMLSelectElement).setCustomValidity('กรุณาเลือกตำบล/แขวง')
                         }}
@@ -2298,7 +2553,11 @@ export default function TaxInvoiceForm() {
                         }}
                         disabled={!formData.districtCode}
                         required
-                        className="w-full px-4 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed"
+                        className={`w-full px-4 pr-10 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed ${
+                          fieldErrors.subdistrictCode
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-red-500'
+                        }`}
                       >
                         <option value="">เลือกตำบล/แขวง</option>
                         {subdistricts.map((s) => (
@@ -2321,6 +2580,23 @@ export default function TaxInvoiceForm() {
                           />
                         </svg>
                       </span>
+                      {/* Inline error message for subdistrict */}
+                      {fieldErrors.subdistrictCode && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                          <svg
+                            className="w-4 h-4 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{fieldErrors.subdistrictCode}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2340,8 +2616,29 @@ export default function TaxInvoiceForm() {
                       inputMode="numeric"
                       maxLength={5}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                        fieldErrors.postalCode
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-red-500'
+                      }`}
                     />
+                    {/* Inline error message for postal code */}
+                    {fieldErrors.postalCode && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                        <svg
+                          className="w-4 h-4 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>{fieldErrors.postalCode}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2487,44 +2784,6 @@ export default function TaxInvoiceForm() {
             </svg>
             <span className="font-medium">ตรวจสอบข้อมูลสำเร็จ</span>
             <span className="opacity-90">สามารถกรอกฟอร์มได้</span>
-          </div>
-        </div>
-      )}
-
-      {/* Validation Errors Popup */}
-      {showValidationErrors && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-50 p-4 pointer-events-none">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200 pointer-events-auto">
-            <div className="flex items-center mb-4">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-red-100">
-                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-red-800">กรุณาตรวจสอบข้อมูล</h3>
-            </div>
-            <div className="mb-6">
-              <p className="text-gray-700 mb-4 text-base">พบข้อผิดพลาดในการกรอกข้อมูล:</p>
-              <ul className="space-y-3">
-                {validationErrors.map((error) => (
-                  <li key={error} className="flex items-start">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                    <span className="text-red-700 text-sm leading-relaxed">{error}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowValidationErrors(false)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              ตกลง
-            </button>
           </div>
         </div>
       )}
