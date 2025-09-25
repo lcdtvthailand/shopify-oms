@@ -854,10 +854,6 @@ export default function TestPage() {
             'custom.custom_tax_id_formatted',
           ]),
           'โทรศัพท์ (ใบกำกับภาษี)': getMf(['custom.phone_number', 'custom.custom_phone_number']),
-          'โทรศัพท์สำรอง (ใบกำกับภาษี)': getMf([
-            'custom.alt_phone_number',
-            'custom.custom_alt_phone_number',
-          ]),
           'จังหวัด (ใบกำกับภาษี)': getMf(['custom.province', 'custom.custom_province']),
           'อำเภอ/เขต (ใบกำกับภาษี)': getMf(['custom.district', 'custom.custom_district']),
           'ตำบล/แขวง (ใบกำกับภาษี)': getMf(['custom.sub_district', 'custom.custom_sub_district']),
