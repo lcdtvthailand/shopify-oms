@@ -1286,7 +1286,7 @@ export default function TaxInvoiceForm() {
     if (formData.documentType === 'receipt' && formData.branchType === 'branch') {
       const branchDigitsForSave = (formData.branchNumber || '').replace(/\D/g, '')
       if (branchDigitsForSave.length !== 5) {
-        errors.push('กรุณากรอกรหัสสาขาย่อยให้ถูกต้อง (ตัวเลข 5 หลัก)')
+        errors.push('กรุณากรอกรหัสสาขาย่อย')
       }
     }
 
