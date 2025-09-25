@@ -538,7 +538,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, formData.districtCode])
+  }, [formData.provinceCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -1204,10 +1204,6 @@ export default function TaxInvoiceForm() {
       errors.push('กรุณากรอกชื่อบริษัท')
     }
 
-    if (!formData.companyName.trim()) {
-      errors.push('กรุณากรอกหมายเลขโทรศัพท์')
-    }
-
     if (!formData.provinceCode) {
       errors.push('กรุณาเลือกจังหวัด')
     }
@@ -1215,7 +1211,6 @@ export default function TaxInvoiceForm() {
     if (!formData.districtCode) {
       errors.push('กรุณาเลือกอำเภอ/เขต')
     }
-
     if (!formData.subdistrictCode) {
       errors.push('กรุณาเลือกตำบล/แขวง')
     }
