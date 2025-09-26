@@ -549,7 +549,7 @@ export default function TaxInvoiceForm() {
     return () => {
       mounted = false
     }
-  }, [formData.provinceCode, formData.districtCode])
+  }, [formData.provinceCode])
 
   // When district changes, load subdistricts
   useEffect(() => {
@@ -2198,68 +2198,67 @@ export default function TaxInvoiceForm() {
                   </div>
                 )}
 
-                {/* Tax Identification Number - Full Width */}
-                <div className="space-y-2">
-                  <label className="block text-gray-700 font-medium">
-                    {formData.documentType === 'receipt'
-                      ? 'หมายเลขประจำตัวผู้เสียภาษี'
-                      : 'เลขประจำตัวประชาชน'}
-                    <span className="ml-2 text-gray-500 text-sm">
-                      (กรอกเลข 13 หลักโดยไม่ต้องมีขีดคั่นหรือเว้นวรรค)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    name="branchCode"
-                    value={formData.branchCode}
-                    onChange={handleInputChange}
-                    onInvalid={(e) => {
-                      ;(e.target as HTMLInputElement).setCustomValidity(
-                        formData.documentType === 'receipt'
-                          ? 'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี'
-                          : 'กรุณากรอกเลขประจำตัวประชาชน'
-                      )
-                    }}
-                    onInput={(e) => {
-                      ;(e.target as HTMLInputElement).setCustomValidity('')
-                    }}
-                    placeholder={`${formData.documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'} (กรอกเลข 13 หลักโดยไม่ต้องมีขีดคั่นหรือเว้นวรรค)`}
-                    inputMode="tel"
-                    maxLength={13}
-                    onBlur={(e) => {
-                      const d = String(e.target.value || '')
-                        .replace(/\D/g, '')
-                        .slice(0, 13)
-                      setFormData((prev) => ({ ...prev, branchCode: d }))
-                    }}
-                    required
-                    className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
-                      fieldErrors.branchCode || taxIdError
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-red-500'
-                    }`}
-                  />
-                  {/* Inline error message for tax ID */}
-                  {(fieldErrors.branchCode || taxIdError) && (
-                    <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
-                      <svg
-                        className="w-4 h-4 flex-shrink-0"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>{fieldErrors.branchCode || taxIdError}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Phone Numbers Row - Two Columns */}
+                {/* Tax Identification Number and Phone Number Row - Two Columns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Tax Identification Number - Half width */}
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">
+                      {formData.documentType === 'receipt'
+                        ? 'หมายเลขประจำตัวผู้เสียภาษี'
+                        : 'เลขประจำตัวประชาชน'}
+                      <span className="ml-2 text-gray-500 text-sm">(กรอกเลข 13 หลัก)</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="branchCode"
+                      value={formData.branchCode}
+                      onChange={handleInputChange}
+                      onInvalid={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity(
+                          formData.documentType === 'receipt'
+                            ? 'กรุณากรอกหมายเลขประจำตัวผู้เสียภาษี'
+                            : 'กรุณากรอกเลขประจำตัวประชาชน'
+                        )
+                      }}
+                      onInput={(e) => {
+                        ;(e.target as HTMLInputElement).setCustomValidity('')
+                      }}
+                      placeholder={`${formData.documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'} (กรอกเลข 13 หลัก)`}
+                      inputMode="tel"
+                      maxLength={13}
+                      onBlur={(e) => {
+                        const d = String(e.target.value || '')
+                          .replace(/\D/g, '')
+                          .slice(0, 13)
+                        setFormData((prev) => ({ ...prev, branchCode: d }))
+                      }}
+                      required
+                      className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                        fieldErrors.branchCode || taxIdError
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-red-500'
+                      }`}
+                    />
+                    {/* Inline error message for tax ID */}
+                    {(fieldErrors.branchCode || taxIdError) && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                        <svg
+                          className="w-4 h-4 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>{fieldErrors.branchCode || taxIdError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Phone Number - Half width */}
                   <div className="space-y-2">
                     <label className="block text-gray-700 font-medium">
                       หมายเลขโทรศัพท์
@@ -2478,7 +2477,7 @@ export default function TaxInvoiceForm() {
                         onInput={(e) => {
                           ;(e.target as HTMLSelectElement).setCustomValidity('')
                         }}
-                        disabled={false}
+                        disabled={!formData.provinceCode}
                         required
                         className={`w-full px-4 pr-10 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent appearance-none bg-white cursor-pointer disabled:opacity-100 disabled:cursor-not-allowed ${
                           fieldErrors.districtCode
