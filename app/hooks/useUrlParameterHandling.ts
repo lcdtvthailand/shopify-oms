@@ -47,7 +47,7 @@ export const useUrlParameterHandling = (
   const [isValidated, setIsValidated] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [showValidationPopup, setShowValidationPopup] = useState(false)
-  const [validationInProgress, setValidationInProgress] = useState(false)
+  const [validationInProgress, setValidationInProgress] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -175,34 +175,7 @@ export const useUrlParameterHandling = (
             node {
               id
               name
-              fullyPaid
-              displayFinancialStatus
-              displayFulfillmentStatus
-              cancelledAt
-              customer {
-                id
-                firstName
-                lastName
-                email
-                defaultAddress {
-                  address1
-                  address2
-                  city
-                  zip
-                  province
-                  country
-                }
-              }
-              lineItems(first: 10) {
-                edges {
-                  node {
-                    title
-                    quantity
-                    variant { price }
-                  }
-                }
-              }
-              totalPriceSet { shopMoney { amount currencyCode } }
+              customer { id email }
             }
           }
         }
@@ -304,6 +277,8 @@ export const useUrlParameterHandling = (
   // Auto-validate URL parameters on mount
   useEffect(() => {
     let mounted = true
+    // Block base content immediately to avoid UI flash while we resolve URL
+    setValidationInProgress(true)
     // Build a key for the current query to avoid re-processing the same params
     const urlOrderId = searchParams.get('order')
     const urlEmail = searchParams.get('email')
@@ -353,17 +328,17 @@ export const useUrlParameterHandling = (
           }
           setOrderId(json.order)
           setEmail(json.email)
-          setTimeout(() => {
-            if (mounted) {
-              validateParametersRef.current(json.order!, json.email!)
-            }
-          }, 100)
+          // Trigger validation immediately (no artificial delay)
+          if (mounted) {
+            validateParametersRef.current(json.order!, json.email!)
+          }
         } catch {
           setValidationMessage('ไม่สามารถตรวจสอบลิงก์ได้ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ')
           setShowValidationPopup(true)
           setIsValidated(false)
         } finally {
           setLoading(false)
+          // validateParameters will manage validationInProgress lifecycle
         }
       })()
     }
@@ -396,17 +371,16 @@ export const useUrlParameterHandling = (
           }
           setOrderId(json.order)
           setEmail(json.email)
-          setTimeout(() => {
-            if (mounted) {
-              validateParametersRef.current(json.order!, json.email!)
-            }
-          }, 100)
+          if (mounted) {
+            validateParametersRef.current(json.order!, json.email!)
+          }
         } catch {
           setValidationMessage('ไม่สามารถตรวจสอบลิงก์ได้ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ')
           setShowValidationPopup(true)
           setIsValidated(false)
         } finally {
           setLoading(false)
+          // validateParameters will manage validationInProgress lifecycle
         }
       })()
     } else if (urlOrderId && urlEmail) {
@@ -433,22 +407,20 @@ export const useUrlParameterHandling = (
           // Fallback: keep old behavior if build-oms not available
           setOrderId(urlOrderId)
           setEmail(urlEmail)
-          setTimeout(() => {
-            if (mounted) {
-              validateParametersRef.current(urlOrderId, urlEmail)
-            }
-          }, 100)
+          // Trigger validation immediately (no artificial delay)
+          if (mounted) {
+            validateParametersRef.current(urlOrderId, urlEmail)
+          }
         } catch {
           // Fallback to prior behavior on error
           setOrderId(urlOrderId)
           setEmail(urlEmail)
-          setTimeout(() => {
-            if (mounted) {
-              validateParametersRef.current(urlOrderId, urlEmail)
-            }
-          }, 100)
+          if (mounted) {
+            validateParametersRef.current(urlOrderId, urlEmail)
+          }
         } finally {
           setLoading(false)
+          // validateParameters will manage validationInProgress lifecycle
         }
       })()
     } else if (urlEmail && !urlOrderId) {
@@ -469,21 +441,21 @@ export const useUrlParameterHandling = (
               // Update the URL without full reload
               routerRef.current.replace(`${u.pathname}?${u.searchParams.toString()}`)
             }
-            // Small delay to ensure state/url settled
-            setTimeout(() => {
-              if (mounted) {
-                validateParametersRef.current(found, urlEmail)
-              }
-            }, 100)
+            // Trigger validation immediately (no artificial delay)
+            if (mounted) {
+              validateParametersRef.current(found, urlEmail)
+            }
           } else {
             setValidationMessage('ไม่พบออเดอร์ล่าสุดของอีเมลนี้ กรุณาระบุ Order ID ด้วยตนเอง')
             setShowValidationPopup(true)
             setIsValidated(false)
+            setValidationInProgress(false)
           }
         } catch {
           setValidationMessage('ไม่สามารถค้นหาออเดอร์จากอีเมลได้ กรุณาระบุ Order ID และ Email ใน URL')
           setShowValidationPopup(true)
           setIsValidated(false)
+          setValidationInProgress(false)
         } finally {
           setLoading(false)
         }
@@ -493,6 +465,10 @@ export const useUrlParameterHandling = (
       setValidationMessage('กรุณาระบุทั้ง Order ID และ Email ใน URL')
       setShowValidationPopup(true)
       setIsValidated(false)
+      setValidationInProgress(false)
+    } else {
+      // No parameters provided; do not block UI
+      setValidationInProgress(false)
     }
 
     return () => {

@@ -40,6 +40,9 @@ interface OrderData {
 }
 
 export default function TaxInvoiceForm() {
+  // Avoid SSR/hydration flash: only render base content after client mounted
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   const [orderStatus, _setOrderStatus] = useState<OrderStatus | null>(null)
   const [showAdminContact, setShowAdminContact] = useState(false)
 
@@ -88,6 +91,9 @@ export default function TaxInvoiceForm() {
     setShowSuccessToast(true)
     setTimeout(() => setShowSuccessToast(false), 3000)
 
+    // Immediately show the form overlay to avoid any UI flash while pre-filling
+    setShowFormOverlay(true)
+
     // Load existing metafields for this order to pre-populate form
     const metafields = await loadExistingMetafields(orderData.id, orderData)
     if (metafields) {
@@ -112,10 +118,7 @@ export default function TaxInvoiceForm() {
       }
     }
 
-    // Show form overlay after a short delay
-    setTimeout(() => {
-      setShowFormOverlay(true)
-    }, 500)
+    // Overlay already shown above; no delay here
   })
 
   // Handle province changes
@@ -395,8 +398,8 @@ export default function TaxInvoiceForm() {
         </div>
       )}
 
-      {/* Original content for non-overlay mode */}
-      {!showFormOverlay && (
+      {/* Original content for non-overlay mode (render only after mount to prevent SSR flash) */}
+      {mounted && !showFormOverlay && !validationInProgress && !isValidated && (
         <div className="tax-form max-w-6xl mx-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-8 md:p-10 m-4 md:m-6">
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
