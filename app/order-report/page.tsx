@@ -507,7 +507,7 @@ const AuthPopup = ({
   authError: string
   authAttempts: number
 }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-gradient-to-b from-red-50/70 to-white/90 backdrop-blur-sm">
     <div className="bg-white rounded-2xl shadow-2xl border border-red-200 p-8 max-w-md w-full mx-4">
       <div className="text-center mb-6">
         <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -1657,7 +1657,13 @@ export default function TestPage() {
     <div className={'min-h-screen bg-white p-4 sm:p-6 lg:p-8'}>
       {/* Main Loading Overlay */}
       {loading && data.length === 0 && (
-        <OrbitalLoader size="xl" text="กำลังดึงข้อมูลคำสั่งซื้อ..." showText={true} overlay={true} />
+        <OrbitalLoader
+          size="xl"
+          text="กำลังดึงข้อมูลคำสั่งซื้อ..."
+          showText={true}
+          overlay={true}
+          variant="twoArcs"
+        />
       )}
 
       <div className="max-w-[1920px] mx-auto">
@@ -1777,7 +1783,12 @@ export default function TestPage() {
               style={{ display: 'none' }}
             >
               {exportingAll ? (
-                <OrbitalLoader size="sm" text="กำลังส่งออกทั้งหมด..." showText={true} />
+                <OrbitalLoader
+                  size="sm"
+                  text="กำลังส่งออกทั้งหมด..."
+                  showText={true}
+                  variant="twoArcs"
+                />
               ) : (
                 <>
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1805,7 +1816,7 @@ export default function TestPage() {
                   className="bg-red-100 hover:bg-red-200 disabled:bg-gray-100 text-red-800 font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg disabled:shadow-sm transition-all duration-200 transform hover:scale-105 disabled:scale-100 flex items-center gap-2"
                 >
                   {loading ? (
-                    <OrbitalLoader size="sm" text="กำลังโหลด..." showText={true} />
+                    <OrbitalLoader size="sm" text="กำลังโหลด..." showText={true} variant="twoArcs" />
                   ) : (
                     <>
                       <svg
@@ -2736,660 +2747,679 @@ export default function TestPage() {
                     Array.isArray(f?.trackingInfo) ? f.trackingInfo : []
                   )
                   return (
-                    <div
-                      ref={detailsRef}
-                      className="mt-6 sm:mt-8 bg-white border border-red-200 rounded-2xl p-5 sm:p-8 shadow-2xl"
-                    >
-                      <div className="flex items-center justify-between mb-5 sm:mb-8">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="p-2 sm:p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg">
-                            <svg
-                              className="h-5 w-5 sm:h-6 sm:w-6 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-xl sm:text-2xl font-bold text-red-800">
-                              รายละเอียดคำสั่งซื้อ
-                            </h3>
-                            <p className="text-sm sm:text-base text-red-600/70 font-medium">
-                              {o.name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                            style={{ display: 'none' }}
-                            onClick={() => setShowRaw((v) => !v)}
-                          >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                              />
-                            </svg>
-                            {showRaw ? 'ซ่อน JSON' : 'แสดง JSON'}
-                          </button>
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              handleCloseDetails()
-                            }}
-                          >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                            ปิด
-                          </button>
-                        </div>
-                      </div>
-                      {showRaw ? (
-                        <div className="bg-gray-50 border border-red-200 rounded-xl p-6 shadow-inner">
-                          <div className="flex items-center gap-2 mb-4">
-                            <svg
-                              className="h-5 w-5 text-red-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                              />
-                            </svg>
-                            <h4 className="font-semibold text-red-800">Raw JSON Data</h4>
-                          </div>
-                          <pre className="text-xs bg-white p-4 rounded-lg border overflow-x-auto font-mono leading-relaxed">
-                            {JSON.stringify(o, null, 2)}
-                          </pre>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ข้อมูลคำสั่งซื้อหลัก</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              หมายเลขคำสั่งซื้อ: {fmt(o.name)}
-                            </div>
-                            <div className="text-sm text-gray-700 space-x-2">
-                              <span>สถานะการสั่งซื้อ:</span>
-                              <Badge
-                                tone={
-                                  o.displayFinancialStatus === 'PAID'
-                                    ? 'green'
-                                    : o.displayFinancialStatus === 'PENDING'
-                                      ? 'yellow'
-                                      : 'gray'
-                                }
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                      {/* Backdrop with blur and light tint */}
+                      <button
+                        type="button"
+                        className="absolute inset-0 bg-white/60 backdrop-blur-md"
+                        aria-label="Close details overlay"
+                        onClick={() => handleCloseDetails()}
+                      />
+                      {/* Modal content */}
+                      <div
+                        ref={detailsRef}
+                        className="relative z-10 w-full max-w-6xl max-h-[85vh] overflow-y-auto bg-white border border-red-200 rounded-2xl p-5 sm:p-8 shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between mb-5 sm:mb-8">
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="p-2 sm:p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg">
+                              <svg
+                                className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
-                                {fmt(o.displayFinancialStatus)}
-                              </Badge>
-                              <Badge
-                                tone={
-                                  o.displayFulfillmentStatus === 'FULFILLED'
-                                    ? 'green'
-                                    : o.displayFulfillmentStatus === 'UNFULFILLED'
-                                      ? 'yellow'
-                                      : 'gray'
-                                }
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                            </div>
+                            <div>
+                              <h3 className="text-xl sm:text-2xl font-bold text-red-800">
+                                รายละเอียดคำสั่งซื้อ
+                              </h3>
+                              <p className="text-sm sm:text-base text-red-600/70 font-medium">
+                                {o.name}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                              style={{ display: 'none' }}
+                              onClick={() => setShowRaw((v) => !v)}
+                            >
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
-                                {fmt(o.displayFulfillmentStatus)}
-                              </Badge>
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                />
+                              </svg>
+                              {showRaw ? 'ซ่อน JSON' : 'แสดง JSON'}
+                            </button>
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                handleCloseDetails()
+                              }}
+                            >
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                              ปิด
+                            </button>
+                          </div>
+                        </div>
+                        {showRaw ? (
+                          <div className="bg-gray-50 border border-red-200 rounded-xl p-6 shadow-inner">
+                            <div className="flex items-center gap-2 mb-4">
+                              <svg
+                                className="h-5 w-5 text-red-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                />
+                              </svg>
+                              <h4 className="font-semibold text-red-800">Raw JSON Data</h4>
                             </div>
-                            <div className="text-sm text-gray-700">
-                              สถานะการคืน/ยกเลิก: {fmt(o.cancelReason)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              วันที่ทำการสั่งซื้อ: {fmtDateTime(o.createdAt)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              เวลาการชำระสินค้า: {fmtDateTime(o.processedAt)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              เวลาที่คำสั่งซื้อสำเร็จ: {fmtDateTime(o.updatedAt)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              หมายเหตุจากผู้ซื้อ: {fmt(o.note)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              {/* Removed tags and sales channel display */}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ข้อมูลผู้ซื้อ</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ชื่อผู้ใช้: {fmt(o.customer?.displayName)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              อีเมล: {fmt(o.email || o.customer?.email)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              เบอร์โทร: {fmt(o.customer?.phone)}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ข้อมูลการจัดส่ง</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ชื่อผู้รับ: {fmt(o.shippingAddress?.name)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              โทรศัพท์: {fmt(o.shippingAddress?.phone)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ประเทศ: {fmt(o.shippingAddress?.country)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              จังหวัด: {fmt(o.shippingAddress?.province)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              อำเภอ/เขต: {fmt(o.shippingAddress?.city)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ตำบล/แขวง: {fmt(o.shippingAddress?.address2)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              รหัสไปรษณีย์: {fmt(o.shippingAddress?.zip)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ที่อยู่: {fmt(o.shippingAddress?.address1)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              หมายเลขติดตามพัสดุ:{' '}
-                              {trackings.length
-                                ? trackings
-                                    .map((t: any) => t?.number)
-                                    .filter(Boolean)
-                                    .join(', ')
-                                : '-'}
-                            </div>
-                            {(() => {
-                              const shippingOptionRaw2_details = String(
-                                (shipLines[0]?.title || shipLines[0]?.source || '') as string
-                              )
-                              const shippingOptionDisplay2_details =
-                                shippingOptionRaw2_details === 'Thailand Shipping'
-                                  ? `${shippingOptionRaw2_details} (รับสินค้าเองที่ร้าน)`
-                                  : shippingOptionRaw2_details
-                              const deliveryMethodText_details =
-                                shippingOptionDisplay2_details ===
-                                'Thailand Shipping (รับสินค้าเองที่ร้าน)'
-                                  ? 'รับสินค้าเองที่ร้าน'
-                                  : 'จัดส่งตามที่อยู่'
-                              return (
-                                <>
-                                  <div className="text-sm text-gray-700">
-                                    วิธีการจัดส่ง: {deliveryMethodText_details || '-'}
-                                  </div>
-                                  <div className="text-sm text-gray-700">
-                                    บริการจัดส่ง: {shippingOptionDisplay2_details || '-'}
-                                  </div>
-                                </>
-                              )
-                            })()}
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ข้อมูลสินค้า</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              {items.length === 0 ? (
-                                '-'
-                              ) : (
-                                <div className="overflow-x-auto border border-red-200 rounded-md">
-                                  <table className="min-w-full text-xs">
-                                    <thead className="bg-red-50">
-                                      <tr>
-                                        <th className="px-3 py-2 text-left font-medium text-red-700">
-                                          สินค้า
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium text-red-700">
-                                          SKU
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-red-700">
-                                          จำนวน
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-red-700">
-                                          คืนได้
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-red-700">
-                                          ราคาตั้งต้น
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-red-700">
-                                          ราคาขาย
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-red-100">
-                                      {items.map((it: any) => (
-                                        <tr key={it.id}>
-                                          <td className="px-3 py-2">{fmt(it.name)}</td>
-                                          <td className="px-3 py-2">{fmt(it.sku)}</td>
-                                          <td className="px-3 py-2 text-right">
-                                            {it.quantity ?? '-'}
-                                          </td>
-                                          <td className="px-3 py-2 text-right">
-                                            {it.refundableQuantity ?? '-'}
-                                          </td>
-                                          <td className="px-3 py-2 text-right">
-                                            {money(it.originalUnitPriceSet)}
-                                          </td>
-                                          <td className="px-3 py-2 text-right">
-                                            {money(it.discountedUnitPriceSet)}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                            <pre className="text-xs bg-white p-4 rounded-lg border overflow-x-auto font-mono leading-relaxed">
+                              {JSON.stringify(o, null, 2)}
+                            </pre>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
                                 </div>
-                              )}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                                  />
-                                </svg>
+                                <h4 className="font-semibold text-red-900 text-lg">
+                                  ข้อมูลคำสั่งซื้อหลัก
+                                </h4>
                               </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ข้อมูลการเงิน</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ราคาขายสุทธิ: {money(o.currentTotalPriceSet)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ส่วนลดรวม: {money(o.currentTotalDiscountsSet)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ค่าจัดส่ง: {money(o.currentShippingPriceSet)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ภาษี: {money(o.currentTotalTaxSet)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ช่องทางการชำระเงิน:{' '}
-                              {txs.length
-                                ? txs
-                                    .map((t: any) => t?.gateway)
-                                    .filter(Boolean)
-                                    .join(', ')
-                                : '-'}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              ค่าธรรมเนียม/ค่าคอมมิชชั่น:{' '}
-                              {txs.length
-                                ? txs
-                                    .flatMap((t: any) => (Array.isArray(t?.fees) ? t.fees : []))
-                                    .map((f: any) => f?.rateName || f?.type)
-                                    .filter(Boolean)
-                                    .join(', ')
-                                : '-'}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"
-                                  />
-                                </svg>
+                              <div className="text-sm text-gray-700">
+                                หมายเลขคำสั่งซื้อ: {fmt(o.name)}
                               </div>
-                              <h4 className="font-semibold text-red-900 text-lg">
-                                การคืนเงิน/คืนสินค้า
-                              </h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              Refunds:{' '}
-                              {refunds.length
-                                ? refunds
-                                    .map(
-                                      (r: any) =>
-                                        `${new Date(r.createdAt).toLocaleDateString('th-TH')} ${money(r.totalRefundedSet)}`
-                                    )
-                                    .join(' , ')
-                                : '-'}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              Returns:{' '}
-                              {returns.length
-                                ? returns
-                                    .map(
-                                      (r: any) =>
-                                        `${r.name || r.id} (${r.status || '-'}) x${r.totalQuantity ?? '-'}`
-                                    )
-                                    .join(' , ')
-                                : '-'}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-900 text-lg">ส่วนลด/โปรโมชัน</h4>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              โค้ดส่วนลด: {fmt(o.discountCode)}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              โค้ดส่วนลดทั้งหมด:{' '}
-                              {o.discountCodes?.length ? o.discountCodes.join(', ') : '-'}
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              Discount Applications:
-                              {discounts.length === 0 ? (
-                                ' -'
-                              ) : (
-                                <ul className="list-disc pl-5 space-y-1">
-                                  {discounts.map((d: any, i: number) => (
-                                    <li key={`discount-${d?.code || d?.title || i}`}>
-                                      {[
-                                        d?.code,
-                                        d?.title,
-                                        d?.value?.amount &&
-                                          `${d.value.amount} ${d.value.currencyCode}`,
-                                        d?.value?.percentage && `${d.value.percentage}%`,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(' | ')}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          </section>
-
-                          <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4 lg:col-start-2">
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-red-500 rounded-lg">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                              </div>
-                              <h4 className="font-semibold text-red-800 text-lg">ใบกำกับภาษี</h4>
-                            </div>
-                            {(() => {
-                              // Helper to get metafield by namespace.key with fallbacks
-                              const getMf = (candidates: string[]): string => {
-                                for (const cand of candidates) {
-                                  const [ns, key] = cand.split('.')
-                                  // Try exact namespace.key first
-                                  const exact = metafields.find(
-                                    (m: any) =>
-                                      String(m?.namespace) === ns && String(m?.key) === key
-                                  )
-                                  if (
-                                    exact &&
-                                    typeof exact.value !== 'undefined' &&
-                                    String(exact.value).trim() !== ''
-                                  ) {
-                                    return String(exact.value)
+                              <div className="text-sm text-gray-700 space-x-2">
+                                <span>สถานะการสั่งซื้อ:</span>
+                                <Badge
+                                  tone={
+                                    o.displayFinancialStatus === 'PAID'
+                                      ? 'green'
+                                      : o.displayFinancialStatus === 'PENDING'
+                                        ? 'yellow'
+                                        : 'gray'
                                   }
-                                  // Fallback: any namespace with same key
-                                  const anyNs = metafields.find((m: any) => String(m?.key) === key)
-                                  if (
-                                    anyNs &&
-                                    typeof anyNs.value !== 'undefined' &&
-                                    String(anyNs.value).trim() !== ''
-                                  ) {
-                                    return String(anyNs.value)
+                                >
+                                  {fmt(o.displayFinancialStatus)}
+                                </Badge>
+                                <Badge
+                                  tone={
+                                    o.displayFulfillmentStatus === 'FULFILLED'
+                                      ? 'green'
+                                      : o.displayFulfillmentStatus === 'UNFULFILLED'
+                                        ? 'yellow'
+                                        : 'gray'
                                   }
-                                }
-                                return '-'
-                              }
-                              const items = [
-                                {
-                                  k: 'ประเภท (นิติบุคคล/บุคคลธรรมดา)',
-                                  v: getMf(['custom.customer_type', 'custom.custom_customer_type']),
-                                },
-                                {
-                                  k: 'คำนำหน้าชื่อ',
-                                  v: getMf(['custom.title_name', 'custom.custom_title_name']),
-                                },
-                                {
-                                  k: 'ชื่อ-นามสกุล',
-                                  v: getMf(['custom.full_name', 'custom.custom_full_name']),
-                                },
-                                {
-                                  k: 'ชื่อบริษัท',
-                                  v: getMf(['custom.company_name', 'custom.custom_company_name']),
-                                },
-                                {
-                                  k: 'สาขา',
-                                  v: getMf(['custom.branch_type', 'custom.custom_branch_type']),
-                                },
-                                {
-                                  k: 'รหัสสาขา',
-                                  v: getMf(['custom.branch_code', 'custom.custom_branch_code']),
-                                },
-                                {
-                                  k: 'หมายเลขประจำตัวผู้เสียภาษี',
-                                  v: getMf([
-                                    'custom.tax_id',
-                                    'custom.custom_tax_id',
-                                    'custom.tax_id_formatted',
-                                    'custom.custom_tax_id_formatted',
-                                  ]),
-                                },
-                                {
-                                  k: 'หมายเลขโทรศัพท์',
-                                  v: getMf(['custom.phone_number', 'custom.custom_phone_number']),
-                                },
-                                {
-                                  k: 'จังหวัด',
-                                  v: getMf(['custom.province', 'custom.custom_province']),
-                                },
-                                {
-                                  k: 'อำเภอ/เขต',
-                                  v: getMf(['custom.district', 'custom.custom_district']),
-                                },
-                                {
-                                  k: 'ตำบล/แขวง',
-                                  v: getMf(['custom.sub_district', 'custom.custom_sub_district']),
-                                },
-                                {
-                                  k: 'ไปรษณีย์',
-                                  v: getMf(['custom.postal_code', 'custom.custom_postal_code']),
-                                },
-                                {
-                                  k: 'ที่อยู่',
-                                  v: getMf(['custom.full_address', 'custom.custom_full_address']),
-                                },
-                              ]
-                              return (
-                                <div className="space-y-4 flex flex-col items-center sm:block">
-                                  <div className="text-sm font-semibold text-gray-800 flex items-center gap-2"></div>
-                                  <div className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-inner w-fit max-w-[100%] sm:w-auto sm:max-w-none">
-                                    {/* Desktop table layout (hidden on mobile) */}
-                                    <table className="hidden sm:table w-full text-sm">
-                                      <tbody className="divide-y divide-gray-200">
-                                        {items.map((p, idx) => (
-                                          <tr key={`${p.k}-${idx}`} className="hover:bg-gray-50">
-                                            <td className="align-top py-3 pr-6 w-64 text-xs font-semibold text-gray-700">
-                                              {p.k}
+                                >
+                                  {fmt(o.displayFulfillmentStatus)}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                สถานะการคืน/ยกเลิก: {fmt(o.cancelReason)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                วันที่ทำการสั่งซื้อ: {fmtDateTime(o.createdAt)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                เวลาการชำระสินค้า: {fmtDateTime(o.processedAt)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                เวลาที่คำสั่งซื้อสำเร็จ: {fmtDateTime(o.updatedAt)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                หมายเหตุจากผู้ซื้อ: {fmt(o.note)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                {/* Removed tags and sales channel display */}
+                              </div>
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">ข้อมูลผู้ซื้อ</h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ชื่อผู้ใช้: {fmt(o.customer?.displayName)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                อีเมล: {fmt(o.email || o.customer?.email)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                เบอร์โทร: {fmt(o.customer?.phone)}
+                              </div>
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">ข้อมูลการจัดส่ง</h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ชื่อผู้รับ: {fmt(o.shippingAddress?.name)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                โทรศัพท์: {fmt(o.shippingAddress?.phone)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ประเทศ: {fmt(o.shippingAddress?.country)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                จังหวัด: {fmt(o.shippingAddress?.province)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                อำเภอ/เขต: {fmt(o.shippingAddress?.city)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ตำบล/แขวง: {fmt(o.shippingAddress?.address2)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                รหัสไปรษณีย์: {fmt(o.shippingAddress?.zip)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ที่อยู่: {fmt(o.shippingAddress?.address1)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                หมายเลขติดตามพัสดุ:{' '}
+                                {trackings.length
+                                  ? trackings
+                                      .map((t: any) => t?.number)
+                                      .filter(Boolean)
+                                      .join(', ')
+                                  : '-'}
+                              </div>
+                              {(() => {
+                                const shippingOptionRaw2_details = String(
+                                  (shipLines[0]?.title || shipLines[0]?.source || '') as string
+                                )
+                                const shippingOptionDisplay2_details =
+                                  shippingOptionRaw2_details === 'Thailand Shipping'
+                                    ? `${shippingOptionRaw2_details} (รับสินค้าเองที่ร้าน)`
+                                    : shippingOptionRaw2_details
+                                const deliveryMethodText_details =
+                                  shippingOptionDisplay2_details ===
+                                  'Thailand Shipping (รับสินค้าเองที่ร้าน)'
+                                    ? 'รับสินค้าเองที่ร้าน'
+                                    : 'จัดส่งตามที่อยู่'
+                                return (
+                                  <>
+                                    <div className="text-sm text-gray-700">
+                                      วิธีการจัดส่ง: {deliveryMethodText_details || '-'}
+                                    </div>
+                                    <div className="text-sm text-gray-700">
+                                      บริการจัดส่ง: {shippingOptionDisplay2_details || '-'}
+                                    </div>
+                                  </>
+                                )
+                              })()}
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">ข้อมูลสินค้า</h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                {items.length === 0 ? (
+                                  '-'
+                                ) : (
+                                  <div className="overflow-x-auto border border-red-200 rounded-md">
+                                    <table className="min-w-full text-xs">
+                                      <thead className="bg-red-50">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left font-medium text-red-700">
+                                            สินค้า
+                                          </th>
+                                          <th className="px-3 py-2 text-left font-medium text-red-700">
+                                            SKU
+                                          </th>
+                                          <th className="px-3 py-2 text-right font-medium text-red-700">
+                                            จำนวน
+                                          </th>
+                                          <th className="px-3 py-2 text-right font-medium text-red-700">
+                                            คืนได้
+                                          </th>
+                                          <th className="px-3 py-2 text-right font-medium text-red-700">
+                                            ราคาตั้งต้น
+                                          </th>
+                                          <th className="px-3 py-2 text-right font-medium text-red-700">
+                                            ราคาขาย
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-red-100">
+                                        {items.map((it: any) => (
+                                          <tr key={it.id}>
+                                            <td className="px-3 py-2">{fmt(it.name)}</td>
+                                            <td className="px-3 py-2">{fmt(it.sku)}</td>
+                                            <td className="px-3 py-2 text-right">
+                                              {it.quantity ?? '-'}
                                             </td>
-                                            <td className="align-top py-3 text-sm text-gray-900 break-words">
-                                              <span className="bg-gray-100 px-2 py-1 rounded-md font-medium">
-                                                {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
-                                                  ? String(p.v || '').replace(/-/g, '')
-                                                  : p.v}
-                                              </span>
+                                            <td className="px-3 py-2 text-right">
+                                              {it.refundableQuantity ?? '-'}
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                              {money(it.originalUnitPriceSet)}
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                              {money(it.discountedUnitPriceSet)}
                                             </td>
                                           </tr>
                                         ))}
                                       </tbody>
                                     </table>
+                                  </div>
+                                )}
+                              </div>
+                            </section>
 
-                                    {/* Mobile 2-line layout (visible only on mobile) */}
-                                    <div className="block sm:hidden space-y-3">
-                                      {items.map((p, idx) => (
-                                        <div
-                                          key={`${p.k}-${idx}`}
-                                          className="pb-3 border-b border-gray-200 last:border-b-0 last:pb-0"
-                                        >
-                                          <div className="text-xs font-semibold text-gray-700 mb-1 text-left">
-                                            {p.k}
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">ข้อมูลการเงิน</h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ราคาขายสุทธิ: {money(o.currentTotalPriceSet)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ส่วนลดรวม: {money(o.currentTotalDiscountsSet)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ค่าจัดส่ง: {money(o.currentShippingPriceSet)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ภาษี: {money(o.currentTotalTaxSet)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ช่องทางการชำระเงิน:{' '}
+                                {txs.length
+                                  ? txs
+                                      .map((t: any) => t?.gateway)
+                                      .filter(Boolean)
+                                      .join(', ')
+                                  : '-'}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                ค่าธรรมเนียม/ค่าคอมมิชชั่น:{' '}
+                                {txs.length
+                                  ? txs
+                                      .flatMap((t: any) => (Array.isArray(t?.fees) ? t.fees : []))
+                                      .map((f: any) => f?.rateName || f?.type)
+                                      .filter(Boolean)
+                                      .join(', ')
+                                  : '-'}
+                              </div>
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">
+                                  การคืนเงิน/คืนสินค้า
+                                </h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                Refunds:{' '}
+                                {refunds.length
+                                  ? refunds
+                                      .map(
+                                        (r: any) =>
+                                          `${new Date(r.createdAt).toLocaleDateString('th-TH')} ${money(r.totalRefundedSet)}`
+                                      )
+                                      .join(' , ')
+                                  : '-'}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                Returns:{' '}
+                                {returns.length
+                                  ? returns
+                                      .map(
+                                        (r: any) =>
+                                          `${r.name || r.id} (${r.status || '-'}) x${r.totalQuantity ?? '-'}`
+                                      )
+                                      .join(' , ')
+                                  : '-'}
+                              </div>
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-900 text-lg">
+                                  ส่วนลด/โปรโมชัน
+                                </h4>
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                โค้ดส่วนลด: {fmt(o.discountCode)}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                โค้ดส่วนลดทั้งหมด:{' '}
+                                {o.discountCodes?.length ? o.discountCodes.join(', ') : '-'}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                Discount Applications:
+                                {discounts.length === 0 ? (
+                                  ' -'
+                                ) : (
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {discounts.map((d: any, i: number) => (
+                                      <li key={`discount-${d?.code || d?.title || i}`}>
+                                        {[
+                                          d?.code,
+                                          d?.title,
+                                          d?.value?.amount &&
+                                            `${d.value.amount} ${d.value.currencyCode}`,
+                                          d?.value?.percentage && `${d.value.percentage}%`,
+                                        ]
+                                          .filter(Boolean)
+                                          .join(' | ')}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            </section>
+
+                            <section className="bg-white border border-red-200 rounded-xl p-6 space-y-4 lg:col-start-2">
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-500 rounded-lg">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                </div>
+                                <h4 className="font-semibold text-red-800 text-lg">ใบกำกับภาษี</h4>
+                              </div>
+                              {(() => {
+                                // Helper to get metafield by namespace.key with fallbacks
+                                const getMf = (candidates: string[]): string => {
+                                  for (const cand of candidates) {
+                                    const [ns, key] = cand.split('.')
+                                    // Try exact namespace.key first
+                                    const exact = metafields.find(
+                                      (m: any) =>
+                                        String(m?.namespace) === ns && String(m?.key) === key
+                                    )
+                                    if (
+                                      exact &&
+                                      typeof exact.value !== 'undefined' &&
+                                      String(exact.value).trim() !== ''
+                                    ) {
+                                      return String(exact.value)
+                                    }
+                                    // Fallback: any namespace with same key
+                                    const anyNs = metafields.find(
+                                      (m: any) => String(m?.key) === key
+                                    )
+                                    if (
+                                      anyNs &&
+                                      typeof anyNs.value !== 'undefined' &&
+                                      String(anyNs.value).trim() !== ''
+                                    ) {
+                                      return String(anyNs.value)
+                                    }
+                                  }
+                                  return '-'
+                                }
+                                const items = [
+                                  {
+                                    k: 'ประเภท (นิติบุคคล/บุคคลธรรมดา)',
+                                    v: getMf([
+                                      'custom.customer_type',
+                                      'custom.custom_customer_type',
+                                    ]),
+                                  },
+                                  {
+                                    k: 'คำนำหน้าชื่อ',
+                                    v: getMf(['custom.title_name', 'custom.custom_title_name']),
+                                  },
+                                  {
+                                    k: 'ชื่อ-นามสกุล',
+                                    v: getMf(['custom.full_name', 'custom.custom_full_name']),
+                                  },
+                                  {
+                                    k: 'ชื่อบริษัท',
+                                    v: getMf(['custom.company_name', 'custom.custom_company_name']),
+                                  },
+                                  {
+                                    k: 'สาขา',
+                                    v: getMf(['custom.branch_type', 'custom.custom_branch_type']),
+                                  },
+                                  {
+                                    k: 'รหัสสาขา',
+                                    v: getMf(['custom.branch_code', 'custom.custom_branch_code']),
+                                  },
+                                  {
+                                    k: 'หมายเลขประจำตัวผู้เสียภาษี',
+                                    v: getMf([
+                                      'custom.tax_id',
+                                      'custom.custom_tax_id',
+                                      'custom.tax_id_formatted',
+                                      'custom.custom_tax_id_formatted',
+                                    ]),
+                                  },
+                                  {
+                                    k: 'หมายเลขโทรศัพท์',
+                                    v: getMf(['custom.phone_number', 'custom.custom_phone_number']),
+                                  },
+                                  {
+                                    k: 'จังหวัด',
+                                    v: getMf(['custom.province', 'custom.custom_province']),
+                                  },
+                                  {
+                                    k: 'อำเภอ/เขต',
+                                    v: getMf(['custom.district', 'custom.custom_district']),
+                                  },
+                                  {
+                                    k: 'ตำบล/แขวง',
+                                    v: getMf(['custom.sub_district', 'custom.custom_sub_district']),
+                                  },
+                                  {
+                                    k: 'ไปรษณีย์',
+                                    v: getMf(['custom.postal_code', 'custom.custom_postal_code']),
+                                  },
+                                  {
+                                    k: 'ที่อยู่',
+                                    v: getMf(['custom.full_address', 'custom.custom_full_address']),
+                                  },
+                                ]
+                                return (
+                                  <div className="space-y-4 flex flex-col items-center sm:block">
+                                    <div className="text-sm font-semibold text-gray-800 flex items-center gap-2"></div>
+                                    <div className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-inner w-fit max-w-[100%] sm:w-auto sm:max-w-none">
+                                      {/* Desktop table layout (hidden on mobile) */}
+                                      <table className="hidden sm:table w-full text-sm">
+                                        <tbody className="divide-y divide-gray-200">
+                                          {items.map((p, idx) => (
+                                            <tr key={`${p.k}-${idx}`} className="hover:bg-gray-50">
+                                              <td className="align-top py-3 pr-6 w-64 text-xs font-semibold text-gray-700">
+                                                {p.k}
+                                              </td>
+                                              <td className="align-top py-3 text-sm text-gray-900 break-words">
+                                                <span className="bg-gray-100 px-2 py-1 rounded-md font-medium">
+                                                  {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
+                                                    ? String(p.v || '').replace(/-/g, '')
+                                                    : p.v}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+
+                                      {/* Mobile 2-line layout (visible only on mobile) */}
+                                      <div className="block sm:hidden space-y-3">
+                                        {items.map((p, idx) => (
+                                          <div
+                                            key={`${p.k}-${idx}`}
+                                            className="pb-3 border-b border-gray-200 last:border-b-0 last:pb-0"
+                                          >
+                                            <div className="text-xs font-semibold text-gray-700 mb-1 text-left">
+                                              {p.k}
+                                            </div>
+                                            <div className="pl-4">
+                                              <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-sm text-gray-900 inline-block text-left break-all">
+                                                {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
+                                                  ? String(p.v || '').replace(/-/g, '')
+                                                  : p.v}
+                                              </span>
+                                            </div>
                                           </div>
-                                          <div className="pl-4">
-                                            <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-sm text-gray-900 inline-block text-left break-all">
-                                              {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
-                                                ? String(p.v || '').replace(/-/g, '')
-                                                : p.v}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      ))}
+                                        ))}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )
-                            })()}
-                          </section>
-                        </div>
-                      )}
+                                )
+                              })()}
+                            </section>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 })()}
