@@ -124,28 +124,28 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('today')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   วันนี้
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('yesterday')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   เมื่อวาน
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('last7')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   7 วันล่าสุด
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('all')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-xs sm:text-sm rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                   title="ล้างตัวกรองวันที่แบบด่วน"
                 >
                   ทั้งหมด
@@ -158,12 +158,12 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
             {typeof monthFilter !== 'undefined' &&
               typeof setMonthFilter !== 'undefined' &&
               thaiMonths && (
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[48px]">
+                <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
+                  <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[48px]">
                     เดือน
                   </label>
                   <select
-                    className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[8rem]"
+                    className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 min-w-[8rem]"
                     value={monthFilter}
                     onChange={(e) => {
                       setDateQuickFilter?.('all')
@@ -182,12 +182,12 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 </div>
               )}
             {typeof yearFilter !== 'undefined' && typeof setYearFilter !== 'undefined' && years && (
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[28px] xl:min-w-0">
+              <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
+                <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[28px] xl:min-w-0">
                   ปี
                 </label>
                 <select
-                  className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                  className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
                   value={yearFilter}
                   onChange={(e) => {
                     setDateQuickFilter?.('all')
@@ -206,12 +206,12 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </div>
             )}
             {/* Page size selector - moved into same grid row */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
+            <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
+              <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
                 แสดงต่อหน้า
               </label>
               <select
-                className="w-full sm:w-auto flex-1 text-xs sm:text-sm h-10 border-2 border-red-200 rounded-lg px-2 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
                 value={pageSize}
                 onChange={(e) => {
                   setPage(() => 1)

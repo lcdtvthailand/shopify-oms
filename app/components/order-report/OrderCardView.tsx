@@ -276,7 +276,7 @@ export const OrderCardView: React.FC<OrderCardViewProps> = ({
 
             {/* Footer with Total and Action */}
             <div className="flex items-center justify-between pt-4 border-t border-red-100">
-              <div className="text-right">
+              <div className="text-left">
                 <div className="text-sm text-gray-500">ยอดรวม</div>
                 <div className="text-xl font-bold text-red-700">
                   {money(order.currentTotalPriceSet)}
