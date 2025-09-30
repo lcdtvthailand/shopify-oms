@@ -41,6 +41,24 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
         return Number.isNaN(parsed) ? 0 : parsed
       }
 
+      // Helper to keep only digits (remove dashes, spaces, etc.)
+      const digitsOnly = (s: string | undefined | null): string =>
+        String(s ?? '').replace(/\D+/g, '')
+
+      // Helper to format date-time as AD YYYY/MM/DD HH:MM:SS (string)
+      const formatDateTimeAD = (iso: string | undefined | null): string => {
+        if (!iso) return ''
+        const d = new Date(iso)
+        if (Number.isNaN(d.getTime())) return ''
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        const hh = String(d.getHours()).padStart(2, '0')
+        const mm = String(d.getMinutes()).padStart(2, '0')
+        const ss = String(d.getSeconds()).padStart(2, '0')
+        return `${y}/${m}/${day} ${hh}:${mm}:${ss}`
+      }
+
       ordersToExport.forEach((o) => {
         const customerName = o.customer?.displayName || o.customer?.email || ''
         const ship = (o.shippingLines as any)?.edges?.[0]?.node
@@ -118,12 +136,12 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
 
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
-          วันที่: o.createdAt ? new Date(o.createdAt).toLocaleString('th-TH') : '',
+          'Line No.': 0,
+          วันที่: formatDateTimeAD(o.createdAt),
           สถานะการชำระเงิน: o.displayFinancialStatus || '',
           สถานะการจัดส่ง: o.displayFulfillmentStatus || '',
           'ชื่อผู้ใช้ (ผู้ซื้อ)': customerName,
           อีเมล: o.customer?.email || o.email || '',
-          เบอร์โทร: o.customer?.phone || '',
           ตัวเลือกการจัดส่ง: shippingOptionDisplay,
           วิธีการจัดส่ง: deliveryMethodText,
           หมายเลขติดตามพัสดุ: tracking.join(', '),
@@ -147,7 +165,7 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           ยอดสินค้า: parseNumber(o.currentSubtotalPriceSet?.shopMoney?.amount),
           ค่าส่ง: parseNumber(o.currentShippingPriceSet?.shopMoney?.amount),
           ภาษี: parseNumber(o.currentTotalTaxSet?.shopMoney?.amount),
-          ร้องขอใบกำกับภาษี: requestedTaxInvoice ? 'ขอใบกำกับภาษี' : 'ไม่ขอใบกำกับภาษี',
+          ร้องขอใบกำกับภาษี: requestedTaxInvoice ? 'Yes' : 'No',
           ประเภทใบกำกับภาษี: getMf(['custom.customer_type', 'custom.custom_customer_type']),
           'คำนำหน้าชื่อ (ใบกำกับภาษี)': getMf(['custom.title_name', 'custom.custom_title_name']),
           'ชื่อ-นามสกุล (ใบกำกับภาษี)': getMf(['custom.full_name', 'custom.custom_full_name']),
@@ -158,13 +176,17 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           ]),
           'ประเภทสาขา (ใบกำกับภาษี)': getMf(['custom.branch_type', 'custom.custom_branch_type']),
           'รหัสสาขา (ใบกำกับภาษี)': getMf(['custom.branch_code', 'custom.custom_branch_code']),
-          เลขผู้เสียภาษี: getMf([
-            'custom.tax_id',
-            'custom.custom_tax_id',
-            'custom.tax_id_formatted',
-            'custom.custom_tax_id_formatted',
-          ]),
-          'โทรศัพท์ (ใบกำกับภาษี)': getMf(['custom.phone_number', 'custom.custom_phone_number']),
+          เลขผู้เสียภาษี: digitsOnly(
+            getMf([
+              'custom.tax_id',
+              'custom.custom_tax_id',
+              'custom.tax_id_formatted',
+              'custom.custom_tax_id_formatted',
+            ])
+          ),
+          'โทรศัพท์ (ใบกำกับภาษี)': digitsOnly(
+            getMf(['custom.phone_number', 'custom.custom_phone_number'])
+          ),
           'จังหวัด (ใบกำกับภาษี)': getMf(['custom.province', 'custom.custom_province']),
           'อำเภอ/เขต (ใบกำกับภาษี)': getMf(['custom.district', 'custom.custom_district']),
           'ตำบล/แขวง (ใบกำกับภาษี)': getMf(['custom.sub_district', 'custom.custom_sub_district']),
@@ -192,10 +214,12 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
               groups.set(key, { it, qty })
             }
           })
+          let lineNo = 1
           Array.from(groups.values()).forEach(({ it, qty }) => {
             const unit = parseFloat(it?.discountedUnitPriceSet?.shopMoney?.amount || '0')
             ordersRows.push({
               ...baseRow,
+              'Line No.': lineNo++,
               รายการสินค้า: formatItem(it),
               จำนวนสินค้า: qty,
               SKU: it?.sku || it?.variant?.sku || '',
@@ -207,6 +231,7 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
         } else {
           ordersRows.push({
             ...baseRow,
+            'Line No.': 1,
             รายการสินค้า: '-',
             จำนวนสินค้า: 0,
             SKU: '',
@@ -351,10 +376,6 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
       }
 
       const main = addSheetFromRows('คำสั่งซื้อ', ordersRows)
-      const items = addSheetFromRows('รายการสินค้า', itemsRows)
-      const shipping = addSheetFromRows('การจัดส่ง', shippingRows)
-      addSheetFromRows('ส่วนลด', discountRows)
-      addSheetFromRows('ใบกำกับภาษี', taxInvoiceRows)
 
       // Style tax-invoice request column in main sheet
       if (main?.headers.length) {
@@ -364,7 +385,7 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           for (let r = 2; r <= ws.rowCount; r++) {
             const cell = ws.getRow(r).getCell(colIdx)
             const val = String(cell.value ?? '')
-            const isRequested = val === 'ขอใบกำกับภาษี'
+            const isRequested = val === 'Yes'
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -378,25 +399,32 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           const ws = main.ws
           ws.getColumn(taxColIdx).numFmt = '#,##0.00'
         }
-      }
-
-      // Format base price in Items sheet as currency/price
-      if (items?.headers.length) {
-        const priceColIdx = items.headers.indexOf('ราคาตั้งต้น') + 1
-        if (priceColIdx > 0) {
-          const ws = items.ws
-          ws.getColumn(priceColIdx).numFmt = '#,##0.00'
+        // Format Line No. as integer
+        const lineNoIdx = main.headers.indexOf('Line No.') + 1
+        if (lineNoIdx > 0) {
+          const ws = main.ws
+          ws.getColumn(lineNoIdx).numFmt = '0'
+        }
+        // Force Date column to text to avoid time display and locale parsing
+        const dateColIdx = main.headers.indexOf('วันที่') + 1
+        if (dateColIdx > 0) {
+          const ws = main.ws
+          ws.getColumn(dateColIdx).numFmt = '@'
+        }
+        // Force text format for tax-id and phone (ใบกำกับภาษี) to preserve leading zeros
+        const mainTaxIdIdx = main.headers.indexOf('เลขผู้เสียภาษี') + 1
+        if (mainTaxIdIdx > 0) {
+          const ws = main.ws
+          ws.getColumn(mainTaxIdIdx).numFmt = '@'
+        }
+        const mainPhoneIdx = main.headers.indexOf('โทรศัพท์ (ใบกำกับภาษี)') + 1
+        if (mainPhoneIdx > 0) {
+          const ws = main.ws
+          ws.getColumn(mainPhoneIdx).numFmt = '@'
         }
       }
 
-      // Format price-before-discount in Shipping sheet as currency/price
-      if (shipping?.headers.length) {
-        const baseShipColIdx = shipping.headers.indexOf('ราคาก่อนส่วนลด') + 1
-        if (baseShipColIdx > 0) {
-          const ws = shipping.ws
-          ws.getColumn(baseShipColIdx).numFmt = '#,##0.00'
-        }
-      }
+      // Only the main sheet is generated now.
 
       // Determine filename based on the date range of orders included
       const createdDates = ordersToExport
