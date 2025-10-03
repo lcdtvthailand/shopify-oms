@@ -8,8 +8,8 @@ import { OrderDetailsComplete } from '@/app/components/order-report/OrderDetails
 import { OrderTableDesktop } from '@/app/components/order-report/OrderTableDesktop'
 import { PaginationControls } from '@/app/components/order-report/PaginationControls'
 import OrbitalLoader from '@/app/components/ui/OrbitalLoader'
+import { useAuth } from '@/app/contexts/AuthContext'
 // Import custom hooks
-import { useOrderAuthentication } from '@/app/hooks/useOrderAuthentication'
 import { useOrderData } from '@/app/hooks/useOrderData'
 import { useOrderExport } from '@/app/hooks/useOrderExport'
 import { useOrderFiltering } from '@/app/hooks/useOrderFiltering'
@@ -26,23 +26,28 @@ export default function OrderReportPage() {
     authAttempts,
     setAuthCode,
     handleAuth,
-    handleLogout,
-  } = useOrderAuthentication()
+  } = useAuth()
 
   // Order data
-  const { data, loading, error, pageInfo, fetchOrders } = useOrderData()
+  const { data, loading, error, pageInfo, fetchOrders, setData } = useOrderData()
 
   // Filtering
   const {
     monthFilter,
     yearFilter,
     dateQuickFilter,
+    fulfillmentFilter,
     setMonthFilter,
     setYearFilter,
     setDateQuickFilter,
+    setFulfillmentFilter,
     getFilteredOrders,
     thaiMonths,
     years,
+    fromDate,
+    toDate,
+    setFromDate,
+    setToDate,
   } = useOrderFiltering(data)
 
   // Sorting
@@ -111,6 +116,15 @@ export default function OrderReportPage() {
   }
 
   // Effects
+  // 1) เมื่อออกจากระบบ ให้ล้างข้อมูลออเดอร์และรีเซ็ตเพจ เพื่อให้หลังล็อกอินดึงข้อมูลใหม่
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSelectedId(null)
+      setData([])
+      setPage(() => 1)
+    }
+  }, [isAuthenticated, setData, setPage])
+
   useEffect(() => {
     if (selectedId) {
       // wait for DOM to paint, then scroll
@@ -178,7 +192,7 @@ export default function OrderReportPage() {
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
                   รายงานคำสั่งซื้อ LCDTV Thailand
                 </h1>
                 <div className="flex items-center gap-2 text-sm text-green-600">
@@ -194,23 +208,6 @@ export default function OrderReportPage() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
-                  title="ออกจากระบบ"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                  <span className="hidden sm:inline">ออกจากระบบ</span>
-                  <span className="sm:hidden">ออก</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => exportToXlsx(filteredData)}
@@ -252,6 +249,16 @@ export default function OrderReportPage() {
             years={years}
             dateQuickFilter={dateQuickFilter}
             setDateQuickFilter={setDateQuickFilter}
+            fulfillmentFilter={fulfillmentFilter}
+            setFulfillmentFilter={setFulfillmentFilter}
+            fromDate={fromDate}
+            toDate={toDate}
+            setDateRange={(from, to) => {
+              setFromDate(from)
+              setToDate(to)
+              // Reset to first page when range changes for better UX
+              setPage(() => 1)
+            }}
           />
 
           {/* Error Display */}

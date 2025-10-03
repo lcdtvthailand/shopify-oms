@@ -71,6 +71,35 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           : []
         const shippingAddress = o.shippingAddress || {}
 
+        // Determine shipping carrier column per requirements
+        // - If UNFULFILLED: leave blank
+        // - If fulfilled and carrier is not "Other": use the carrier name
+        // - If fulfilled and carrier is "Other": use the tracking URL instead
+        const firstTrackingInfo = (() => {
+          if (!Array.isArray(o.fulfillments)) return null
+          for (const f of o.fulfillments as any[]) {
+            if (Array.isArray(f?.trackingInfo) && f.trackingInfo.length > 0) {
+              // pick the first tracking entry that has number or url
+              const t = f.trackingInfo.find((ti: any) => ti?.number || ti?.url || ti?.company)
+              if (t) return t
+            }
+          }
+          return null
+        })()
+        const fulfillmentStatus = String(o.displayFulfillmentStatus || '').toUpperCase()
+        const isFulfilled = fulfillmentStatus === 'FULFILLED'
+        const shippingCarrierDisplay = isFulfilled
+          ? (() => {
+              const company = String(firstTrackingInfo?.company || '').trim()
+              const url = String(firstTrackingInfo?.url || '').trim()
+              if (company && !/^(other|others)$/i.test(company)) return company
+              // When "Other" is selected, Shopify stores the custom URL
+              if (company && /^(other|others)$/i.test(company)) return url
+              // Fallback: if no company but we have URL (sometimes company may be null for custom)
+              return url || ''
+            })()
+          : ''
+
         // Consolidated summaries
         const itemEdges: any[] = (o.lineItems as any)?.edges || []
         const formatItem = (it: any) => {
@@ -144,6 +173,7 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           อีเมล: o.customer?.email || o.email || '',
           ตัวเลือกการจัดส่ง: shippingOptionDisplay,
           วิธีการจัดส่ง: deliveryMethodText,
+          ผู้ให้บริการขนส่ง: shippingCarrierDisplay,
           หมายเลขติดตามพัสดุ: tracking.join(', '),
           ชื่อผู้รับ: shippingAddress?.name || '',
           เบอร์โทรผู้รับ: shippingAddress?.phone || '',
