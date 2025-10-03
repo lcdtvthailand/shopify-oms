@@ -83,7 +83,7 @@ export const AuthPopup: React.FC<AuthPopupProps> = ({
           {authAttempts >= 3 ? 'ถูกล็อค กรุณารอ...' : 'เข้าสู่ระบบ'}
         </button>
 
-        <div className="text-right text-xs text-gray-500 mt-4">ความพยายาม: {authAttempts}/3</div>
+        <div className="text-right text-xs text-gray-500 mt-4"></div>
       </div>
     </div>
   </div>
