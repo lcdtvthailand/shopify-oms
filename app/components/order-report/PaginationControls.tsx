@@ -303,7 +303,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           {/* Divider between date filters and month/year/pageSize */}
           <div className="hidden xl:block w-px bg-red-200 h-8 mx-2"></div>
           {/* Month/Year replaced by Date Range Picker when setDateRange is provided */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:flex-none xl:items-center gap-4 xl:gap-4 w-full sm:items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 2xl:flex xl:flex-none xl:items-center gap-4 xl:gap-4 w-full sm:items-end">
             {typeof setDateRange === 'function' ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
                 <label className="text-sm text-red-700 font-semibold sm:whitespace-nowrap sm:min-w-[88px] flex items-center gap-2">
@@ -633,24 +633,26 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                   )}
               </>
             )}
-            {/* Page size selector - moved into same grid row */}
-            <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
-              <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
-                แสดงต่อหน้า
-              </label>
-              <select
-                className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
-                value={pageSize}
-                onChange={(e) => {
-                  setPage(() => 1)
-                  setPageSize(parseInt(e.target.value, 10))
-                }}
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+            {/* Page size selector - on its own row on tablet, inline on larger screens */}
+            <div className="col-span-full sm:col-span-3 xl:col-auto xl:flex xl:items-center xl:gap-3">
+              <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
+                <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
+                  แสดงต่อหน้า
+                </label>
+                <select
+                  className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPage(() => 1)
+                    setPageSize(parseInt(e.target.value, 10))
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
