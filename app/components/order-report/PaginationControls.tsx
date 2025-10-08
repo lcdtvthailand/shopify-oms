@@ -174,37 +174,109 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     }
   }
 
+  // Function to handle page change with scroll to top
+  const handlePageChange = (newPage: number) => {
+    setPage(() => newPage)
+    // Smooth scroll to top of the page
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
+  }
+
   if (variant === 'bottom') {
+    // Calculate page numbers to display
+    const maxPageButtons = 5 // Show max 5 page numbers at a time
+    let startPage = Math.max(1, safePage - Math.floor(maxPageButtons / 2))
+    const endPage = Math.min(totalPages, startPage + maxPageButtons - 1)
+
+    // Adjust startPage if we're near the end
+    startPage = Math.max(1, endPage - maxPageButtons + 1)
+
+    const pageNumbers = []
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i)
+    }
+
     return (
       <div className="mt-4">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm px-4 py-2 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200 font-medium text-red-700"
-            disabled={safePage <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            ก่อนหน้า
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm px-4 py-2 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200 font-medium text-red-700"
-            disabled={safePage >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            ถัดไป
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center justify-center space-x-2">
+            <button
+              type="button"
+              className="flex items-center justify-center w-10 h-10 text-sm font-medium text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200"
+              disabled={safePage <= 1}
+              onClick={() => handlePageChange(Math.max(1, safePage - 1))}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+
+            {startPage > 1 && (
+              <>
+                <button
+                  type="button"
+                  className={`w-10 h-10 text-sm font-medium ${1 === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                  onClick={() => handlePageChange(1)}
+                >
+                  1
+                </button>
+                {startPage > 2 && <span className="text-gray-500">...</span>}
+              </>
+            )}
+
+            {pageNumbers.map((pageNum) => (
+              <button
+                key={pageNum}
+                type="button"
+                className={`w-10 h-10 text-sm font-medium ${pageNum === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                onClick={() => handlePageChange(pageNum)}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            {endPage < totalPages && (
+              <>
+                {endPage < totalPages - 1 && <span className="text-gray-500">...</span>}
+                <button
+                  type="button"
+                  className={`w-10 h-10 text-sm font-medium ${totalPages === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                  onClick={() => handlePageChange(totalPages)}
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              className="flex items-center justify-center w-10 h-10 text-sm font-medium text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200"
+              disabled={safePage >= totalPages}
+              onClick={() => handlePageChange(Math.min(totalPages, safePage + 1))}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Result count text */}
+          <div className="text-sm text-gray-600 mt-2">
+            แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จากทั้งหมด{' '}
+            {totalItems.toLocaleString()} รายการ หน้า {safePage} จาก {totalPages}
+          </div>
         </div>
       </div>
     )
@@ -213,27 +285,12 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   return (
     <div className="bg-white border border-red-200 rounded-xl px-5 sm:px-7 py-5 shadow-lg mb-4 sm:mb-6 2xl:mb-8">
       {/* Mobile-first layout; on xl+ keep header and controls in one row (iPad Pro = stacked) */}
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between xl:gap-6">
-        {/* Stats row - always visible */}
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-red-700 font-medium">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-              <span>
-                แสดง{' '}
-                <span className="font-bold">
-                  {startIndex + 1}-{endIndex}
-                </span>{' '}
-                จากทั้งหมด <span className="font-bold">{totalItems}</span> รายการ
-              </span>
-              <span className="text-xs text-red-600/70 font-normal">
-                หน้า {safePage} จาก {totalPages}
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col gap-5 xl:flex-col 2xl:flex-row xl:items-stretch 2xl:items-center xl:justify-between xl:gap-0 2xl:gap-6">
+        {/* Empty div to maintain layout - result count moved to bottom */}
+        <div></div>
 
         {/* Controls row - responsive layout */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between xl:flex-nowrap xl:justify-start xl:items-center xl:gap-4">
+        <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between xl:flex-wrap xl:justify-start xl:items-stretch xl:gap-1 2xl:flex-nowrap 2xl:items-center">
           {/* Fulfillment status filter (moved to front) */}
           {typeof fulfillmentFilter !== 'undefined' &&
             typeof setFulfillmentFilter !== 'undefined' && (
@@ -241,7 +298,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[80px]">
                   สถานะจัดส่ง
                 </label>
-                <div className="grid grid-cols-2 sm:flex gap-3">
+                <div className="grid grid-cols-2 sm:flex gap-3 w-full">
                   <button
                     type="button"
                     onClick={() => setFulfillmentFilter('fulfilled')}
@@ -267,7 +324,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               <label className="text-sm text-red-700 font-medium whitespace-nowrap sm:min-w-[68px] xl:hidden">
                 ช่วงวันที่
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 xl:flex gap-3 xl:gap-3 w-full sm:max-w-[560px] xl:max-w-none">
+              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 2xl:flex gap-3 w-full sm:max-w-[560px]">
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('today')}
@@ -303,7 +360,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           {/* Divider between date filters and month/year/pageSize */}
           <div className="hidden xl:block w-px bg-red-200 h-8 mx-2"></div>
           {/* Month/Year replaced by Date Range Picker when setDateRange is provided */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 2xl:flex xl:flex-none xl:items-center gap-4 xl:gap-4 w-full sm:items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 2xl:flex xl:flex-none xl:items-center gap-4 xl:gap-1 w-full sm:items-end">
             {typeof setDateRange === 'function' ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
                 <label className="text-sm text-red-700 font-semibold sm:whitespace-nowrap sm:min-w-[88px] flex items-center gap-2">
@@ -557,11 +614,12 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                       setDateQuickFilter?.('all')
                       setMonthFilter?.('all')
                       setYearFilter?.('all')
+                      setFulfillmentFilter?.('all')
                       setDateRange?.(null, null)
                       setShowFromCal(false)
                       setShowToCal(false)
                     }}
-                    title="ล้างช่วงวันที่"
+                    title="ล้างตัวกรองทั้งหมด"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -634,23 +692,23 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </>
             )}
             {/* Page size selector - on its own row on tablet, inline on larger screens */}
-            <div className="col-span-full sm:col-span-3 xl:col-auto xl:flex xl:items-center xl:gap-3">
-              <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:gap-3 sm:w-auto">
-                <label className="text-sm text-red-700 font-medium sm:whitespace-nowrap sm:min-w-[92px] xl:min-w-0">
+            <div className="col-span-full sm:col-span-3 xl:col-span-full 2xl:col-auto xl:flex xl:flex-col xl:items-start xl:gap-2 2xl:flex-row 2xl:items-center 2xl:gap-3 xl:mt-2 2xl:mt-0">
+              <div className="flex flex-col items-start gap-2 w-auto sm:flex-row sm:items-center sm:gap-3">
+                <label className="text-sm text-red-700 font-medium whitespace-nowrap min-w-[92px]">
                   แสดงต่อหน้า
                 </label>
                 <select
-                  className="w-full sm:w-auto flex-1 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 sm:px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                  className="w-24 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
                   value={pageSize}
                   onChange={(e) => {
                     setPage(() => 1)
                     setPageSize(parseInt(e.target.value, 10))
                   }}
                 >
+                  <option value={5}>5</option>
                   <option value={10}>10</option>
+                  <option value={15}>15</option>
                   <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
                 </select>
               </div>
             </div>

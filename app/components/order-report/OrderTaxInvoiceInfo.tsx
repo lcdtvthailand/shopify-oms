@@ -106,7 +106,7 @@ export const OrderTaxInvoiceInfo: React.FC<OrderTaxInvoiceInfoProps> = ({ order 
       </div>
       <div className="space-y-4 flex flex-col items-center sm:block">
         <div className="text-sm font-semibold text-gray-800 flex items-center gap-2"></div>
-        <div className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-inner w-fit max-w-[100%] sm:w-auto sm:max-w-none">
+        <div className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-inner w-full max-w-full sm:max-w-none">
           {/* Desktop table layout (hidden on mobile) */}
           <table className="hidden sm:table w-full text-sm">
             <tbody className="divide-y divide-gray-200">
@@ -116,7 +116,7 @@ export const OrderTaxInvoiceInfo: React.FC<OrderTaxInvoiceInfoProps> = ({ order 
                     {p.k}
                   </td>
                   <td className="align-top py-3 text-sm text-gray-900 break-words">
-                    <span className="bg-gray-100 px-2 py-1 rounded-md font-medium">
+                    <span className="bg-red-200 px-2 py-1 rounded-md font-medium border border-red-100">
                       {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
                         ? String(p.v || '').replace(/-/g, '')
                         : p.v}
@@ -136,7 +136,7 @@ export const OrderTaxInvoiceInfo: React.FC<OrderTaxInvoiceInfoProps> = ({ order 
               >
                 <div className="text-xs font-semibold text-gray-700 mb-1 text-left">{p.k}</div>
                 <div className="pl-4">
-                  <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-sm text-gray-900 inline-block text-left break-all">
+                  <span className="bg-red-200 px-2 py-1 rounded-md font-medium text-sm text-gray-900 inline-block text-left break-all border border-red-100">
                     {p.k.includes('หมายเลขประจำตัวผู้เสียภาษี')
                       ? String(p.v || '').replace(/-/g, '')
                       : p.v}

@@ -388,18 +388,26 @@ export default function OrderReportPage() {
 
           {/* Order Details Modal */}
           {selectedId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
               {/* Backdrop with dark background + blur to match original */}
               <button
                 type="button"
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm"
                 aria-label="Close details overlay"
                 onClick={() => handleCloseDetails()}
               />
               {/* Modal content */}
               <div
                 ref={detailsRef}
-                className="relative z-10 w-full max-w-6xl max-h-[85vh] overflow-y-auto bg-white border border-red-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl"
+                className="relative z-10 w-full max-w-6xl max-h-[85vh] overflow-y-auto bg-white border border-red-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl overscroll-contain"
+                style={{
+                  // Prevent scroll chaining
+                  overscrollBehavior: 'contain',
+                  // Smooth scrolling
+                  scrollBehavior: 'smooth',
+                  // Prevent content shift when scrollbar appears/disappears
+                  scrollbarGutter: 'stable both-edges',
+                }}
               >
                 {/* Top-right close button */}
                 <button

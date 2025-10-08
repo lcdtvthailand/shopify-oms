@@ -13,7 +13,7 @@ export default function TopMenu() {
           {/* Left side - empty for consistency with export button layout */}
           <div className="flex-1"></div>
           {/* Right side - logout button */}
-          <div className="flex items-center">
+          <div className="flex items-center pr-6 lg:pr-8">
             {isAuthenticated && (
               <button
                 type="button"
