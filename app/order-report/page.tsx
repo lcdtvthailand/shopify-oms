@@ -190,9 +190,9 @@ export default function OrderReportPage() {
       <div className="max-w-[1920px] mx-auto">
         <div className="bg-white rounded-2xl shadow-xl border border-red-100 p-6 lg:p-8">
           <div className="mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-center md:gap-4">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent mb-2 md:mb-0">
                   รายงานคำสั่งซื้อ LCDTV Thailand
                 </h1>
                 <div className="flex items-center gap-2 text-sm text-green-600">

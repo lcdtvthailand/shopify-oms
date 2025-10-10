@@ -174,29 +174,15 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     }
   }
 
-  // Function to handle page change with scroll to top
+  // Function to handle page change
   const handlePageChange = (newPage: number) => {
     setPage(() => newPage)
-    // Smooth scroll to top of the page
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
   }
 
   if (variant === 'bottom') {
-    // Calculate page numbers to display
-    const maxPageButtons = 5 // Show max 5 page numbers at a time
-    let startPage = Math.max(1, safePage - Math.floor(maxPageButtons / 2))
-    const endPage = Math.min(totalPages, startPage + maxPageButtons - 1)
-
-    // Adjust startPage if we're near the end
-    startPage = Math.max(1, endPage - maxPageButtons + 1)
-
-    const pageNumbers = []
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i)
-    }
+    // Always show first 3 pages, then ellipsis, then last page
+    const pageNumbers = [1, 2, 3].filter((page) => page <= totalPages)
+    const showEllipsis = totalPages > 3
 
     return (
       <div className="mt-4">
@@ -218,18 +204,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </svg>
             </button>
 
-            {startPage > 1 && (
-              <>
-                <button
-                  type="button"
-                  className={`w-10 h-10 text-sm font-medium ${1 === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
-                  onClick={() => handlePageChange(1)}
-                >
-                  1
-                </button>
-                {startPage > 2 && <span className="text-gray-500">...</span>}
-              </>
-            )}
+            {/* First page is always shown in the pageNumbers array */}
 
             {pageNumbers.map((pageNum) => (
               <button
@@ -242,16 +217,18 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </button>
             ))}
 
-            {endPage < totalPages && (
+            {showEllipsis && (
               <>
-                {endPage < totalPages - 1 && <span className="text-gray-500">...</span>}
-                <button
-                  type="button"
-                  className={`w-10 h-10 text-sm font-medium ${totalPages === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
-                  onClick={() => handlePageChange(totalPages)}
-                >
-                  {totalPages}
-                </button>
+                <span className="text-gray-500">...</span>
+                {totalPages > 3 && (
+                  <button
+                    type="button"
+                    className={`w-10 h-10 text-sm font-medium ${totalPages === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                    onClick={() => handlePageChange(totalPages)}
+                  >
+                    {totalPages}
+                  </button>
+                )}
               </>
             )}
 
@@ -285,12 +262,9 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   return (
     <div className="bg-white border border-red-200 rounded-xl px-5 sm:px-7 py-5 shadow-lg mb-4 sm:mb-6 2xl:mb-8">
       {/* Mobile-first layout; on xl+ keep header and controls in one row (iPad Pro = stacked) */}
-      <div className="flex flex-col gap-5 xl:flex-col 2xl:flex-row xl:items-stretch 2xl:items-center xl:justify-between xl:gap-0 2xl:gap-6">
-        {/* Empty div to maintain layout - result count moved to bottom */}
-        <div></div>
-
+      <div className="flex flex-col gap-5">
         {/* Controls row - responsive layout */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between xl:flex-wrap xl:justify-start xl:items-stretch xl:gap-1 2xl:flex-nowrap 2xl:items-center">
+        <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-start xl:flex-wrap xl:justify-start xl:items-stretch xl:gap-4 2xl:flex-nowrap 2xl:items-center">
           {/* Fulfillment status filter (moved to front) */}
           {typeof fulfillmentFilter !== 'undefined' &&
             typeof setFulfillmentFilter !== 'undefined' && (
@@ -360,7 +334,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           {/* Divider between date filters and month/year/pageSize */}
           <div className="hidden xl:block w-px bg-red-200 h-8 mx-2"></div>
           {/* Month/Year replaced by Date Range Picker when setDateRange is provided */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 2xl:flex xl:flex-none xl:items-center gap-4 xl:gap-1 w-full sm:items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 2xl:flex xl:flex-none xl:items-center gap-4 xl:gap-1 w-auto sm:items-end">
             {typeof setDateRange === 'function' ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
                 <label className="text-sm text-red-700 font-semibold sm:whitespace-nowrap sm:min-w-[88px] flex items-center gap-2">
