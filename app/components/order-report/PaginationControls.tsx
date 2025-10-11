@@ -185,18 +185,33 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   }
 
   if (variant === 'bottom') {
-    // Always show first 3 pages, then ellipsis, then last page
-    const pageNumbers = [1, 2, 3].filter((page) => page <= totalPages)
-    const showEllipsis = totalPages > 3
+    // For mobile: show first page, ellipsis, and current page (if not first page)
+    // For desktop: show first 3 pages, then ellipsis, then last page
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768 // 768px is Tailwind's 'md' breakpoint
+
+    let pageNumbers: number[] = []
+    let showEllipsis = false
+
+    if (isMobile) {
+      // Mobile view: Show [1, ..., currentPage] if not on first page, otherwise just [1]
+      pageNumbers = safePage > 1 ? [1, safePage] : [1]
+      showEllipsis = safePage > 2
+    } else {
+      // Desktop view: Original behavior
+      pageNumbers = [1, 2, 3].filter((page) => page <= totalPages)
+      showEllipsis = totalPages > 3
+    }
 
     return (
       <div className="mt-4 w-full">
-        <div className="flex justify-between items-center w-full">
-          <div className="text-sm text-gray-600">
-            แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จากทั้งหมด{' '}
-            {totalItems.toLocaleString()} รายการ หน้า {safePage} จาก {totalPages}
+        <div className="flex flex-col md:flex-row justify-between items-center w-full gap-4">
+          <div className="order-2 md:order-1 w-full md:w-auto flex justify-center md:justify-start">
+            <div className="text-sm text-gray-600 text-center md:text-left">
+              แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จากทั้งหมด{' '}
+              {totalItems.toLocaleString()} รายการ หน้า {safePage} จาก {totalPages}
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="order-1 md:order-2 flex items-center space-x-2 w-full md:w-auto justify-center">
             <button
               type="button"
               className="flex items-center justify-center w-10 h-10 text-sm font-medium text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200"
