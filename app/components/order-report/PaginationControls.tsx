@@ -177,6 +177,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   // Function to handle page change
   const handlePageChange = (newPage: number) => {
     setPage(() => newPage)
+    // Scroll to top of the page when pagination changes
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
   }
 
   if (variant === 'bottom') {
@@ -185,9 +190,13 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     const showEllipsis = totalPages > 3
 
     return (
-      <div className="mt-4">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="flex items-center justify-center space-x-2">
+      <div className="mt-4 w-full">
+        <div className="flex justify-between items-center w-full">
+          <div className="text-sm text-gray-600">
+            แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จากทั้งหมด{' '}
+            {totalItems.toLocaleString()} รายการ หน้า {safePage} จาก {totalPages}
+          </div>
+          <div className="flex items-center space-x-2">
             <button
               type="button"
               className="flex items-center justify-center w-10 h-10 text-sm font-medium text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-red-200 transition-all duration-200"
@@ -204,13 +213,13 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </svg>
             </button>
 
-            {/* First page is always shown in the pageNumbers array */}
-
             {pageNumbers.map((pageNum) => (
               <button
                 key={pageNum}
                 type="button"
-                className={`w-10 h-10 text-sm font-medium ${pageNum === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                className={`w-10 h-10 text-sm font-medium ${
+                  pageNum === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
+                } border-2 border-red-200 rounded-lg transition-all duration-200`}
                 onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum}
@@ -223,7 +232,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 {totalPages > 3 && (
                   <button
                     type="button"
-                    className={`w-10 h-10 text-sm font-medium ${totalPages === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'} border-2 border-red-200 rounded-lg transition-all duration-200`}
+                    className={`w-10 h-10 text-sm font-medium ${
+                      totalPages === safePage
+                        ? 'bg-red-600 text-white'
+                        : 'text-red-700 hover:bg-red-50'
+                    } border-2 border-red-200 rounded-lg transition-all duration-200`}
                     onClick={() => handlePageChange(totalPages)}
                   >
                     {totalPages}
@@ -247,12 +260,6 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 />
               </svg>
             </button>
-          </div>
-
-          {/* Result count text */}
-          <div className="text-sm text-gray-600 mt-2">
-            แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จากทั้งหมด{' '}
-            {totalItems.toLocaleString()} รายการ หน้า {safePage} จาก {totalPages}
           </div>
         </div>
       </div>
@@ -302,28 +309,28 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('today')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'today' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   วันนี้
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('yesterday')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'yesterday' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   เมื่อวาน
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('last7')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'last7' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   7 วันล่าสุด
                 </button>
                 <button
                   type="button"
                   onClick={() => setDateQuickFilter('all')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-12 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm sm:text-base rounded-lg border transition-colors ${dateQuickFilter === 'all' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                   title="ล้างตัวกรองวันที่แบบด่วน"
                 >
                   ทั้งหมด
@@ -359,7 +366,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                     <button
                       type="button"
                       ref={buttonRef}
-                      className="h-12 w-full sm:w-64 border-2 border-red-200 rounded-xl px-4 pr-9 bg-white hover:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-200/50 text-left text-sm shadow-sm flex items-center gap-2"
+                      className="h-10 w-full sm:w-64 border-2 border-red-200 rounded-xl px-4 pr-9 bg-white hover:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-200/50 text-left text-sm shadow-sm flex items-center gap-2"
                       onClick={() => {
                         setShowFromCal((s) => !s)
                         setShowToCal(false)
@@ -583,7 +590,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
 
                   <button
                     type="button"
-                    className="px-4 h-12 text-sm rounded-xl border-2 bg-gradient-to-r from-gray-50 to-gray-100 text-red-700 border-red-200 hover:from-red-50 hover:to-red-100 hover:border-red-300 transition-all duration-200 font-medium shadow-sm flex items-center gap-2"
+                    className="px-4 h-10 text-sm rounded-xl border-2 bg-gradient-to-r from-gray-50 to-gray-100 text-red-700 border-red-200 hover:from-red-50 hover:to-red-100 hover:border-red-300 transition-all duration-200 font-medium shadow-sm flex items-center gap-2"
                     onClick={() => {
                       setDateQuickFilter?.('all')
                       setMonthFilter?.('all')
@@ -672,7 +679,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                   แสดงต่อหน้า
                 </label>
                 <select
-                  className="w-24 text-sm sm:text-base h-12 border-2 border-red-200 rounded-lg px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
+                  className="w-24 text-sm sm:text-base h-10 border-2 border-red-200 rounded-lg px-3 bg-white hover:border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200"
                   value={pageSize}
                   onChange={(e) => {
                     setPage(() => 1)
