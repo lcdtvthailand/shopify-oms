@@ -1,16 +1,20 @@
 'use client'
 
 interface AuthPopupProps {
-  authCode: string
-  setAuthCode: (code: string) => void
+  email: string
+  password: string
+  setEmail: (email: string) => void
+  setPassword: (password: string) => void
   handleAuth: () => void
   authError: string
   authAttempts: number
 }
 
 export const AuthPopup: React.FC<AuthPopupProps> = ({
-  authCode,
-  setAuthCode,
+  email,
+  password,
+  setEmail,
+  setPassword,
   handleAuth,
   authError,
   authAttempts,
@@ -34,22 +38,39 @@ export const AuthPopup: React.FC<AuthPopupProps> = ({
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">เข้าสู่ระบบรายงาน</h2>
-        <p className="text-gray-600">กรุณาใส่รหัสเพื่อเข้าถึงหน้ารายงานคำสั่งซื้อ</p>
+        <p className="text-gray-600">กรุณาใส่อีเมลและรหัสผ่านเพื่อเข้าถึงหน้ารายงานคำสั่งซื้อ</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">รหัสเข้าใช้งาน</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyPress={(e) =>
+              e.key === 'Enter' && authAttempts < 3 && email.trim() && password && handleAuth()
+            }
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500 focus:outline-none transition-all duration-200"
+            placeholder="อีเมลของคุณ"
+            disabled={authAttempts >= 3}
+            autoComplete="username"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
           <input
             type="password"
-            value={authCode}
-            onChange={(e) => setAuthCode(e.target.value)}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             onKeyPress={(e) =>
-              e.key === 'Enter' && authAttempts < 3 && authCode.trim() && handleAuth()
+              e.key === 'Enter' && authAttempts < 3 && email.trim() && password && handleAuth()
             }
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-            placeholder="ใส่รหัสที่นี่"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500 focus:outline-none transition-all duration-200"
+            placeholder="รหัสผ่านของคุณ"
             disabled={authAttempts >= 3}
+            autoComplete="current-password"
           />
         </div>
 
@@ -77,10 +98,10 @@ export const AuthPopup: React.FC<AuthPopupProps> = ({
         <button
           type="button"
           onClick={handleAuth}
-          disabled={!authCode.trim() || authAttempts >= 3}
+          disabled={!email.trim() || !password || authAttempts >= 3}
           className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
         >
-          {authAttempts >= 3 ? 'ถูกล็อค กรุณารอ...' : 'เข้าสู่ระบบ'}
+          {authAttempts >= 3 ? 'ถูกล็อค กรุณารอ 5 นาที...' : 'เข้าสู่ระบบ'}
         </button>
 
         <div className="text-right text-xs text-gray-500 mt-4"></div>

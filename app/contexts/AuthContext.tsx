@@ -6,10 +6,12 @@ import { useOrderAuthentication } from '@/app/hooks/useOrderAuthentication'
 interface AuthContextType {
   isAuthenticated: boolean
   showAuthPopup: boolean
-  authCode: string
+  email: string
+  password: string
   authError: string
   authAttempts: number
-  setAuthCode: (code: string) => void
+  setEmail: (email: string) => void
+  setPassword: (password: string) => void
   handleAuth: () => Promise<void>
   handleLogout: () => Promise<void>
 }

@@ -1,27 +1,55 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
+interface UserCredentials {
+  email: string
+  password: string
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json().catch(() => ({}))) as { code?: unknown }
-    const code = typeof body.code === 'string' ? body.code : undefined
+    const body = (await request.json().catch(() => ({}))) as {
+      email?: unknown
+      password?: unknown
+    }
 
-    // Get the password from environment variable (required)
-    const validPassword = process.env.ORDER_REPORT_PASSWORD
-    if (!validPassword) {
+    const email = typeof body.email === 'string' ? body.email.trim() : ''
+    const password = typeof body.password === 'string' ? body.password : ''
+
+    // Get the credentials from environment variable (required)
+    const credentialsJson = process.env.ORDER_REPORT_PASSWORD
+    if (!credentialsJson) {
       return NextResponse.json(
         { success: false, message: 'Server not configured: ORDER_REPORT_PASSWORD is missing' },
         { status: 500 }
       )
     }
 
-    // Validate the code
-    if (!code) {
-      return NextResponse.json({ success: false, message: 'รหัสไม่ถูกต้อง' }, { status: 400 })
+    // Parse the credentials
+    let validCredentials: UserCredentials[] = []
+    try {
+      validCredentials = JSON.parse(credentialsJson) as UserCredentials[]
+      if (!Array.isArray(validCredentials)) {
+        throw new Error('Invalid credentials format')
+      }
+    } catch (error) {
+      console.error('Failed to parse ORDER_REPORT_PASSWORD:', error)
+      return NextResponse.json({ success: false, message: 'การตั้งค่าระบบไม่ถูกต้อง' }, { status: 500 })
     }
 
-    // Check if code matches (case insensitive)
-    if (code.toUpperCase() === validPassword.toUpperCase()) {
-      // Create response with success
+    // Validate input
+    if (!email || !password) {
+      return NextResponse.json(
+        { success: false, message: 'กรุณากรอกอีเมลและรหัสผ่าน' },
+        { status: 400 }
+      )
+    }
+
+    // Check if credentials match
+    const isValid = validCredentials.some(
+      (cred) => cred.email.toLowerCase() === email.toLowerCase() && cred.password === password
+    )
+
+    if (isValid) {
       const response = NextResponse.json(
         { success: true, message: 'เข้าสู่ระบบสำเร็จ' },
         { status: 200 }
@@ -38,10 +66,7 @@ export async function POST(request: NextRequest) {
 
       return response
     } else {
-      return NextResponse.json(
-        { success: false, message: 'รหัสไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' },
-        { status: 401 }
-      )
+      return NextResponse.json({ success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, { status: 401 })
     }
   } catch (error) {
     console.error('Auth error:', error)

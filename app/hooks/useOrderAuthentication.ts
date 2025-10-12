@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react'
 interface UseOrderAuthenticationReturn {
   isAuthenticated: boolean
   showAuthPopup: boolean
-  authCode: string
+  email: string
+  password: string
   authError: string
   authAttempts: number
-  setAuthCode: (code: string) => void
+  setEmail: (email: string) => void
+  setPassword: (password: string) => void
   handleAuth: () => Promise<void>
   handleLogout: () => Promise<void>
 }
@@ -16,7 +18,8 @@ interface UseOrderAuthenticationReturn {
 export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showAuthPopup, setShowAuthPopup] = useState(true)
-  const [authCode, setAuthCode] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [authAttempts, setAuthAttempts] = useState(0)
 
@@ -49,8 +52,16 @@ export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
 
   // Handle authentication
   const handleAuth = async () => {
-    if (!authCode.trim()) {
-      setAuthError('กรุณาใส่รหัสเข้าใช้งาน')
+    // Reset previous errors
+    setAuthError('')
+
+    // Validate inputs
+    if (!email.trim()) {
+      setAuthError('กรุณากรอกอีเมล')
+      return
+    }
+    if (!password) {
+      setAuthError('กรุณากรอกรหัสผ่าน')
       return
     }
 
@@ -60,8 +71,8 @@ export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({ code: authCode }),
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
       })
 
       const responseData = (await response.json()) as { success?: boolean; message?: string }
@@ -70,18 +81,19 @@ export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
         // Authentication successful
         setIsAuthenticated(true)
         setShowAuthPopup(false)
-        setAuthError('')
-        setAuthCode('')
+        setEmail('')
+        setPassword('')
         setAuthAttempts(0)
       } else {
         // Authentication failed
-        setAuthAttempts((prev) => prev + 1)
-        setAuthError(responseData.message || 'รหัสไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
-        setAuthCode('')
+        const newAttempts = authAttempts + 1
+        setAuthAttempts(newAttempts)
+        setAuthError(responseData.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+        setPassword('')
 
         // Lock after 3 failed attempts
-        if (authAttempts >= 2) {
-          setAuthError('คุณใส่รหัสผิดเกินกำหนด กรุณารอ 5 นาทีแล้วลองใหม่')
+        if (newAttempts >= 3) {
+          setAuthError('คุณใส่ข้อมูลไม่ถูกต้องเกินกำหนด กรุณารอ 5 นาทีแล้วลองใหม่')
           setTimeout(
             () => {
               setAuthAttempts(0)
@@ -102,15 +114,20 @@ export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
     try {
       await fetch('/api/order-report-auth', {
         method: 'DELETE',
-        credentials: 'include', // Include cookies
+        credentials: 'include',
       })
+      setIsAuthenticated(false)
+      setShowAuthPopup(true)
+      setEmail('')
+      setPassword('')
+      setAuthError('')
+      setAuthAttempts(0)
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
       // Always reset state regardless of API call result
       setIsAuthenticated(false)
       setShowAuthPopup(true)
-      setAuthCode('')
       setAuthError('')
       setAuthAttempts(0)
     }
@@ -119,10 +136,12 @@ export const useOrderAuthentication = (): UseOrderAuthenticationReturn => {
   return {
     isAuthenticated,
     showAuthPopup,
-    authCode,
+    email,
+    password,
     authError,
     authAttempts,
-    setAuthCode,
+    setEmail,
+    setPassword,
     handleAuth,
     handleLogout,
   }

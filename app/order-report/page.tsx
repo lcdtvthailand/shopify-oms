@@ -21,10 +21,12 @@ export default function OrderReportPage() {
   const {
     isAuthenticated,
     showAuthPopup,
-    authCode,
+    email,
+    password,
     authError,
     authAttempts,
-    setAuthCode,
+    setEmail,
+    setPassword,
     handleAuth,
   } = useAuth()
 
@@ -165,8 +167,10 @@ export default function OrderReportPage() {
   if (!isAuthenticated || showAuthPopup) {
     return (
       <AuthPopup
-        authCode={authCode}
-        setAuthCode={setAuthCode}
+        email={email}
+        password={password}
+        setEmail={setEmail}
+        setPassword={setPassword}
         handleAuth={handleAuth}
         authError={authError}
         authAttempts={authAttempts}
