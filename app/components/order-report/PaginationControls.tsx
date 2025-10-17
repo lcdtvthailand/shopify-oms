@@ -199,6 +199,8 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
 
     const showLeftEllipsis = !isSmall && middleStart > firstPage + 1
     const showRightEllipsis = !isSmall && middleEnd < lastPage - 1
+    const isAtStart = !isSmall && safePage <= firstPage + 1 // pages 1 or 2
+    const isAtEnd = !isSmall && safePage >= lastPage - 1 // last or last-1
 
     return (
       <div className="mt-4 w-full">
@@ -242,52 +244,118 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               ))
             ) : (
               <>
-                {/* First */}
-                <button
-                  type="button"
-                  className={`w-10 h-10 text-sm font-medium ${
-                    firstPage === safePage
-                      ? 'bg-red-600 text-white'
-                      : 'text-red-700 hover:bg-red-50'
-                  } border-2 border-red-200 rounded-lg transition-all duration-200`}
-                  onClick={() => handlePageChange(firstPage)}
-                >
-                  {firstPage}
-                </button>
-
-                {/* Left Ellipsis */}
-                {showLeftEllipsis && <span className="text-gray-500">...</span>}
-
-                {/* Middle Pages */}
-                {middlePages.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    className={`w-10 h-10 text-sm font-medium ${
-                      p === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
-                    } border-2 border-red-200 rounded-lg transition-all duration-200`}
-                    onClick={() => handlePageChange(p)}
-                  >
-                    {p}
-                  </button>
-                ))}
-
-                {/* Right Ellipsis */}
-                {showRightEllipsis && <span className="text-gray-500">...</span>}
-
-                {/* Last */}
-                {lastPage > firstPage && (
-                  <button
-                    type="button"
-                    className={`w-10 h-10 text-sm font-medium ${
-                      lastPage === safePage
-                        ? 'bg-red-600 text-white'
-                        : 'text-red-700 hover:bg-red-50'
-                    } border-2 border-red-200 rounded-lg transition-all duration-200`}
-                    onClick={() => handlePageChange(lastPage)}
-                  >
-                    {lastPage}
-                  </button>
+                {isAtStart ? (
+                  <>
+                    {/* 1 2 3 4 ... last */}
+                    {[firstPage, 2, 3, 4]
+                      .filter((p) => p <= lastPage - 1)
+                      .map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          className={`w-10 h-10 text-sm font-medium ${
+                            p === safePage
+                              ? 'bg-red-600 text-white'
+                              : 'text-red-700 hover:bg-red-50'
+                          } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                          onClick={() => handlePageChange(p)}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    <span className="text-gray-500">...</span>
+                    {lastPage > firstPage && (
+                      <button
+                        type="button"
+                        className={`w-10 h-10 text-sm font-medium ${
+                          lastPage === safePage
+                            ? 'bg-red-600 text-white'
+                            : 'text-red-700 hover:bg-red-50'
+                        } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                        onClick={() => handlePageChange(lastPage)}
+                      >
+                        {lastPage}
+                      </button>
+                    )}
+                  </>
+                ) : isAtEnd ? (
+                  <>
+                    {/* first ... last-3 last-2 last-1 last */}
+                    <button
+                      type="button"
+                      className={`w-10 h-10 text-sm font-medium ${
+                        firstPage === safePage
+                          ? 'bg-red-600 text-white'
+                          : 'text-red-700 hover:bg-red-50'
+                      } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                      onClick={() => handlePageChange(firstPage)}
+                    >
+                      {firstPage}
+                    </button>
+                    <span className="text-gray-500">...</span>
+                    {[lastPage - 3, lastPage - 2, lastPage - 1, lastPage]
+                      .filter((p) => p > firstPage)
+                      .map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          className={`w-10 h-10 text-sm font-medium ${
+                            p === safePage
+                              ? 'bg-red-600 text-white'
+                              : 'text-red-700 hover:bg-red-50'
+                          } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                          onClick={() => handlePageChange(p)}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                  </>
+                ) : (
+                  <>
+                    {/* First */}
+                    <button
+                      type="button"
+                      className={`w-10 h-10 text-sm font-medium ${
+                        firstPage === safePage
+                          ? 'bg-red-600 text-white'
+                          : 'text-red-700 hover:bg-red-50'
+                      } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                      onClick={() => handlePageChange(firstPage)}
+                    >
+                      {firstPage}
+                    </button>
+                    {/* Left Ellipsis */}
+                    {showLeftEllipsis && <span className="text-gray-500">...</span>}
+                    {/* Middle Pages */}
+                    {middlePages.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        className={`w-10 h-10 text-sm font-medium ${
+                          p === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
+                        } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                        onClick={() => handlePageChange(p)}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    {/* Right Ellipsis */}
+                    {showRightEllipsis && <span className="text-gray-500">...</span>}
+                    {/* Last */}
+                    {lastPage > firstPage && (
+                      <button
+                        type="button"
+                        className={`w-10 h-10 text-sm font-medium ${
+                          lastPage === safePage
+                            ? 'bg-red-600 text-white'
+                            : 'text-red-700 hover:bg-red-50'
+                        } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                        onClick={() => handlePageChange(lastPage)}
+                      >
+                        {lastPage}
+                      </button>
+                    )}
+                  </>
                 )}
               </>
             )}
