@@ -185,22 +185,20 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   }
 
   if (variant === 'bottom') {
-    // For mobile: show first page, ellipsis, and current page (if not first page)
-    // For desktop: show first 3 pages, then ellipsis, then last page
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768 // 768px is Tailwind's 'md' breakpoint
+    // Sliding window pagination: 1 ... (p-1 p p+1) ... last
+    // Fallback for small totalPages: show all without ellipsis
+    const windowRadius = 1 // shows 3 pages centered on current
+    const firstPage = 1
+    const lastPage = totalPages
 
-    let pageNumbers: number[] = []
-    let showEllipsis = false
+    const isSmall = totalPages <= 7
+    const middleStart = Math.max(firstPage + 1, safePage - windowRadius)
+    const middleEnd = Math.min(lastPage - 1, safePage + windowRadius)
+    const middlePages: number[] = []
+    for (let p = middleStart; p <= middleEnd; p++) middlePages.push(p)
 
-    if (isMobile) {
-      // Mobile view: Show [1, ..., currentPage] if not on first page, otherwise just [1]
-      pageNumbers = safePage > 1 ? [1, safePage] : [1]
-      showEllipsis = safePage > 2
-    } else {
-      // Desktop view: Original behavior
-      pageNumbers = [1, 2, 3].filter((page) => page <= totalPages)
-      showEllipsis = totalPages > 3
-    }
+    const showLeftEllipsis = !isSmall && middleStart > firstPage + 1
+    const showRightEllipsis = !isSmall && middleEnd < lastPage - 1
 
     return (
       <div className="mt-4 w-full">
@@ -228,33 +226,67 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               </svg>
             </button>
 
-            {pageNumbers.map((pageNum) => (
-              <button
-                key={pageNum}
-                type="button"
-                className={`w-10 h-10 text-sm font-medium ${
-                  pageNum === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
-                } border-2 border-red-200 rounded-lg transition-all duration-200`}
-                onClick={() => handlePageChange(pageNum)}
-              >
-                {pageNum}
-              </button>
-            ))}
-
-            {showEllipsis && (
+            {/* First page or all pages when small */}
+            {isSmall ? (
+              Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`w-10 h-10 text-sm font-medium ${
+                    p === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
+                  } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                  onClick={() => handlePageChange(p)}
+                >
+                  {p}
+                </button>
+              ))
+            ) : (
               <>
-                <span className="text-gray-500">...</span>
-                {totalPages > 3 && (
+                {/* First */}
+                <button
+                  type="button"
+                  className={`w-10 h-10 text-sm font-medium ${
+                    firstPage === safePage
+                      ? 'bg-red-600 text-white'
+                      : 'text-red-700 hover:bg-red-50'
+                  } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                  onClick={() => handlePageChange(firstPage)}
+                >
+                  {firstPage}
+                </button>
+
+                {/* Left Ellipsis */}
+                {showLeftEllipsis && <span className="text-gray-500">...</span>}
+
+                {/* Middle Pages */}
+                {middlePages.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`w-10 h-10 text-sm font-medium ${
+                      p === safePage ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
+                    } border-2 border-red-200 rounded-lg transition-all duration-200`}
+                    onClick={() => handlePageChange(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                {/* Right Ellipsis */}
+                {showRightEllipsis && <span className="text-gray-500">...</span>}
+
+                {/* Last */}
+                {lastPage > firstPage && (
                   <button
                     type="button"
                     className={`w-10 h-10 text-sm font-medium ${
-                      totalPages === safePage
+                      lastPage === safePage
                         ? 'bg-red-600 text-white'
                         : 'text-red-700 hover:bg-red-50'
                     } border-2 border-red-200 rounded-lg transition-all duration-200`}
-                    onClick={() => handlePageChange(totalPages)}
+                    onClick={() => handlePageChange(lastPage)}
                   >
-                    {totalPages}
+                    {lastPage}
                   </button>
                 )}
               </>
