@@ -32,7 +32,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
         onInput={(e) => {
           ;(e.target as HTMLTextAreaElement).setCustomValidity('')
         }}
-        placeholder="ที่อยู่"
+        placeholder={documentType === 'receipt' ? texts.registeredAddress : texts.address}
         rows={1}
         required
         className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
