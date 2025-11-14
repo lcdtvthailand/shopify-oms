@@ -1,5 +1,7 @@
 'use client'
 
+import { useLanguage } from '@/app/contexts/LanguageContext'
+
 interface DocumentTypeSelectorProps {
   documentType: 'tax' | 'receipt'
   onDocumentTypeChange: (type: 'tax' | 'receipt') => void
@@ -9,6 +11,7 @@ export const DocumentTypeSelector: React.FC<DocumentTypeSelectorProps> = ({
   documentType,
   onDocumentTypeChange,
 }) => {
+  const { texts } = useLanguage()
   return (
     <div className="space-y-3">
       <div className="radio-group flex flex-wrap items-center gap-4">
@@ -24,7 +27,7 @@ export const DocumentTypeSelector: React.FC<DocumentTypeSelectorProps> = ({
           <span
             className={`${documentType === 'tax' ? 'text-red-600' : 'text-gray-600'} font-medium`}
           >
-            บุคคลธรรมดา
+            {texts.individual}
           </span>
         </label>
         <label className="flex items-center space-x-2 cursor-pointer">
@@ -39,7 +42,7 @@ export const DocumentTypeSelector: React.FC<DocumentTypeSelectorProps> = ({
           <span
             className={`${documentType === 'receipt' ? 'text-red-600' : 'text-gray-600'} font-medium`}
           >
-            นิติบุคคล
+            {texts.corporate}
           </span>
         </label>
       </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { ErrorMessage } from '@/app/components/ui/ErrorMessage'
+import { useLanguage } from '@/app/contexts/LanguageContext'
 
 interface AddressFieldProps {
   documentType: 'tax' | 'receipt'
@@ -15,15 +16,11 @@ export const AddressField: React.FC<AddressFieldProps> = ({
   fieldErrors,
   onAddressChange,
 }) => {
+  const { texts } = useLanguage()
   return (
     <div className="space-y-2">
       <label className="block text-gray-700 font-medium">
-        ที่อยู่
-        <span className="ml-2 text-gray-500 text-sm">
-          {documentType === 'receipt'
-            ? '(กรอกตามที่อยู่จดทะเบียนบริษัท)'
-            : '(กรอก เลขที่, ชื่อหมู่บ้าน อาคาร คอนโด, หมู่ที่, ซอย, ถนน)'}
-        </span>
+        {documentType === 'receipt' ? texts.registeredAddress : texts.address}
       </label>
       <textarea
         name="address"

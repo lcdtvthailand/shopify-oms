@@ -1,6 +1,7 @@
 'use client'
 
 import { ErrorMessage } from '@/app/components/ui/ErrorMessage'
+import { useLanguage } from '@/app/contexts/LanguageContext'
 
 interface CompanyInfoFieldsProps {
   companyNameText: string
@@ -23,11 +24,12 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
   onBranchNumberChange,
   onClearFieldError,
 }) => {
+  const { texts } = useLanguage()
   return (
     <>
       {/* Company Name - Full Width for juristic person */}
       <div className="space-y-2">
-        <label className="block text-gray-700 font-medium">ชื่อบริษัท</label>
+        <label className="block text-gray-700 font-medium">{texts.companyName}</label>
         <input
           type="text"
           name="companyNameText"
@@ -40,7 +42,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
           onInput={(e) => {
             ;(e.target as HTMLInputElement).setCustomValidity('')
           }}
-          placeholder="ชื่อบริษัท"
+          placeholder={texts.companyName}
           required
           className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
             fieldErrors.companyNameText
@@ -55,7 +57,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
       <div className={`grid grid-cols-1 ${branchType === 'branch' ? 'md:grid-cols-2' : ''} gap-6`}>
         {/* Left: Branch radios */}
         <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">สาขา</label>
+          <label className="block text-gray-700 font-medium">{texts.branch}</label>
           <div className="flex items-center space-x-6 gap-4">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -73,7 +75,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
               <span
                 className={`${branchType === 'head' ? 'text-red-600' : 'text-gray-600'} font-medium`}
               >
-                สำนักงานใหญ่
+                {texts.headOffice}
               </span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -91,7 +93,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
               <span
                 className={`${branchType === 'branch' ? 'text-red-600' : 'text-gray-600'} font-medium`}
               >
-                สาขาย่อย
+                {texts.branchOffice}
               </span>
             </label>
           </div>

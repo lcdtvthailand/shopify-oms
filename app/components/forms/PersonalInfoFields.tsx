@@ -1,6 +1,7 @@
 'use client'
 
 import { ErrorMessage } from '@/app/components/ui/ErrorMessage'
+import { useLanguage } from '@/app/contexts/LanguageContext'
 
 interface PersonalInfoFieldsProps {
   titleName: string
@@ -19,11 +20,12 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
   onFullNameChange,
   onClearFieldError,
 }) => {
+  const { texts } = useLanguage()
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Title Name - Half width */}
       <div className="space-y-2">
-        <label className="block text-gray-700 font-medium">คำนำหน้าชื่อ</label>
+        <label className="block text-gray-700 font-medium">{texts.titleLabel}</label>
         <div className="relative">
           <select
             name="titleName"
@@ -45,7 +47,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
                 : 'border-gray-300 focus:ring-red-500'
             }`}
           >
-            <option value="">เลือกคำนำหน้าชื่อ</option>
+            <option value="">{texts.selectTitle}</option>
             <option value="นาย">นาย</option>
             <option value="นาง">นาง</option>
             <option value="นางสาว">นางสาว</option>
@@ -70,7 +72,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
 
       {/* Name - Half width */}
       <div className="space-y-2">
-        <label className="block text-gray-700 font-medium">ชื่อ-นามสกุล</label>
+        <label className="block text-gray-700 font-medium">{texts.fullName}</label>
         <input
           type="text"
           name="fullName"
@@ -83,7 +85,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
           onInput={(e) => {
             ;(e.target as HTMLInputElement).setCustomValidity('')
           }}
-          placeholder="ชื่อ-นามสกุล"
+          placeholder={texts.fullName}
           required
           className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
             fieldErrors.fullName

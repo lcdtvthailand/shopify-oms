@@ -1,6 +1,7 @@
 'use client'
 
 import { ErrorMessage } from '@/app/components/ui/ErrorMessage'
+import { useLanguage } from '@/app/contexts/LanguageContext'
 
 interface TaxIdAndPhoneFieldsProps {
   documentType: 'tax' | 'receipt'
@@ -23,13 +24,13 @@ export const TaxIdAndPhoneFields: React.FC<TaxIdAndPhoneFieldsProps> = ({
   onCompanyNameChange,
   onBranchCodeBlur,
 }) => {
+  const { texts } = useLanguage()
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Tax Identification Number - Half width */}
       <div className="space-y-2">
         <label className="block text-gray-700 font-medium">
-          {documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'}
-          <span className="ml-2 text-gray-500 text-sm">(กรอกเลข 13 หลัก)</span>
+          {documentType === 'receipt' ? texts.taxId : texts.nationalId}
         </label>
         <input
           type="text"
@@ -46,7 +47,7 @@ export const TaxIdAndPhoneFields: React.FC<TaxIdAndPhoneFieldsProps> = ({
           onInput={(e) => {
             ;(e.target as HTMLInputElement).setCustomValidity('')
           }}
-          placeholder={`${documentType === 'receipt' ? 'หมายเลขประจำตัวผู้เสียภาษี' : 'เลขประจำตัวประชาชน'} (กรอกเลข 13 หลัก)`}
+          placeholder={documentType === 'receipt' ? texts.taxId : texts.nationalId}
           inputMode="tel"
           maxLength={13}
           onBlur={onBranchCodeBlur}
@@ -62,10 +63,7 @@ export const TaxIdAndPhoneFields: React.FC<TaxIdAndPhoneFieldsProps> = ({
 
       {/* Phone Number - Half width */}
       <div className="space-y-2">
-        <label className="block text-gray-700 font-medium">
-          หมายเลขโทรศัพท์
-          <span className="ml-2 text-gray-500 text-sm">(ไม่บังคับ)</span>
-        </label>
+        <label className="block text-gray-700 font-medium">{texts.phoneNumber}</label>
         <input
           type="text"
           name="companyName"
@@ -77,7 +75,7 @@ export const TaxIdAndPhoneFields: React.FC<TaxIdAndPhoneFieldsProps> = ({
           onInput={(e) => {
             ;(e.target as HTMLInputElement).setCustomValidity('')
           }}
-          placeholder="หมายเลขโทรศัพท์ (ไม่บังคับ)"
+          placeholder={texts.phoneNumber}
           inputMode="tel"
           maxLength={12}
           className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${

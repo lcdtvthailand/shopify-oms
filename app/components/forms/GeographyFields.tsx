@@ -1,6 +1,7 @@
 'use client'
 
 import { ErrorMessage } from '@/app/components/ui/ErrorMessage'
+import { useLanguage } from '@/app/contexts/LanguageContext'
 
 interface GeographyFieldsProps {
   provinceCode: number | null
@@ -33,12 +34,13 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
   onPostalCodeChange,
   onClearFieldError,
 }) => {
+  const { texts, language } = useLanguage()
   return (
     <>
       {/* Province and District Row - Two Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">จังหวัด</label>
+          <label className="block text-gray-700 font-medium">{texts.province}</label>
           <div className="relative">
             <select
               name="provinceCode"
@@ -60,10 +62,10 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
                   : 'border-gray-300 focus:ring-red-500'
               }`}
             >
-              <option value="">เลือกจังหวัด</option>
+              <option value="">{texts.selectProvince}</option>
               {provinces.map((p) => (
                 <option key={p.code} value={String(p.code)}>
-                  {p.nameTh}
+                  {language === 'th' ? p.nameTh : p.nameEn}
                 </option>
               ))}
             </select>
@@ -88,7 +90,7 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
           </div>
         </div>
         <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">อำเภอ/ เขต</label>
+          <label className="block text-gray-700 font-medium">{texts.district}</label>
           <div className="relative">
             <select
               name="districtCode"
@@ -111,10 +113,10 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
                   : 'border-gray-300 focus:ring-red-500'
               }`}
             >
-              <option value="">เลือกอำเภอ/เขต</option>
+              <option value="">{texts.selectDistrict}</option>
               {districts.map((d) => (
                 <option key={d.code} value={String(d.code)}>
-                  {d.nameTh}
+                  {language === 'th' ? d.nameTh : d.nameEn}
                 </option>
               ))}
             </select>
@@ -140,7 +142,7 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
       {/* Subdistrict and Postal Code Row - Two Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">ตำบล/ แขวง</label>
+          <label className="block text-gray-700 font-medium">{texts.subdistrict}</label>
           <div className="relative">
             <select
               name="subdistrictCode"
@@ -163,10 +165,10 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
                   : 'border-gray-300 focus:ring-red-500'
               }`}
             >
-              <option value="">เลือกตำบล/แขวง</option>
+              <option value="">{texts.selectSubdistrict}</option>
               {subdistricts.map((s) => (
                 <option key={s.code} value={String(s.code)}>
-                  {s.nameTh}
+                  {language === 'th' ? s.nameTh : s.nameEn}
                 </option>
               ))}
             </select>
@@ -188,7 +190,7 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
           </div>
         </div>
         <div className="space-y-2">
-          <label className="block text-gray-700 font-medium">รหัสไปรษณีย์</label>
+          <label className="block text-gray-700 font-medium">{texts.postalCode}</label>
           <input
             type="text"
             name="postalCode"
@@ -200,7 +202,7 @@ export const GeographyFields: React.FC<GeographyFieldsProps> = ({
             onInput={(e) => {
               ;(e.target as HTMLInputElement).setCustomValidity('')
             }}
-            placeholder="รหัสไปรษณีย์"
+            placeholder={texts.postalCode}
             inputMode="numeric"
             maxLength={5}
             required

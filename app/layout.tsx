@@ -6,6 +6,7 @@ import TopBar from './components/layout/TopBar'
 import TopMenu from './components/layout/TopMenu'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { AuthProvider } from './contexts/AuthContext'
+import { LanguageProvider } from './contexts/LanguageContext'
 
 const anuphan = Anuphan({
   subsets: ['thai', 'latin'],
@@ -23,22 +24,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="th">
       <body className={`bg-gray-50 min-h-screen ${anuphan.className}`}>
         <AuthProvider>
-          <TopBar />
-          <header className="bg-white">
-            <div className="mx-auto max-w-screen-xl px-3 sm:px-4 py-2 sm:py-3 flex justify-center">
-              <Image
-                src="/LOGO LCDTVTHAILAND SHOP Official 1.png"
-                alt="LCDTVTHAILAND SHOP"
-                width={200}
-                height={60}
-                priority
-              />
-            </div>
-          </header>
-          <TopMenu />
-          <main>
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </main>
+          <LanguageProvider>
+            <TopBar />
+            <header className="bg-white">
+              <div className="mx-auto max-w-screen-xl px-3 sm:px-4 py-2 sm:py-3 flex justify-center">
+                <Image
+                  src="/LOGO LCDTVTHAILAND SHOP Official 1.png"
+                  alt="LCDTVTHAILAND SHOP"
+                  width={200}
+                  height={60}
+                  priority
+                />
+              </div>
+            </header>
+            <TopMenu />
+            <main>
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </main>
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>
