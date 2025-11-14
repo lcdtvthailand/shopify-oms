@@ -103,7 +103,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
         {/* Right: Sub-branch code input (show only when selecting branch) */}
         {branchType === 'branch' && (
           <div className="space-y-2">
-            <label className="block text-gray-700 font-medium">รหัสสาขาย่อย</label>
+            <label className="block text-gray-700 font-medium">{texts.branchCode}</label>
             <input
               type="text"
               name="branchNumber"
@@ -115,7 +115,7 @@ export const CompanyInfoFields: React.FC<CompanyInfoFieldsProps> = ({
               onInput={(e) => {
                 ;(e.target as HTMLInputElement).setCustomValidity('')
               }}
-              placeholder="รหัสสาขาย่อย"
+              placeholder={texts.branchCode}
               inputMode="numeric"
               pattern="\\d{5}"
               maxLength={5}

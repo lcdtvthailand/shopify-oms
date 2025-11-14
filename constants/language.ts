@@ -26,6 +26,7 @@ export const TAX_INVOICE_TEXTS = {
     branch: 'สาขา',
     headOffice: 'สำนักงานใหญ่',
     branchOffice: 'สาขาย่อย',
+    branchCode: 'รหัสสาขาย่อย',
     taxId: 'หมายเลขประจำตัวผู้เสียภาษี (กรอกเลข 13 หลัก)',
 
     // Address fields
@@ -82,6 +83,7 @@ export const TAX_INVOICE_TEXTS = {
     branch: 'Branch',
     headOffice: 'Head Office',
     branchOffice: 'Branch Office',
+    branchCode: 'Branch Code',
     taxId: 'Tax Identification Number (13 digits)',
 
     // Address fields
