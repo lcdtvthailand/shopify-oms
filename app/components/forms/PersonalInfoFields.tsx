@@ -48,9 +48,9 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
             }`}
           >
             <option value="">{texts.selectTitle}</option>
-            <option value="นาย">นาย</option>
-            <option value="นาง">นาง</option>
-            <option value="นางสาว">นางสาว</option>
+            <option value="นาย">{texts.titleMr}</option>
+            <option value="นาง">{texts.titleMrs}</option>
+            <option value="นางสาว">{texts.titleMiss}</option>
           </select>
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
             <svg

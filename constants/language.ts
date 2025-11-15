@@ -17,6 +17,9 @@ export const TAX_INVOICE_TEXTS = {
     // Personal info fields
     titleLabel: 'คำนำหน้าชื่อ',
     selectTitle: 'เลือกคำนำหน้าชื่อ',
+    titleMr: 'นาย',
+    titleMrs: 'นาง',
+    titleMiss: 'นางสาว',
     fullName: 'ชื่อ-นามสกุล',
     nationalId: 'เลขประจำตัวประชาชน (กรอกเลข 13 หลัก)',
     phoneNumber: 'หมายเลขโทรศัพท์ (ไม่บังคับ)',
@@ -31,7 +34,9 @@ export const TAX_INVOICE_TEXTS = {
 
     // Address fields
     address: 'ที่อยู่ (กรอก เลขที่, ชื่อหมู่บ้าน อาคาร คอนโด, หมู่ที่, ซอย, ถนน)',
+    addressPlaceholder: 'ที่อยู่',
     registeredAddress: 'ที่อยู่ (กรอกตามที่อยู่จดทะเบียนบริษัท)',
+    registeredAddressPlaceholder: 'ที่อยู่จดทะเบียนบริษัท',
     province: 'จังหวัด',
     selectProvince: 'เลือกจังหวัด',
     district: 'อำเภอ/เขต',
@@ -74,6 +79,9 @@ export const TAX_INVOICE_TEXTS = {
     // Personal info fields
     titleLabel: 'Title',
     selectTitle: 'Select Title',
+    titleMr: 'Mr.',
+    titleMrs: 'Mrs.',
+    titleMiss: 'Miss',
     fullName: 'Full Name',
     nationalId: 'National ID Number (13 digits)',
     phoneNumber: 'Phone Number (optional)',
@@ -88,7 +96,9 @@ export const TAX_INVOICE_TEXTS = {
 
     // Address fields
     address: 'Address (House No., Village/Building/Condo, Alley, Road)',
+    addressPlaceholder: 'Address',
     registeredAddress: 'Registered Address (as listed in company documents)',
+    registeredAddressPlaceholder: 'Registered Address',
     province: 'Province',
     selectProvince: 'Select Province',
     district: 'District',
