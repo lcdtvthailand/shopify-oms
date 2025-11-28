@@ -418,14 +418,14 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 <button
                   type="button"
                   onClick={() => setPackingFilter('packed')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm rounded-lg border transition-colors ${packingFilter === 'packed' ? 'bg-green-600 text-white border-green-700' : 'bg-white text-green-700 border-green-200 hover:bg-green-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm rounded-lg border transition-colors ${packingFilter === 'packed' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   Packed
                 </button>
                 <button
                   type="button"
                   onClick={() => setPackingFilter('unpacked')}
-                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm rounded-lg border transition-colors ${packingFilter === 'unpacked' ? 'bg-orange-600 text-white border-orange-700' : 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50'}`}
+                  className={`w-full sm:w-auto text-center whitespace-nowrap px-3 h-10 text-sm rounded-lg border transition-colors ${packingFilter === 'unpacked' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-red-700 border-red-200 hover:bg-red-50'}`}
                 >
                   Unpacked
                 </button>
