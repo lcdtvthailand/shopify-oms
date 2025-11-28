@@ -5,6 +5,7 @@ import { OrderCustomerInfo } from './OrderCustomerInfo'
 import { OrderDiscountsPromo } from './OrderDiscountsPromo'
 import { OrderFinancialInfo } from './OrderFinancialInfo'
 import { OrderItemsInfo } from './OrderItemsInfo'
+import { OrderPackingInfo } from './OrderPackingInfo'
 import { OrderRefundsReturns } from './OrderRefundsReturns'
 import { OrderShippingInfo } from './OrderShippingInfo'
 import { OrderTaxInvoiceInfo } from './OrderTaxInvoiceInfo'
@@ -51,6 +52,7 @@ export const OrderDetailsComplete: React.FC<OrderDetailsCompleteProps> = ({ orde
       <OrderRefundsReturns order={order} />
       <OrderDiscountsPromo order={order} />
       <OrderTaxInvoiceInfo order={order} />
+      <OrderPackingInfo order={order} />
     </div>
   )
 }

@@ -163,11 +163,16 @@ export const useOrderExport = (defaultOrders?: OrderNode[]): UseOrderExportRetur
           getMf(['custom.full_address', 'custom.custom_full_address'])
         )
 
+        // Determine packing status from tags
+        const orderTags = (o.tags || []).map((t: string) => t.toLowerCase().trim())
+        const packingStatus = orderTags.includes('packed') ? 'PACKED' : 'UNPACKED'
+
         const baseRow = {
           หมายเลขคำสั่งซื้อ: o.name,
           'Line No.': 0,
           วันที่: formatDateTimeAD(o.createdAt),
           สถานะการชำระเงิน: o.displayFinancialStatus || '',
+          สถานะการจัดของ: packingStatus,
           สถานะการจัดส่ง: o.displayFulfillmentStatus || '',
           'ชื่อผู้ใช้ (ผู้ซื้อ)': customerName,
           อีเมล: o.customer?.email || o.email || '',

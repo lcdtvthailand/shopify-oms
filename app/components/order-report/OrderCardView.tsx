@@ -17,7 +17,7 @@ export const OrderCardView: React.FC<OrderCardViewProps> = ({
   handleSelectOrder,
 }) => {
   return (
-    <div className="2xl:hidden space-y-4 md:space-y-6">
+    <div className="xl:hidden space-y-4 md:space-y-6">
       {pageData.map((order, _index) => {
         const customerName = order.customer?.displayName || order.customer?.email || '-'
         const shippingAddress: any = (order as any).shippingAddress || {}
@@ -112,6 +112,15 @@ export const OrderCardView: React.FC<OrderCardViewProps> = ({
                 <Badge tone={order.displayFulfillmentStatus === 'FULFILLED' ? 'green' : 'gray'}>
                   {order.displayFulfillmentStatus || 'UNFULFILLED'}
                 </Badge>
+                {(() => {
+                  const tags = (order.tags || []).map((t: string) => t.toLowerCase().trim())
+                  const isPacked = tags.includes('packed')
+                  return (
+                    <Badge tone={isPacked ? 'green' : 'yellow'}>
+                      {isPacked ? 'PACKED' : 'UNPACKED'}
+                    </Badge>
+                  )
+                })()}
               </div>
             </div>
 

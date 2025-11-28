@@ -5,16 +5,19 @@ import type { OrderNode } from './useOrderData'
 
 type DateQuickFilter = 'all' | 'today' | 'yesterday' | 'last7'
 type FulfillmentFilter = 'all' | 'fulfilled' | 'unfulfilled'
+type PackingFilter = 'all' | 'packed' | 'unpacked'
 
 interface UseOrderFilteringReturn {
   monthFilter: number | 'all'
   yearFilter: number | 'all'
   dateQuickFilter: DateQuickFilter
   fulfillmentFilter: FulfillmentFilter
+  packingFilter: PackingFilter
   setMonthFilter: (filter: number | 'all') => void
   setYearFilter: (filter: number | 'all') => void
   setDateQuickFilter: (filter: DateQuickFilter) => void
   setFulfillmentFilter: (filter: FulfillmentFilter) => void
+  setPackingFilter: (filter: PackingFilter) => void
   getFilteredOrders: (orders: OrderNode[]) => OrderNode[]
   thaiMonths: string[]
   years: number[]
@@ -30,6 +33,7 @@ export const useOrderFiltering = (orders: OrderNode[]): UseOrderFilteringReturn 
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
   const [dateQuickFilter, setDateQuickFilter] = useState<DateQuickFilter>('all')
   const [fulfillmentFilter, setFulfillmentFilter] = useState<FulfillmentFilter>('all')
+  const [packingFilter, setPackingFilter] = useState<PackingFilter>('all')
   const [fromDate, setFromDate] = useState<string | null>(null)
   const [toDate, setToDate] = useState<string | null>(null)
 
@@ -102,14 +106,24 @@ export const useOrderFiltering = (orders: OrderNode[]): UseOrderFilteringReturn 
       if (!(okMonth && okYear)) return false
 
       // Fulfillment status filter
-      if (fulfillmentFilter === 'all') return true
-      const raw = (o.displayFulfillmentStatus || '').toUpperCase().trim()
-      if (fulfillmentFilter === 'fulfilled') {
-        return raw === 'FULFILLED'
+      if (fulfillmentFilter !== 'all') {
+        const raw = (o.displayFulfillmentStatus || '').toUpperCase().trim()
+        if (fulfillmentFilter === 'fulfilled') {
+          if (raw !== 'FULFILLED') return false
+        }
+        if (fulfillmentFilter === 'unfulfilled') {
+          if (raw !== 'UNFULFILLED' && raw !== '') return false
+        }
       }
-      if (fulfillmentFilter === 'unfulfilled') {
-        return raw === 'UNFULFILLED' || raw === ''
+
+      // Packing status filter (based on tags)
+      if (packingFilter !== 'all') {
+        const tags = (o.tags || []).map((t: string) => t.toLowerCase().trim())
+        const isPacked = tags.includes('packed')
+        if (packingFilter === 'packed' && !isPacked) return false
+        if (packingFilter === 'unpacked' && isPacked) return false
       }
+
       return true
     })
   }
@@ -119,10 +133,12 @@ export const useOrderFiltering = (orders: OrderNode[]): UseOrderFilteringReturn 
     yearFilter,
     dateQuickFilter,
     fulfillmentFilter,
+    packingFilter,
     setMonthFilter,
     setYearFilter,
     setDateQuickFilter,
     setFulfillmentFilter,
+    setPackingFilter,
     getFilteredOrders,
     thaiMonths,
     years,

@@ -21,114 +21,67 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
   getSortIcon,
 }) => {
   return (
-    <div className="hidden 2xl:block overflow-x-auto">
+    <div className="hidden xl:block overflow-x-auto">
       <div className="bg-white border border-red-200 rounded-xl shadow-lg overflow-hidden">
-        <table className="min-w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-gradient-to-r from-red-50 to-red-100">
             <tr>
               <th
-                className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
+                className="w-[6%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
                 onClick={() => handleSort('name')}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
-                    />
-                  </svg>
-                  Order
-                  <span className="text-lg">{getSortIcon('name')}</span>
+                <div className="flex items-center gap-1">
+                  <span>#</span>
+                  <span className="text-sm">{getSortIcon('name')}</span>
                 </div>
               </th>
               <th
-                className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
+                className="w-[10%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
                 onClick={() => handleSort('createdAt')}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
+                <div className="flex items-center gap-1">
                   Date
-                  <span className="text-lg">{getSortIcon('createdAt')}</span>
+                  <span className="text-sm">{getSortIcon('createdAt')}</span>
                 </div>
               </th>
               <th
-                className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
+                className="w-[10%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
                 onClick={() => handleSort('customerName')}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                <div className="flex items-center gap-1">
                   Customer
-                  <span className="text-lg">{getSortIcon('customerName')}</span>
+                  <span className="text-sm">{getSortIcon('customerName')}</span>
                 </div>
               </th>
-              <th className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider">
+              <th className="w-[18%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider">
                 Shipping
               </th>
-              <th className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider">
+              <th className="w-[18%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider">
                 Items
               </th>
               <th
-                className="px-7 py-5 text-left text-sm font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
+                className="w-[9%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
                 onClick={() => handleSort('status')}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                <div className="flex items-center gap-1">
                   Status
-                  <span className="text-lg">{getSortIcon('status')}</span>
+                  <span className="text-sm">{getSortIcon('status')}</span>
                 </div>
+              </th>
+              <th className="w-[8%] px-3 py-4 text-left text-xs font-semibold text-red-800 uppercase tracking-wider">
+                Packing
               </th>
               <th
-                className="px-7 py-5 text-right text-sm font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
+                className="w-[10%] px-3 py-4 text-right text-xs font-semibold text-red-800 uppercase tracking-wider cursor-pointer hover:bg-red-200/50 transition-colors duration-200"
                 onClick={() => handleSort('totalPrice')}
               >
-                <div className="flex items-center justify-end gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
+                <div className="flex items-center justify-end gap-1">
                   Total
-                  <span className="text-lg">{getSortIcon('totalPrice')}</span>
+                  <span className="text-sm">{getSortIcon('totalPrice')}</span>
                 </div>
               </th>
-              <th className="px-7 py-5 text-right text-sm font-semibold text-red-800 uppercase tracking-wider">
-                <div className="flex items-center justify-end gap-3">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                    />
-                  </svg>
-                  Actions
-                </div>
+              <th className="w-[11%] px-3 py-4 text-center text-xs font-semibold text-red-800 uppercase tracking-wider">
+                Actions
               </th>
             </tr>
           </thead>
@@ -203,20 +156,20 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
                   }}
                   className={`${_index % 2 === 0 ? 'bg-white' : 'bg-white'} ${selectedId === order.id ? 'ring-2 ring-red-500 bg-white' : ''} hover:bg-white transition-colors duration-200`}
                 >
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      {order.name}
+                  <td className="px-3 py-3 text-xs font-medium text-gray-900">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">{order.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
-                    {fmtDateTime(order.createdAt)}
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    <span className="whitespace-nowrap">{fmtDateTime(order.createdAt)}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg
-                          className="h-4 w-4 text-red-600"
+                          className="h-3 w-3 text-red-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -229,13 +182,11 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
                           />
                         </svg>
                       </div>
-                      <span className="font-medium truncate inline-block max-w-[240px]">
-                        {customerName}
-                      </span>
+                      <span className="font-medium truncate">{customerName}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-700">
-                    <div className="space-y-1 leading-5">
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    <div className="space-y-0.5 leading-4">
                       <div>
                         <span className="text-[11px] text-gray-500">ผู้รับ</span>
                         <span className="mx-1 text-gray-400">:</span>
@@ -296,8 +247,8 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-700">
-                    <div className="space-y-3 leading-5">
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    <div className="space-y-2 leading-4">
                       {allItems.length === 0 && <div className="text-gray-400">-</div>}
                       {allItems.map((it: any, idx: number) => {
                         const nm: string = it?.name || '-'
@@ -345,8 +296,8 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
                       })}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    <div className="flex flex-col space-y-2">
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    <div className="flex flex-col space-y-1">
                       <Badge tone={order.displayFinancialStatus === 'PAID' ? 'green' : 'yellow'}>
                         {order.displayFinancialStatus || '-'}
                       </Badge>
@@ -357,22 +308,33 @@ export const OrderTableDesktop: React.FC<OrderTableDesktopProps> = ({
                       </Badge>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right">
-                    <span className="font-semibold text-lg text-red-700">
+                  <td className="px-3 py-3 text-xs text-gray-700">
+                    {(() => {
+                      const tags = (order.tags || []).map((t: string) => t.toLowerCase().trim())
+                      const isPacked = tags.includes('packed')
+                      return (
+                        <Badge tone={isPacked ? 'green' : 'yellow'}>
+                          {isPacked ? 'PACKED' : 'UNPACKED'}
+                        </Badge>
+                      )
+                    })()}
+                  </td>
+                  <td className="px-3 py-3 text-xs text-gray-900 text-right">
+                    <span className="font-semibold text-base text-red-700">
                       {money(order.currentTotalPriceSet)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right">
+                  <td className="px-3 py-3 text-xs text-gray-900 text-center">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
                       onClick={(e) => {
                         e.preventDefault()
                         handleSelectOrder(order.id, order.name)
                       }}
                     >
                       <svg
-                        className="h-4 w-4"
+                        className="h-3 w-3"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

@@ -39,10 +39,12 @@ export default function OrderReportPage() {
     yearFilter,
     dateQuickFilter,
     fulfillmentFilter,
+    packingFilter,
     setMonthFilter,
     setYearFilter,
     setDateQuickFilter,
     setFulfillmentFilter,
+    setPackingFilter,
     getFilteredOrders,
     thaiMonths,
     years,
@@ -255,6 +257,8 @@ export default function OrderReportPage() {
             setDateQuickFilter={setDateQuickFilter}
             fulfillmentFilter={fulfillmentFilter}
             setFulfillmentFilter={setFulfillmentFilter}
+            packingFilter={packingFilter}
+            setPackingFilter={setPackingFilter}
             fromDate={fromDate}
             toDate={toDate}
             setDateRange={(from, to) => {
