@@ -100,25 +100,17 @@ export const useUrlParameterHandling = (
         // Also constrain by created_at to only pick orders created after arrival (minus skew)
         const skewMs = 60000
         const sinceIso = new Date(new Date(arrivalAtRef.current).getTime() - skewMs).toISOString()
-        const primaryQueries = [
-          `email:"${customerEmail}" created_at:>=${sinceIso}`,
-          `customer_email:"${customerEmail}" created_at:>=${sinceIso}`,
-        ]
-        for (const q of primaryQueries) {
-          const res = await runSearch(q)
-          if (res) {
-            return res
-          }
+
+        // Try with created_at constraint first (single query to reduce API calls)
+        const primaryQuery = `email:"${customerEmail}" created_at:>=${sinceIso}`
+        const res = await runSearch(primaryQuery)
+        if (res) {
+          return res
         }
-        // Fallback: if none found after arrival (index lag), try without created_at but still return something
-        const fallbackQueries = [`email:"${customerEmail}"`, `customer_email:"${customerEmail}"`]
-        for (const q of fallbackQueries) {
-          const res = await runSearch(q)
-          if (res) {
-            return res
-          }
-        }
-        return null
+
+        // Fallback: try without created_at constraint (only one fallback query)
+        const fallbackQuery = `email:"${customerEmail}"`
+        return await runSearch(fallbackQuery)
       } catch {
         // fetchLatestOrderByEmail failed
         return null
@@ -128,25 +120,34 @@ export const useUrlParameterHandling = (
   )
 
   // Poll until a newly created order (>= arrival time minus a small skew) appears
+  // IMPORTANT: Do NOT return old orders as fallback to prevent customer data leakage
   const waitForNewestOrderAfter = useCallback(
-    async (customerEmail: string, timeoutMs = 60000, intervalMs = 1500): Promise<string | null> => {
+    async (customerEmail: string, timeoutMs = 15000, intervalMs = 3000): Promise<string | null> => {
       const skewMs = 60000 // 1 minute clock/indexing skew tolerance
       const deadline = Date.now() + timeoutMs
       const arrival = new Date(arrivalAtRef.current).getTime()
-      let lastSeen: { orderNumber: string; createdAt: string } | null = null
-      while (Date.now() < deadline) {
+
+      // Limit polling attempts to prevent 429 errors
+      let attempts = 0
+      const maxAttempts = 5
+
+      while (Date.now() < deadline && attempts < maxAttempts) {
+        attempts++
         const latest = await fetchLatestOrderByEmail(customerEmail)
         if (latest) {
-          lastSeen = latest
           const createdTs = new Date(latest.createdAt).getTime()
+          // Only return if this order was created after user arrived (new order)
           if (!Number.isNaN(createdTs) && createdTs >= arrival - skewMs) {
             return latest.orderNumber
           }
         }
-        await new Promise((r) => setTimeout(r, intervalMs))
+        // Wait before next attempt
+        if (Date.now() < deadline && attempts < maxAttempts) {
+          await new Promise((r) => setTimeout(r, intervalMs))
+        }
       }
-      // Fallback: return whatever we last saw (may be previous order)
-      return lastSeen?.orderNumber ?? null
+      // Do NOT return old orders - return null to require explicit order ID
+      return null
     },
     [fetchLatestOrderByEmail]
   )

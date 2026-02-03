@@ -148,14 +148,18 @@ export default function OrderReportPage() {
     }
   }, [isAuthenticated, showAuthPopup, loading, data.length, fetchOrders])
 
-  // Auto-fetch subsequent pages while there are more pages
+  // Auto-fetch subsequent pages while there are more pages (with delay to prevent 429)
   useEffect(() => {
     if (!isAuthenticated || showAuthPopup) return
     if (loading) return
-    if (pageInfo?.hasNextPage) {
-      // Keep fetching next pages until exhausted
+    if (!pageInfo?.hasNextPage) return
+
+    // Add delay between requests to prevent rate limiting (429 errors)
+    const timeoutId = setTimeout(() => {
       fetchOrders(pageInfo.endCursor)
-    }
+    }, 2000) // 2 second delay between page fetches
+
+    return () => clearTimeout(timeoutId)
   }, [
     isAuthenticated,
     showAuthPopup,
