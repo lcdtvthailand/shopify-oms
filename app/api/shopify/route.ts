@@ -3,6 +3,59 @@ import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors
 import { env, graphqlQuerySchema } from '@/lib/utils/validation'
 import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
+// Fields to remove from order nodes in response
+const SENSITIVE_ORDER_FIELDS = ['id', 'name', 'createdAt', 'customer'] as const
+
+// Type guard to check if data has orders structure
+interface OrdersData {
+  orders?: {
+    edges?: Array<{ node?: Record<string, unknown> }>
+  }
+}
+
+function hasOrdersData(data: unknown): data is OrdersData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'orders' in data &&
+    typeof (data as OrdersData).orders === 'object'
+  )
+}
+
+// Sanitize order data by removing sensitive fields from response
+function sanitizeOrderResponse(data: ShopifyGraphQLResponse): ShopifyGraphQLResponse {
+  if (!data?.data || !hasOrdersData(data.data)) {
+    return data
+  }
+
+  const ordersData = data.data as OrdersData
+  if (!ordersData.orders?.edges) {
+    return data
+  }
+
+  const sanitizedEdges = ordersData.orders.edges.map((edge) => {
+    if (!edge?.node) return edge
+
+    const sanitizedNode = { ...edge.node }
+    for (const field of SENSITIVE_ORDER_FIELDS) {
+      delete sanitizedNode[field]
+    }
+
+    return { ...edge, node: sanitizedNode }
+  })
+
+  return {
+    ...data,
+    data: {
+      ...data.data,
+      orders: {
+        ...ordersData.orders,
+        edges: sanitizedEdges,
+      },
+    },
+  } as ShopifyGraphQLResponse
+}
+
 // CORS headers configuration
 const corsHeaders = {
   'Access-Control-Allow-Origin': env.NEXT_PUBLIC_ALLOWED_ORIGINS || '*',
@@ -138,8 +191,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Return successful response
-    return NextResponse.json(shopifyData, {
+    // Sanitize and return successful response
+    const sanitizedData = sanitizeOrderResponse(shopifyData)
+    return NextResponse.json(sanitizedData, {
       headers: corsHeaders,
     })
   } catch (error) {
