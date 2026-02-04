@@ -190,6 +190,7 @@ export const useUrlParameterHandling = (
           body: JSON.stringify({
             query: GET_ORDER_DETAILS,
             variables: { query: `name:#${checkOrderId}` },
+            expectedEmail: checkEmail,
           }),
         })
 

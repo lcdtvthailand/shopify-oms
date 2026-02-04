@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       throw new AppError('Invalid request format', ErrorCodes.VALIDATION_ERROR, 400)
     }
 
-    const { query, variables } = validationResult.data
+    const { query, variables, expectedEmail } = validationResult.data
 
     // Log the incoming request (without sensitive data)
     logger.info('Shopify API request', {
@@ -136,6 +136,33 @@ export async function POST(request: NextRequest) {
           headers: corsHeaders,
         }
       )
+    }
+
+    // If expectedEmail is provided, verify it matches the order's customer email
+    if (expectedEmail) {
+      const orders = (
+        shopifyData.data as {
+          orders?: { edges?: Array<{ node?: { customer?: { email?: string } } }> }
+        }
+      )?.orders
+      const firstOrder = orders?.edges?.[0]?.node
+      const customerEmail = firstOrder?.customer?.email?.toLowerCase()
+      const isAnonymousEmail =
+        expectedEmail.includes('anonymous-') && expectedEmail.includes('@example.com')
+
+      // If not anonymous and email doesn't match, return error without order data
+      if (!isAnonymousEmail && customerEmail !== expectedEmail.toLowerCase()) {
+        return NextResponse.json(
+          {
+            error: 'Order not found or email mismatch',
+            code: ErrorCodes.UNAUTHORIZED,
+          },
+          {
+            status: 401,
+            headers: corsHeaders,
+          }
+        )
+      }
     }
 
     // Return successful response

@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const graphqlQuerySchema = z.object({
   query: z.string().min(1).max(5000),
   variables: z.record(z.string(), z.any()).optional(),
+  expectedEmail: z.string().email().optional(),
 })
 
 // Tax Invoice form data validation
