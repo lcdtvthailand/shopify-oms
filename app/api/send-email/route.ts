@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { getEmailProvider, sendTaxInvoiceEmails } from '@/lib/services/email'
 import {
   buildAdminEmail,
   buildCustomerEmail,
   type TaxInvoiceEmailData,
 } from '@/lib/services/email-templates'
-import { sendTaxInvoiceEmails } from '@/lib/services/gmail'
 import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors'
 
 // Rate limiting for email sending
@@ -47,13 +47,10 @@ export async function POST(request: NextRequest) {
       throw new AppError('Missing required email data', ErrorCodes.VALIDATION_ERROR, 400)
     }
 
-    // Check Gmail credentials are configured
-    if (
-      !process.env.GMAIL_CLIENT_ID ||
-      !process.env.GMAIL_CLIENT_SECRET ||
-      !process.env.GMAIL_REFRESH_TOKEN
-    ) {
-      logger.warn('Gmail credentials not configured, skipping email send')
+    // Check if any email provider is configured
+    const provider = getEmailProvider()
+    if (provider === 'none') {
+      logger.warn('No email provider configured, skipping email send')
       return NextResponse.json({
         success: false,
         message: 'Email service not configured',
