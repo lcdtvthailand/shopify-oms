@@ -13,3 +13,10 @@ NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00
 
 # Order Report Security
 ORDER_REPORT_PASSWORD=xxxxxxxxxx
+
+# Gmail API (for sending tax invoice confirmation emails)
+GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-client-secret
+GMAIL_REFRESH_TOKEN=your-refresh-token
+GMAIL_SENDER_EMAIL=shop@lcdtvthailand.com
+GMAIL_ADMIN_EMAIL=shop@lcdtvthailand.com
