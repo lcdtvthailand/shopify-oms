@@ -2,18 +2,17 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Clone the request headers
-  const headers = new Headers(request.headers)
+  const response = NextResponse.next()
 
-  // Add security headers
-  headers.set('X-DNS-Prefetch-Control', 'on')
-  headers.set('X-XSS-Protection', '1; mode=block')
-  headers.set('X-Frame-Options', 'SAMEORIGIN')
-  headers.set('X-Content-Type-Options', 'nosniff')
-  headers.set('Referrer-Policy', 'origin-when-cross-origin')
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-  headers.set('X-Permitted-Cross-Domain-Policies', 'none')
+  // Add security headers to the RESPONSE
+  response.headers.set('X-DNS-Prefetch-Control', 'on')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none')
 
   // CSP header - removed unsafe-eval, kept unsafe-inline for Next.js/Tailwind compatibility
   const cspHeader = [
@@ -32,13 +31,9 @@ export function middleware(request: NextRequest) {
     'upgrade-insecure-requests',
   ].join('; ')
 
-  headers.set('Content-Security-Policy', cspHeader)
+  response.headers.set('Content-Security-Policy', cspHeader)
 
-  return NextResponse.next({
-    request: {
-      headers,
-    },
-  })
+  return response
 }
 
 export const config = {
