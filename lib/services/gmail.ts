@@ -62,17 +62,28 @@ async function getAccessToken(): Promise<string> {
 /**
  * Build a RFC 2822 MIME message and Base64url-encode it for the Gmail API.
  */
+/** Strip CRLF and other control characters to prevent email header injection */
+function sanitizeHeaderValue(value: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional security sanitization of control chars
+  return value.replace(/[\r\n\x00-\x1f]/g, '')
+}
+
 function buildRawEmail(options: EmailOptions): string {
-  const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+  const senderEmail = sanitizeHeaderValue(
+    process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+  )
   const senderName = 'LCDTVTHAILAND SHOP'
 
-  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  const boundary = `boundary_${Date.now()}_${crypto.randomUUID()}`
+
+  const sanitizedTo = sanitizeHeaderValue(options.to)
+  const sanitizedReplyTo = options.replyTo ? sanitizeHeaderValue(options.replyTo) : undefined
 
   const headers = [
     `From: =?UTF-8?B?${btoa(unescape(encodeURIComponent(senderName)))}?= <${senderEmail}>`,
-    `To: ${options.to}`,
+    `To: ${sanitizedTo}`,
     `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(options.subject)))}?=`,
-    ...(options.replyTo ? [`Reply-To: ${options.replyTo}`] : []),
+    ...(sanitizedReplyTo ? [`Reply-To: ${sanitizedReplyTo}`] : []),
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',

@@ -7,12 +7,39 @@ import {
 import { sendTaxInvoiceEmails } from '@/lib/services/gmail'
 import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors'
 
+// Rate limiting for email sending
+const emailRateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const EMAIL_RATE_LIMIT_WINDOW = 60 * 1000
+const EMAIL_RATE_LIMIT_MAX = 5
+
+function checkEmailRateLimit(identifier: string): boolean {
+  const now = Date.now()
+  const limit = emailRateLimitMap.get(identifier)
+  if (!limit || now > limit.resetTime) {
+    emailRateLimitMap.set(identifier, { count: 1, resetTime: now + EMAIL_RATE_LIMIT_WINDOW })
+    return true
+  }
+  if (limit.count >= EMAIL_RATE_LIMIT_MAX) return false
+  limit.count++
+  return true
+}
+
 export function OPTIONS() {
   return new Response(null, { status: 200 })
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    if (!checkEmailRateLimit(clientIp)) {
+      throw new AppError(
+        'Too many requests. Please try again later.',
+        ErrorCodes.RATE_LIMIT_EXCEEDED,
+        429
+      )
+    }
+
     const body = (await request.json()) as TaxInvoiceEmailData
 
     // Basic validation

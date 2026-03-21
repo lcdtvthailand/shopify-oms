@@ -12,14 +12,16 @@ export function middleware(request: NextRequest) {
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('Referrer-Policy', 'origin-when-cross-origin')
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  headers.set('X-Permitted-Cross-Domain-Policies', 'none')
 
-  // Add CSP header for additional security
+  // CSP header - removed unsafe-eval, kept unsafe-inline for Next.js/Tailwind compatibility
   const cspHeader = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' blob: data: https:",
-    "font-src 'self' data:",
+    "img-src 'self' blob: https:",
+    "font-src 'self'",
     "connect-src 'self'",
     "media-src 'self'",
     "object-src 'none'",

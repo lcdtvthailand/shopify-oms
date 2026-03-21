@@ -11,6 +11,10 @@ NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx
 NEXT_PUBLIC_ADMIN_LINE_ID=@yourlineid
 NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00
 
+# OMS Link Security
+OMS_TOKEN_SECRET=your-secret-key-here
+OMS_LINK_TTL_HOURS=72
+
 # Order Report Security
 ORDER_REPORT_PASSWORD=xxxxxxxxxx
 
