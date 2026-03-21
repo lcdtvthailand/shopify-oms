@@ -2,24 +2,25 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Clone the request headers
-  const headers = new Headers(request.headers)
+  const response = NextResponse.next()
 
-  // Add security headers
-  headers.set('X-DNS-Prefetch-Control', 'on')
-  headers.set('X-XSS-Protection', '1; mode=block')
-  headers.set('X-Frame-Options', 'SAMEORIGIN')
-  headers.set('X-Content-Type-Options', 'nosniff')
-  headers.set('Referrer-Policy', 'origin-when-cross-origin')
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // Add security headers to the RESPONSE
+  response.headers.set('X-DNS-Prefetch-Control', 'on')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none')
 
-  // Add CSP header for additional security
+  // CSP header - removed unsafe-eval, kept unsafe-inline for Next.js/Tailwind compatibility
   const cspHeader = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' blob: data: https:",
-    "font-src 'self' data:",
+    "img-src 'self' blob: https:",
+    "font-src 'self'",
     "connect-src 'self'",
     "media-src 'self'",
     "object-src 'none'",
@@ -30,13 +31,9 @@ export function middleware(request: NextRequest) {
     'upgrade-insecure-requests',
   ].join('; ')
 
-  headers.set('Content-Security-Policy', cspHeader)
+  response.headers.set('Content-Security-Policy', cspHeader)
 
-  return NextResponse.next({
-    request: {
-      headers,
-    },
-  })
+  return response
 }
 
 export const config = {

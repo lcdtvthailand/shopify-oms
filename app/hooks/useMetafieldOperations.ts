@@ -457,6 +457,45 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
           })
         }
 
+        // Send confirmation emails (fire-and-forget, don't block save flow)
+        const customerEmail = orderData.customer?.email || ''
+        if (customerEmail) {
+          const now = new Date()
+          const submittedAt = now.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderName: orderData.name,
+              customerType,
+              titleName: formData.titleName || '',
+              fullName: formData.documentType === 'tax' ? fullNameToSave : '',
+              companyName: formData.documentType === 'receipt' ? companyNameToSave : '',
+              branchType: branchTypeTh,
+              branchCode,
+              taxId: taxIdDigits,
+              taxIdFormatted,
+              phoneNumber,
+              province,
+              district,
+              subDistrict,
+              postalCode,
+              fullAddress,
+              customerEmail,
+              submittedAt,
+            }),
+          }).catch((emailErr) => {
+            console.error('Failed to send tax invoice emails:', emailErr)
+          })
+        }
+
         setSaveMessage('บันทึกข้อมูลใบกำกับภาษีสำเร็จ!')
         setShowSavePopup(true)
         return true

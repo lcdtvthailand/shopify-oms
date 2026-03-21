@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
 
 interface UserCredentials {
@@ -5,8 +6,45 @@ interface UserCredentials {
   password: string
 }
 
+// Server-side rate limiting for auth attempts
+const authRateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const AUTH_RATE_LIMIT_WINDOW = 5 * 60 * 1000 // 5 minutes
+const AUTH_RATE_LIMIT_MAX = 5 // 5 attempts per 5 minutes
+
+function checkAuthRateLimit(identifier: string): boolean {
+  const now = Date.now()
+  const limit = authRateLimitMap.get(identifier)
+  if (!limit || now > limit.resetTime) {
+    authRateLimitMap.set(identifier, { count: 1, resetTime: now + AUTH_RATE_LIMIT_WINDOW })
+    return true
+  }
+  if (limit.count >= AUTH_RATE_LIMIT_MAX) return false
+  limit.count++
+  return true
+}
+
+/** Constant-time string comparison to prevent timing attacks */
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do a comparison to avoid timing leak on length difference
+    crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(a, 'utf8'))
+    return false
+  }
+  return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const clientIp =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+
+    if (!checkAuthRateLimit(clientIp)) {
+      return NextResponse.json(
+        { success: false, message: 'คุณใส่ข้อมูลไม่ถูกต้องเกินกำหนด กรุณารอ 5 นาทีแล้วลองใหม่' },
+        { status: 429 }
+      )
+    }
+
     const body = (await request.json().catch(() => ({}))) as {
       email?: unknown
       password?: unknown
@@ -18,10 +56,7 @@ export async function POST(request: NextRequest) {
     // Get the credentials from environment variable (required)
     const credentialsJson = process.env.ORDER_REPORT_PASSWORD
     if (!credentialsJson) {
-      return NextResponse.json(
-        { success: false, message: 'Server not configured: ORDER_REPORT_PASSWORD is missing' },
-        { status: 500 }
-      )
+      return NextResponse.json({ success: false, message: 'การตั้งค่าระบบไม่ถูกต้อง' }, { status: 500 })
     }
 
     // Parse the credentials
@@ -31,8 +66,7 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(validCredentials)) {
         throw new Error('Invalid credentials format')
       }
-    } catch (error) {
-      console.error('Failed to parse ORDER_REPORT_PASSWORD:', error)
+    } catch {
       return NextResponse.json({ success: false, message: 'การตั้งค่าระบบไม่ถูกต้อง' }, { status: 500 })
     }
 
@@ -44,9 +78,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if credentials match
+    // Check credentials using constant-time comparison to prevent timing attacks
     const isValid = validCredentials.some(
-      (cred) => cred.email.toLowerCase() === email.toLowerCase() && cred.password === password
+      (cred) =>
+        safeCompare(cred.email.toLowerCase(), email.toLowerCase()) &&
+        safeCompare(cred.password, password)
     )
 
     if (isValid) {
@@ -69,7 +105,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, { status: 401 })
     }
   } catch (error) {
-    console.error('Auth error:', error)
+    console.error('Auth error:', error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json({ success: false, message: 'เกิดข้อผิดพลาดในระบบ' }, { status: 500 })
   }
 }

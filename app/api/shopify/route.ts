@@ -3,11 +3,19 @@ import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors
 import { env, graphqlQuerySchema } from '@/lib/utils/validation'
 import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
-// CORS headers configuration
-const corsHeaders = {
-  'Access-Control-Allow-Origin': env.NEXT_PUBLIC_ALLOWED_ORIGINS || '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+// CORS headers configuration - never allow wildcard origin
+function getCorsHeaders(request?: NextRequest) {
+  const allowedOrigins = env.NEXT_PUBLIC_ALLOWED_ORIGINS
+  const origins = allowedOrigins ? allowedOrigins.split(',').map((o) => o.trim()) : []
+  const requestOrigin = request?.headers.get('origin') || ''
+  const matched = origins.includes(requestOrigin) ? requestOrigin : origins[0] || ''
+
+  return {
+    'Access-Control-Allow-Origin': matched,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    Vary: 'Origin',
+  }
 }
 
 // Rate limiting map (simple in-memory implementation)
@@ -37,10 +45,10 @@ function checkRateLimit(identifier: string): boolean {
   return true
 }
 
-export function OPTIONS() {
+export function OPTIONS(request: NextRequest) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(request),
   })
 }
 
@@ -81,6 +89,42 @@ export async function POST(request: NextRequest) {
     }
 
     const { query, variables, expectedEmail } = validationResult.data
+
+    // GraphQL operation allowlist - only permit known safe queries
+    // Block mutations, subscriptions, and introspection
+    const normalizedQuery = query.replace(/\s+/g, ' ').trim().toLowerCase()
+    if (
+      normalizedQuery.startsWith('mutation') ||
+      normalizedQuery.startsWith('subscription') ||
+      normalizedQuery.includes('__schema') ||
+      normalizedQuery.includes('__type')
+    ) {
+      throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
+    }
+
+    // Only allow queries that operate on known resources
+    const allowedOperations = [
+      'orders',
+      'order',
+      'getorderbyname',
+      'getordermetafields',
+      'findordersbyemail',
+      'metafieldsset',
+    ]
+    const operationMatch = query.match(/(?:query|mutation)\s+(\w+)/i)
+    const operationName = operationMatch?.[1]?.toLowerCase() || ''
+    const hasAllowedResource = allowedOperations.some(
+      (op) => normalizedQuery.includes(op) || operationName.includes(op)
+    )
+
+    // Allow metafieldsSet mutations specifically (needed for saving tax invoice data)
+    const isMetafieldMutation =
+      normalizedQuery.includes('metafieldsset') && normalizedQuery.startsWith('mutation')
+    if (isMetafieldMutation) {
+      // Re-allow this specific mutation
+    } else if (!hasAllowedResource) {
+      throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
+    }
 
     // Log the incoming request (without sensitive data)
     logger.info('Shopify API request', {
@@ -129,11 +173,10 @@ export async function POST(request: NextRequest) {
         {
           error: 'GraphQL errors occurred',
           code: ErrorCodes.BAD_REQUEST,
-          details: shopifyData.errors,
         },
         {
           status: 400,
-          headers: corsHeaders,
+          headers: getCorsHeaders(request),
         }
       )
     }
@@ -147,8 +190,12 @@ export async function POST(request: NextRequest) {
       )?.orders
       const firstOrder = orders?.edges?.[0]?.node
       const customerEmail = firstOrder?.customer?.email?.toLowerCase()
+      // Only allow anonymous bypass if BOTH the expected and actual customer emails
+      // match the anonymous pattern exactly (prevents attacker from using fake anonymous email)
+      const anonymousPattern = /^anonymous-[a-f0-9-]+@example\.com$/i
       const isAnonymousEmail =
-        expectedEmail.includes('anonymous-') && expectedEmail.includes('@example.com')
+        anonymousPattern.test(expectedEmail) &&
+        (!customerEmail || anonymousPattern.test(customerEmail))
 
       // If not anonymous and email doesn't match, return error without order data
       if (!isAnonymousEmail && customerEmail !== expectedEmail.toLowerCase()) {
@@ -159,7 +206,7 @@ export async function POST(request: NextRequest) {
           },
           {
             status: 401,
-            headers: corsHeaders,
+            headers: getCorsHeaders(request),
           }
         )
       }
@@ -167,7 +214,7 @@ export async function POST(request: NextRequest) {
 
     // Return successful response
     return NextResponse.json(shopifyData, {
-      headers: corsHeaders,
+      headers: getCorsHeaders(request),
     })
   } catch (error) {
     return handleApiError(error)

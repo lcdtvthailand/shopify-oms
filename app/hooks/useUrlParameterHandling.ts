@@ -220,9 +220,11 @@ export const useUrlParameterHandling = (
 
         // ตรวจสอบว่า email ตรงกันหรือไม่
         // For anonymous orders, customer might be null - skip email validation if anonymous email pattern
-        const isAnonymousEmail =
-          checkEmail.includes('anonymous-') && checkEmail.includes('@example.com')
         const customerEmail = node.customer?.email?.toLowerCase()
+        const anonymousPattern = /^anonymous-[a-f0-9-]+@example\.com$/i
+        const isAnonymousEmail =
+          anonymousPattern.test(checkEmail) &&
+          (!customerEmail || anonymousPattern.test(customerEmail))
 
         if (!isAnonymousEmail && customerEmail !== checkEmail.toLowerCase()) {
           setValidationMessage('ไม่มีคำสั่งซื้อหรือผู้ใช้นี้ในระบบ')
@@ -323,7 +325,11 @@ export const useUrlParameterHandling = (
             reason?: string
           }
           if (!json?.ok || json.valid !== true || !json.order || !json.email) {
-            setValidationMessage('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง')
+            const expiredMsg =
+              json?.reason === 'link_expired'
+                ? 'ลิงก์หมดอายุแล้ว กรุณาขอลิงก์ใหม่จากร้านค้า'
+                : 'ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง'
+            setValidationMessage(expiredMsg)
             setShowValidationPopup(true)
             setIsValidated(false)
             return
@@ -366,7 +372,11 @@ export const useUrlParameterHandling = (
             reason?: string
           }
           if (!json?.ok || json.valid !== true || !json.order || !json.email) {
-            setValidationMessage('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง')
+            const expiredMsg =
+              json?.reason === 'link_expired'
+                ? 'ลิงก์หมดอายุแล้ว กรุณาขอลิงก์ใหม่จากร้านค้า'
+                : 'ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาเข้าหน้าฟอร์มจากร้านค้าอีกครั้ง'
+            setValidationMessage(expiredMsg)
             setShowValidationPopup(true)
             setIsValidated(false)
             return
