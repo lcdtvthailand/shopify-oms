@@ -19,7 +19,9 @@
     "deploy:cf": "pnpm build:cloudflare && wrangler deploy --compatibility-date 2025-09-01",
     "preview": "pnpm build:cloudflare && wrangler dev",
     "cf:dev": "wrangler dev --local",
-    "cf:tail": "wrangler tail"
+    "cf:tail": "wrangler tail",
+    "gmail:token": "node scripts/get-gmail-token.mjs",
+    "email:preview": "node --import tsx scripts/preview-email.mjs"
   },
   "dependencies": {
     "isomorphic-dompurify": "^2.26.0",

@@ -11,6 +11,11 @@ enabled = true
 # Environment variables (non-sensitive)
 [vars]
 NODE_ENV = "production"
+NEXT_PUBLIC_ADMIN_EMAIL = "shop@lcdtvthailand.com"
+NEXT_PUBLIC_ADMIN_PHONE = "02-000-0000"
+NEXT_PUBLIC_ADMIN_LINE_ID = "@lcdtvthailand"
+NEXT_PUBLIC_ADMIN_OFFICE_HOURS = "จันทร์-ศุกร์ 9:00-18:00"
+NEXT_PUBLIC_ALLOWED_ORIGINS = "https://lcdtvthailand.com"
 
 # KV Namespaces for caching (optional)
 # [[kv_namespaces]]

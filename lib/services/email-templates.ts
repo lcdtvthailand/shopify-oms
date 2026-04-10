@@ -16,7 +16,105 @@ export interface TaxInvoiceEmailData {
   fullAddress: string
   customerEmail: string
   submittedAt: string
+  lang?: 'th' | 'en'
+  invoiceUrl?: string
 }
+
+type Lang = 'th' | 'en'
+
+const i18n = {
+  th: {
+    taxInvoice: 'ใบกำกับภาษี',
+    taxInvoiceUpper: 'Tax Invoice',
+    confirmed: '✓ ยืนยันแล้ว',
+    customerInfo: '👤 ข้อมูลผู้ขอใบกำกับภาษี',
+    companyInfo: '🏢 ข้อมูลนิติบุคคล',
+    addressInfo: '📍 ที่อยู่สำหรับใบกำกับภาษี',
+    contactInfo: '📧 ข้อมูลติดต่อลูกค้า',
+    type: 'ประเภท (นิติบุคคล/บุคคลธรรมดา)',
+    individual: 'บุคคลธรรมดา',
+    company: 'นิติบุคคล',
+    title: 'คำนำหน้าชื่อ',
+    fullName: 'ชื่อ-นามสกุล',
+    companyName: 'ชื่อบริษัท',
+    branch: 'สาขา',
+    branchCode: 'รหัสสาขา',
+    taxId: 'หมายเลขประจำตัวผู้เสียภาษี',
+    phone: 'หมายเลขโทรศัพท์',
+    province: 'จังหวัด',
+    district: 'อำเภอ/เขต',
+    subDistrict: 'ตำบล/แขวง',
+    postalCode: 'ไปรษณีย์',
+    address: 'ที่อยู่',
+    order: 'คำสั่งซื้อ',
+    greetingPrefix: 'สวัสดีคุณ',
+    thankYou: 'ขอบคุณที่ส่งข้อมูลสำหรับการออกใบกำกับภาษี คำสั่งซื้อหมายเลข',
+    received: 'ทางร้านได้รับข้อมูลของท่านเรียบร้อยแล้ว กรุณาตรวจสอบรายละเอียดด้านล่าง',
+    successTitle: 'ระบบบันทึกข้อมูลสำเร็จ',
+    successDesc: 'เจ้าหน้าที่จะดำเนินการจัดส่งใบกำกับภาษีให้ท่านตามขั้นตอนต่อไป',
+    noteTitle: 'หมายเหตุสำคัญ',
+    noteDesc: 'หากข้อมูลไม่ถูกต้อง กรุณากรอกแบบฟอร์มใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่',
+    submittedAt: 'บันทึกเมื่อ',
+    needHelp: 'ต้องการความช่วยเหลือ?',
+    autoEmail: 'อีเมลนี้ถูกส่งอัตโนมัติจากระบบออกใบกำกับภาษี กรุณาอย่าตอบกลับอีเมลนี้โดยตรง',
+    allRights: 'All rights reserved.',
+    viewInvoice: '📋 ดูรายละเอียดใบกำกับภาษี',
+    viewInvoiceDesc: 'พิมพ์หรือบันทึก PDF ได้ที่หน้านี้',
+    newSubmission: 'New Submission',
+    subjectCustomer: (order: string, brand: string) =>
+      `ยืนยันข้อมูลใบกำกับภาษี - คำสั่งซื้อ ${order} | ${brand}`,
+    preheaderCustomer: (order: string) =>
+      `ยืนยันข้อมูลใบกำกับภาษี คำสั่งซื้อ ${order} - ทางร้านได้รับข้อมูลเรียบร้อยแล้ว`,
+    preheaderAdmin: (order: string, name: string, type: string) =>
+      `ข้อมูลใบกำกับภาษีใหม่ ${order} จาก ${name} - ${type}`,
+  },
+  en: {
+    taxInvoice: 'Tax Invoice',
+    taxInvoiceUpper: 'Tax Invoice',
+    confirmed: '✓ Confirmed',
+    customerInfo: '👤 Customer Information',
+    companyInfo: '🏢 Company Information',
+    addressInfo: '📍 Invoice Address',
+    contactInfo: '📧 Customer Contact',
+    type: 'Type (Company/Individual)',
+    individual: 'Individual',
+    company: 'Juristic Person (Company)',
+    title: 'Title',
+    fullName: 'Full Name',
+    companyName: 'Company Name',
+    branch: 'Branch',
+    branchCode: 'Branch Code',
+    taxId: 'Tax ID Number',
+    phone: 'Phone Number',
+    province: 'Province',
+    district: 'District',
+    subDistrict: 'Sub-district',
+    postalCode: 'Postal Code',
+    address: 'Address',
+    order: 'Order',
+    greetingPrefix: 'Dear ',
+    thankYou: 'Thank you for submitting your tax invoice information for order',
+    received: 'We have received your information. Please review the details below.',
+    successTitle: 'Information Saved Successfully',
+    successDesc: 'Our team will process and issue your tax invoice accordingly.',
+    noteTitle: 'Important Note',
+    noteDesc: 'If any information is incorrect, please resubmit the form or contact our staff.',
+    submittedAt: 'Submitted at',
+    needHelp: 'Need help?',
+    autoEmail:
+      'This email was sent automatically from the tax invoice system. Please do not reply directly to this email.',
+    allRights: 'All rights reserved.',
+    viewInvoice: '📋 View Tax Invoice Details',
+    viewInvoiceDesc: 'Print or save as PDF from this page',
+    newSubmission: 'New Submission',
+    subjectCustomer: (order: string, brand: string) =>
+      `Tax Invoice Confirmation - Order ${order} | ${brand}`,
+    preheaderCustomer: (order: string) =>
+      `Tax invoice confirmation for order ${order} - We have received your information.`,
+    preheaderAdmin: (order: string, name: string, type: string) =>
+      `New tax invoice submission ${order} from ${name} - ${type}`,
+  },
+} as const
 
 const BRAND = {
   name: 'LCDTVTHAILAND SHOP',
@@ -39,7 +137,7 @@ const BRAND = {
   contactLine: '@lcdtvthailand',
 }
 
-function baseLayout(content: string, preheader: string): string {
+function baseLayout(content: string, preheader: string, t: (typeof i18n)[Lang]): string {
   return `<!DOCTYPE html>
 <html lang="th" dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -48,7 +146,7 @@ function baseLayout(content: string, preheader: string): string {
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>${BRAND.name} - Tax Invoice</title>
+<title>${BRAND.name} - ${t.taxInvoice}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
   body, table, td, p, a, li, span { font-family: 'Anuphan', 'Helvetica Neue', Arial, sans-serif; }
@@ -93,12 +191,12 @@ function baseLayout(content: string, preheader: string): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
   <tr>
     <td style="vertical-align:middle;">
-      <p style="margin:0 0 2px; font-size:12px; color:${BRAND.grayMedium}; font-weight:500; text-transform:uppercase; letter-spacing:1.5px;">Tax Invoice</p>
-      <h1 style="margin:0; font-size:20px; color:${BRAND.dark}; font-weight:700;">ใบกำกับภาษี</h1>
+      <p style="margin:0 0 2px; font-size:12px; color:${BRAND.grayMedium}; font-weight:500; text-transform:uppercase; letter-spacing:1.5px;">${t.taxInvoiceUpper}</p>
+      <h1 style="margin:0; font-size:20px; color:${BRAND.dark}; font-weight:700;">${t.taxInvoice}</h1>
     </td>
     <td style="text-align:right; vertical-align:middle;">
       <span style="display:inline-block; padding:6px 14px; background-color:${BRAND.white}; border:1px solid ${BRAND.colorBorder}; border-radius:999px; font-size:11px; color:${BRAND.color}; font-weight:600; letter-spacing:0.5px;">
-        &#10003; ยืนยันแล้ว
+        ${t.confirmed}
       </span>
     </td>
   </tr>
@@ -128,7 +226,7 @@ function baseLayout(content: string, preheader: string): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
   <tr>
     <td style="text-align:center;">
-      <p style="margin:0 0 12px; font-size:13px; color:${BRAND.dark}; font-weight:600;">ต้องการความช่วยเหลือ?</p>
+      <p style="margin:0 0 12px; font-size:13px; color:${BRAND.dark}; font-weight:600;">${t.needHelp}</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
       <tr>
         <td style="padding:0 12px;">
@@ -155,10 +253,10 @@ function baseLayout(content: string, preheader: string): string {
   <tr>
     <td style="text-align:center;">
       <p style="margin:0 0 6px; font-size:12px; color:${BRAND.grayMedium};">
-        &copy; ${new Date().getFullYear()} ${BRAND.name} &mdash; All rights reserved.
+        &copy; ${new Date().getFullYear()} ${BRAND.name} &mdash; ${t.allRights}
       </p>
       <p style="margin:0 0 4px; font-size:11px; color:${BRAND.grayMedium};">
-        อีเมลนี้ถูกส่งอัตโนมัติจากระบบออกใบกำกับภาษี กรุณาอย่าตอบกลับอีเมลนี้โดยตรง
+        ${t.autoEmail}
       </p>
       <p style="margin:0; font-size:11px; color:${BRAND.grayMedium};">
         <a href="${BRAND.website}" style="color:${BRAND.color};">lcdtvthailand.com</a>
@@ -179,78 +277,104 @@ function baseLayout(content: string, preheader: string): string {
 }
 
 function infoRow(label: string, value: string, isLast = false): string {
-  if (!value) return ''
+  const display = value || '-'
   return `
   <tr>
     <td style="padding:12px 16px; font-size:13px; color:${BRAND.gray}; font-weight:500; white-space:nowrap; vertical-align:top; width:150px;${isLast ? '' : ` border-bottom:1px solid ${BRAND.grayBorder};`}">
       ${label}
     </td>
     <td style="padding:12px 16px; font-size:14px; color:${BRAND.dark}; font-weight:500;${isLast ? '' : ` border-bottom:1px solid ${BRAND.grayBorder};`}">
-      ${value}
+      ${display}
     </td>
   </tr>`
 }
 
-function dataTable(data: TaxInvoiceEmailData): string {
+function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
   const isCompany = data.customerType === 'นิติบุคคล'
-  const displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
 
-  const rows = [
-    infoRow(
-      'คำสั่งซื้อ',
-      `<strong style="color:${BRAND.color}; font-size:15px;">${data.orderName}</strong>`
-    ),
-    infoRow(
-      'ประเภทลูกค้า',
-      `<span style="display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:600; background-color:${isCompany ? '#EFF6FF' : '#F0FDF4'}; color:${isCompany ? '#1D4ED8' : '#15803D'};">${data.customerType}</span>`
-    ),
-    infoRow(
-      isCompany ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล',
-      `<strong style="color:${BRAND.dark};">${displayName}</strong>`
-    ),
-    ...(isCompany && data.branchType ? [infoRow('ประเภทสาขา', data.branchType)] : []),
-    ...(isCompany && data.branchCode ? [infoRow('รหัสสาขา', data.branchCode)] : []),
-    infoRow(
-      'เลขผู้เสียภาษี',
-      `<span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; letter-spacing:1.5px; color:${BRAND.dark};">${data.taxIdFormatted}</span>`
-    ),
-    ...(data.phoneNumber
-      ? [
-          infoRow(
-            'เบอร์โทรศัพท์',
-            `<a href="tel:${data.phoneNumber.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:500;">${data.phoneNumber}</a>`
-          ),
-        ]
-      : []),
-  ].filter(Boolean)
+  const infoRows = isCompany
+    ? [
+        infoRow(
+          t.type,
+          `<span style="display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:600; background-color:#EFF6FF; color:#1D4ED8;">${t.company}</span>`
+        ),
+        infoRow(
+          t.companyName,
+          data.companyName
+            ? `<strong style="color:${BRAND.dark};">${data.companyName}</strong>`
+            : ''
+        ),
+        infoRow(t.branch, data.branchType),
+        infoRow(t.branchCode, data.branchCode),
+        infoRow(
+          t.taxId,
+          data.taxIdFormatted
+            ? `<span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; letter-spacing:1.5px; color:${BRAND.dark};">${data.taxIdFormatted}</span>`
+            : ''
+        ),
+        infoRow(
+          t.phone,
+          data.phoneNumber
+            ? `<a href="tel:${data.phoneNumber.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:500;">${data.phoneNumber}</a>`
+            : '',
+          true
+        ),
+      ]
+    : [
+        infoRow(
+          t.type,
+          `<span style="display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:600; background-color:#F0FDF4; color:#15803D;">${t.individual}</span>`
+        ),
+        infoRow(t.title, data.titleName),
+        infoRow(
+          t.fullName,
+          data.fullName ? `<strong style="color:${BRAND.dark};">${data.fullName}</strong>` : ''
+        ),
+        infoRow(
+          t.taxId,
+          data.taxIdFormatted
+            ? `<span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; letter-spacing:1.5px; color:${BRAND.dark};">${data.taxIdFormatted}</span>`
+            : ''
+        ),
+        infoRow(
+          t.phone,
+          data.phoneNumber
+            ? `<a href="tel:${data.phoneNumber.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:500;">${data.phoneNumber}</a>`
+            : '',
+          true
+        ),
+      ]
 
   const addressRows = [
-    infoRow('ที่อยู่', data.fullAddress),
-    infoRow('ตำบล/แขวง', data.subDistrict),
-    infoRow('อำเภอ/เขต', data.district),
-    infoRow('จังหวัด', data.province),
+    infoRow(t.province, data.province),
+    infoRow(t.district, data.district),
+    infoRow(t.subDistrict, data.subDistrict),
     infoRow(
-      'รหัสไปรษณีย์',
-      `<span style="font-family:'Courier New',monospace; font-weight:600; letter-spacing:1px;">${data.postalCode}</span>`,
-      true
+      t.postalCode,
+      data.postalCode
+        ? `<span style="font-family:'Courier New',monospace; font-weight:600; letter-spacing:1px;">${data.postalCode}</span>`
+        : ''
     ),
-  ].filter(Boolean)
+    infoRow(t.address, data.fullAddress, true),
+  ]
+
+  const sectionLabel = isCompany ? t.companyInfo : t.customerInfo
 
   return `
   <!-- Person/Company Info -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BRAND.grayBorder}; border-radius:12px; overflow:hidden; margin-bottom:16px;">
     <tr>
       <td colspan="2" style="padding:10px 16px; background-color:${BRAND.grayLight}; border-bottom:1px solid ${BRAND.grayBorder};">
-        <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">&#128100; ข้อมูลผู้ขอใบกำกับภาษี</p>
+        <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">${sectionLabel}</p>
       </td>
     </tr>
-    ${rows.join('')}
+    ${infoRows.join('')}
   </table>
   <!-- Address Info -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BRAND.grayBorder}; border-radius:12px; overflow:hidden;">
     <tr>
       <td colspan="2" style="padding:10px 16px; background-color:${BRAND.grayLight}; border-bottom:1px solid ${BRAND.grayBorder};">
-        <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">&#128205; ที่อยู่สำหรับใบกำกับภาษี</p>
+        <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">${t.addressInfo}</p>
       </td>
     </tr>
     ${addressRows.join('')}
@@ -261,9 +385,11 @@ function dataTable(data: TaxInvoiceEmailData): string {
  * Customer confirmation email
  */
 export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string; html: string } {
-  const subject = `ยืนยันข้อมูลใบกำกับภาษี - คำสั่งซื้อ ${data.orderName} | ${BRAND.name}`
+  const lang: Lang = data.lang || 'th'
+  const t = i18n[lang]
   const isCompany = data.customerType === 'นิติบุคคล'
   const displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
+  const subject = t.subjectCustomer(data.orderName, BRAND.name)
 
   const content = `
   <!-- Greeting -->
@@ -271,12 +397,12 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   <tr>
     <td>
       <p style="margin:0 0 6px; font-size:18px; color:${BRAND.dark}; font-weight:700;">
-        สวัสดีคุณ${displayName}
+        ${t.greetingPrefix}${displayName}
       </p>
       <p style="margin:0; font-size:14px; color:${BRAND.darkSoft}; line-height:1.8;">
-        ขอบคุณที่ส่งข้อมูลสำหรับการออกใบกำกับภาษี คำสั่งซื้อหมายเลข
+        ${t.thankYou}
         <strong style="color:${BRAND.color};">${data.orderName}</strong><br>
-        ทางร้านได้รับข้อมูลของท่านเรียบร้อยแล้ว กรุณาตรวจสอบรายละเอียดด้านล่าง
+        ${t.received}
       </p>
     </td>
   </tr>
@@ -292,8 +418,8 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
           <span style="font-size:20px;">&#9989;</span>
         </td>
         <td style="vertical-align:middle;">
-          <p style="margin:0 0 2px; font-size:14px; color:#065F46; font-weight:700;">ระบบบันทึกข้อมูลสำเร็จ</p>
-          <p style="margin:0; font-size:12px; color:#047857;">เจ้าหน้าที่จะดำเนินการจัดส่งใบกำกับภาษีให้ท่านตามขั้นตอนต่อไป</p>
+          <p style="margin:0 0 2px; font-size:14px; color:#065F46; font-weight:700;">${t.successTitle}</p>
+          <p style="margin:0; font-size:12px; color:#047857;">${t.successDesc}</p>
         </td>
       </tr>
       </table>
@@ -302,7 +428,31 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   </table>
 
   <!-- Data Card -->
-  ${dataTable(data)}
+  ${dataTable(data, t)}
+
+  <!-- View Invoice CTA -->
+  ${
+    data.invoiceUrl
+      ? `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+  <tr>
+    <td style="text-align:center; padding:0;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+      <tr>
+        <td style="border-radius:12px; background-color:${BRAND.color};">
+          <a href="${data.invoiceUrl}" target="_blank" style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:700; color:${BRAND.white}; text-decoration:none; letter-spacing:0.3px;">
+            ${t.viewInvoice}
+          </a>
+        </td>
+      </tr>
+      </table>
+      <p style="margin:8px 0 0; font-size:11px; color:${BRAND.grayMedium};">${t.viewInvoiceDesc}</p>
+    </td>
+  </tr>
+  </table>
+  `
+      : ''
+  }
 
   <!-- Notice -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
@@ -314,9 +464,9 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
           <span style="font-size:16px;">&#9888;&#65039;</span>
         </td>
         <td>
-          <p style="margin:0 0 4px; font-size:13px; color:#92400E; font-weight:700;">หมายเหตุสำคัญ</p>
+          <p style="margin:0 0 4px; font-size:13px; color:#92400E; font-weight:700;">${t.noteTitle}</p>
           <p style="margin:0; font-size:12px; color:#A16207; line-height:1.7;">
-            หากข้อมูลไม่ถูกต้อง กรุณากรอกแบบฟอร์มใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่<br>
+            ${t.noteDesc}<br>
             &#9993; <a href="mailto:${BRAND.contactEmail}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactEmail}</a>
             &nbsp;&nbsp;&#9742; <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone}</a>
           </p>
@@ -332,7 +482,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   <tr>
     <td style="text-align:right;">
       <p style="margin:0; font-size:11px; color:${BRAND.grayMedium};">
-        บันทึกเมื่อ ${data.submittedAt}
+        ${t.submittedAt} ${data.submittedAt}
       </p>
     </td>
   </tr>
@@ -340,10 +490,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
 
   return {
     subject,
-    html: baseLayout(
-      content,
-      `ยืนยันข้อมูลใบกำกับภาษี คำสั่งซื้อ ${data.orderName} - ทางร้านได้รับข้อมูลเรียบร้อยแล้ว`
-    ),
+    html: baseLayout(content, t.preheaderCustomer(data.orderName), t),
   }
 }
 
@@ -351,9 +498,11 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
  * Admin notification email
  */
 export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; html: string } {
+  const lang: Lang = data.lang || 'th'
+  const t = i18n[lang]
   const isCompany = data.customerType === 'นิติบุคคล'
   const displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
-  const subject = `[ใบกำกับภาษี] ${data.orderName} | ${displayName} | ${data.customerType}`
+  const subject = `[${t.taxInvoice}] ${data.orderName} | ${displayName} | ${data.customerType}`
 
   const content = `
   <!-- Alert banner -->
@@ -363,12 +512,12 @@ export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; h
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td style="vertical-align:middle;">
-          <p style="margin:0 0 2px; font-size:11px; color:${BRAND.grayMedium}; font-weight:500; text-transform:uppercase; letter-spacing:1px;">New Submission</p>
+          <p style="margin:0 0 2px; font-size:11px; color:${BRAND.grayMedium}; font-weight:500; text-transform:uppercase; letter-spacing:1px;">${t.newSubmission}</p>
           <p style="margin:0; font-size:22px; color:${BRAND.color}; font-weight:700;">${data.orderName}</p>
         </td>
         <td style="text-align:right; vertical-align:middle;">
           <span style="display:inline-block; padding:5px 14px; border-radius:999px; font-size:12px; font-weight:700; background-color:${isCompany ? '#DBEAFE' : '#DCFCE7'}; color:${isCompany ? '#1D4ED8' : '#15803D'};">
-            ${data.customerType}
+            ${isCompany ? t.company : t.individual}
           </span>
         </td>
       </tr>
@@ -381,7 +530,7 @@ export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; h
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px; border:1px solid ${BRAND.grayBorder}; border-radius:12px; overflow:hidden;">
   <tr>
     <td style="padding:10px 16px; background-color:${BRAND.grayLight}; border-bottom:1px solid ${BRAND.grayBorder};">
-      <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">&#128231; ข้อมูลติดต่อลูกค้า</p>
+      <p style="margin:0; font-size:12px; color:${BRAND.gray}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">${t.contactInfo}</p>
     </td>
   </tr>
   <tr>
@@ -411,14 +560,14 @@ export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; h
   </table>
 
   <!-- Full Details -->
-  ${dataTable(data)}
+  ${dataTable(data, t)}
 
   <!-- Timestamp -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
   <tr>
     <td style="padding:12px 16px; background-color:${BRAND.grayLight}; border-radius:8px;">
       <p style="margin:0; font-size:12px; color:${BRAND.grayMedium};">
-        &#128337; บันทึกเมื่อ <strong style="color:${BRAND.darkSoft};">${data.submittedAt}</strong>
+        &#128337; ${t.submittedAt} <strong style="color:${BRAND.darkSoft};">${data.submittedAt}</strong>
       </p>
     </td>
   </tr>
@@ -426,9 +575,6 @@ export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; h
 
   return {
     subject,
-    html: baseLayout(
-      content,
-      `ข้อมูลใบกำกับภาษีใหม่ ${data.orderName} จาก ${displayName} - ${data.customerType}`
-    ),
+    html: baseLayout(content, t.preheaderAdmin(data.orderName, displayName, data.customerType), t),
   }
 }

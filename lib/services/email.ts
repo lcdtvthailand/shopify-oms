@@ -229,12 +229,17 @@ export async function sendTaxInvoiceEmails(params: {
   adminHtml: string
   adminSubject: string
 }): Promise<{ customerSent: boolean; adminSent: boolean }> {
+  const testOverride = process.env.TEST_EMAIL_OVERRIDE
+  const customerTo = testOverride || params.customerEmail
   const adminEmail =
-    process.env.RESEND_ADMIN_EMAIL || process.env.GMAIL_ADMIN_EMAIL || 'shop@lcdtvthailand.com'
+    testOverride ||
+    process.env.RESEND_ADMIN_EMAIL ||
+    process.env.GMAIL_ADMIN_EMAIL ||
+    'shop@lcdtvthailand.com'
 
   const [customerSent, adminSent] = await Promise.all([
     sendEmail({
-      to: params.customerEmail,
+      to: customerTo,
       subject: params.customerSubject,
       html: params.customerHtml,
     }),

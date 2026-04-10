@@ -42,7 +42,8 @@
       "Bash(npx wrangler r2 bucket list:*)",
       "Bash(npx wrangler queues:*)",
       "Bash(npx wrangler d1 list:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(open scripts/preview-customer-company.html scripts/preview-customer-individual.html scripts/preview-admin.html)"
     ],
     "deny": []
   }
