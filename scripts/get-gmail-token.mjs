@@ -78,7 +78,9 @@ const server = http.createServer(async (req, res) => {
       console.log(`echo "${tokens.refresh_token}" | npx wrangler secret put GMAIL_REFRESH_TOKEN\n`)
 
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-      res.end('<h1>Success!</h1><p>Refresh token is shown in the terminal. You can close this page.</p>')
+      res.end(
+        '<h1>Success!</h1><p>Refresh token is shown in the terminal. You can close this page.</p>'
+      )
     } else {
       console.error('No refresh_token in response:', tokens)
       res.writeHead(400, { 'Content-Type': 'text/html' })
