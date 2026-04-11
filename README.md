@@ -1,255 +1,198 @@
-# Shopify OMS Thai Tax Invoice
+# Shopify OMS - Thai Tax Invoice
 
-A Next.js application that enables Thai customers to request tax invoices for their Shopify orders. Built with Next.js 15, React 19, and TypeScript, featuring Thai localization and seamless Shopify integration.
+Tax invoice request system for LCDTVTHAILAND SHOP. Customers receive a secure link to submit their tax invoice information, which is stored in Shopify order metafields and confirmed via email.
 
-## Features
+## Tech Stack
 
-- **Thai Tax Invoice Form**: Complete form interface for individual and juristic person tax invoices
-- **Order Validation**: Automatic order lookup and validation via order number and email
-- **Thai Geography Data**: Complete provinces, districts, and sub-districts with postal codes
-- **Auto-detection**: Automatically detects latest order when only email is provided
-- **Order Status Validation**: Prevents tax invoice creation for cancelled or fulfilled orders
-- **Thai Formatting**: Phone numbers (xxx-xxx-xxxx) and tax IDs (x-xxxx-xxxxx-xx-x) auto-formatting
-- **Shopify Integration**: Stores all tax invoice data as order metafields
+- **Framework**: Next.js 15 (App Router) + React 19 + TypeScript
+- **Hosting**: Cloudflare Workers (via OpenNext)
+- **API**: Shopify Admin GraphQL API
+- **Email**: Gmail API (OAuth2)
+- **Styling**: Tailwind CSS v4 + Anuphan (Thai font)
+- **Code Quality**: Biome, Husky, lint-staged
 
-## Prerequisites
-
-- Node.js 18+
-- pnpm (recommended) or npm
-- Shopify store with Admin API access
-- Shopify Admin API access token
-
-## Installation
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/lcdtvthailand/shopify-oms.git
-cd shopify-oms
-```
-
-2. Install dependencies:
+## Getting Started
 
 ```bash
 pnpm install
+pnpm dev        # http://localhost:3000
 ```
 
-3. Create `.env.local` file:
+## Scripts
+
+| Command | Description |
+|---|---|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build production bundle |
+| `pnpm lint` | Run Biome linter |
+| `pnpm deploy` | Build and deploy to Cloudflare Workers |
+| `pnpm deploy:production` | Deploy to production environment |
+
+## Environment Variables
+
+Copy `.env.local` and configure:
+
+### Required
+
+| Variable | Description |
+|---|---|
+| `SHOPIFY_STORE_DOMAIN` | e.g. `lcdtvthailand.myshopify.com` |
+| `SHOPIFY_ADMIN_ACCESS_TOKEN` | Shopify Admin API token (`shpat_...`) |
+
+### Gmail (Email sending)
+
+| Variable | Description |
+|---|---|
+| `GMAIL_CLIENT_ID` | Google OAuth2 client ID |
+| `GMAIL_CLIENT_SECRET` | Google OAuth2 client secret |
+| `GMAIL_REFRESH_TOKEN` | OAuth2 refresh token (scope: `gmail.send`) |
+| `GMAIL_SENDER_EMAIL` | Sender email address |
+| `GMAIL_ADMIN_EMAIL` | Admin notification email |
+
+### Optional
+
+| Variable | Description |
+|---|---|
+| `OMS_TOKEN_SECRET` | HMAC secret for OMS links |
+| `OMS_LINK_TTL_HOURS` | OMS link expiry (default: 72) |
+| `TEST_EMAIL_OVERRIDE` | Redirect all emails to this address (testing) |
+| `ORDER_REPORT_PASSWORD` | Password for order report page |
+| `NEXT_PUBLIC_ALLOWED_ORIGINS` | CORS allowed origins |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | Admin contact email (public) |
+| `NEXT_PUBLIC_ADMIN_PHONE` | Admin contact phone (public) |
+| `NEXT_PUBLIC_ADMIN_LINE_ID` | LINE official account ID (public) |
+| `NEXT_PUBLIC_ADMIN_OFFICE_HOURS` | Office hours (public) |
+
+## Gmail Setup
+
+Generate a refresh token with `gmail.send` scope:
 
 ```bash
-cp .env.example .env.local
+node scripts/get-gmail-token.mjs
 ```
 
-4. Configure environment variables:
-
-```env
-# Required
-SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
-SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_xxxxxxxxxxxxx
-
-# Optional - Admin Contact Info
-NEXT_PUBLIC_ADMIN_EMAIL=admin@lcdtvthailand.com
-NEXT_PUBLIC_ADMIN_PHONE=02-xxx-xxxx
-NEXT_PUBLIC_ADMIN_LINE_ID=@lcdtvthailand
-NEXT_PUBLIC_ADMIN_OFFICE_HOURS=Mon-Fri 9:00-18:00
-```
-
-## Development
-
-Start the development server:
+Then set it in `.env.local` and Cloudflare:
 
 ```bash
-pnpm dev
+echo "YOUR_REFRESH_TOKEN" | npx wrangler secret put GMAIL_REFRESH_TOKEN
 ```
 
-The application will be available at `http://localhost:3000`
+## Features
 
-### Key Development Commands
-
-```bash
-pnpm dev      # Start development server
-pnpm build    # Build production bundle
-pnpm start    # Start production server
-pnpm lint     # Run Biome linter
-```
-
-## Usage
-
-### Customer Flow
-
-1. Customer receives a link with URL parameters:
-
-   ```
-   https://your-domain.com/?order=12345&email=customer@example.com
-   ```
-
-2. System automatically validates the order and email
-
-3. If valid, customer can fill out the tax invoice form with:
-   - Personal/Company information
-   - Tax ID (13 digits)
-   - Phone numbers
-   - Complete Thai address with cascading selections
-
-4. Data is saved to Shopify as order metafields
-
-### URL Parameters
-
-- `order` - Shopify order number (without #)
-- `email` - Customer email address
-
-If only email is provided, the system will attempt to find the latest order automatically.
+- **Secure OMS Links**: HMAC-signed URLs with configurable TTL
+- **Tax Invoice Form**: Thai-localized with cascading geography (province/district/subdistrict)
+- **Email Notifications**: Branded HTML emails in Thai and English (individual/company x TH/EN)
+- **Invoice View Page**: `/invoice/[token]` — shareable page with print/save PDF
+- **Order Status Validation**: Blocks cancelled/refunded/fulfilled orders
+- **Rate Limiting**: Per-IP rate limiting on all API routes
 
 ## Architecture
 
-### Tech Stack
+### Customer Flow
 
-- **Frontend**: Next.js 15 App Router, React 19, TypeScript
-- **Styling**: Tailwind CSS v4
-- **Validation**: Zod
-- **Security**: DOMPurify, rate limiting
-- **Code Quality**: Biome, Husky, lint-staged
+```
+OMS Link → Token Validation → Order Lookup → Tax Invoice Form
+                                                ├→ Save to Shopify Metafields
+                                                ├→ Send Email (with invoice view link)
+                                                └→ Save Customer Profile
+```
+
+### URL Parameters
+
+Customers access the form via secure OMS links:
+
+```
+https://shopify-oms.lcdtv.workers.dev/?code=<signed-token>
+```
+
+Links are generated via `/api/build-oms?order=1234&email=customer@example.com`
 
 ### Project Structure
 
 ```
-├── app/
-│   ├── api/          # API routes
-│   ├── components/   # React components
-│   ├── layout.tsx    # Root layout
-│   └── page.tsx      # Home page
-├── lib/
-│   ├── geography/    # Thai geography data
-│   ├── services/     # Business logic
-│   └── utils/        # Utility functions
-├── constants/        # App constants
-├── types/           # TypeScript types
-└── docs/            # Documentation
+app/
+├── api/
+│   ├── shopify/          # Shopify GraphQL proxy
+│   ├── build-oms/        # Generate OMS links
+│   ├── resolve-oms/      # Validate OMS links
+│   ├── send-email/       # Email dispatch
+│   └── invoice-token/    # Generate invoice view tokens
+├── invoice/[token]/      # Invoice view page (print/PDF)
+├── order-report/         # Order report page
+├── components/           # React components
+├── hooks/                # Custom React hooks
+└── contexts/             # Auth & Language providers
+lib/
+├── geography/            # Thai geography dataset
+├── services/             # Email templates, order status
+└── utils/                # Validation, error handling
 ```
-
-### Key Components
-
-- **TaxInvoiceForm**: Main form component with validation and Shopify integration
-- **OrderStatusAlert**: Displays order eligibility warnings
-- **AdminContactModal**: Contact information for customer support
-- **TopBar**: Application header with branding
-
-## API Integration
-
-### Shopify GraphQL API
-
-All Shopify API calls go through `/api/shopify/route.ts` which handles:
-
-- Authentication with access token
-- Rate limiting
-- Error handling
-- CORS headers
 
 ### Metafields Storage
 
 Tax invoice data is stored in Shopify order metafields under the `custom` namespace:
 
-- `customer_type`: บุคคลธรรมดา or นิติบุคคล
-- `company_name`: Name or company name
-- `tax_id`: 13-digit tax ID (formatted)
-- `phone_number`: Primary phone
-- `alt_phone_number`: Alternative phone
-- `province`, `district`, `sub_district`: Address components
-- `postal_code`: 5-digit postal code
-- `full_address`: Complete address
-- `branch_type`: สำนักงานใหญ่ or สาขาย่อย (juristic only)
-- `branch_code`: Branch code (if applicable)
-
-## Security
-
-- Environment variables for sensitive data
-- Rate limiting on API endpoints
-- Input sanitization with DOMPurify
-- CORS configuration
-- Security headers via middleware
+| Key | Description |
+|---|---|
+| `customer_type` | บุคคลธรรมดา or นิติบุคคล |
+| `title_name` | Thai title prefix |
+| `full_name` | Individual name |
+| `custom_company_name` | Company name |
+| `tax_id` / `tax_id_formatted` | 13-digit tax ID |
+| `phone_number` | Contact phone |
+| `branch_type` | สำนักงานใหญ่ or สาขาย่อย |
+| `branch_code` | Branch code |
+| `province` / `district` / `sub_district` | Address |
+| `postal_code` | 5-digit postal code |
+| `full_address` | Street address |
 
 ## Deployment
 
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Import project in Vercel
-3. Configure environment variables
-4. Deploy
-
-### Docker
+### Cloudflare Workers
 
 ```bash
-docker build -t shopify-oms .
-docker run -p 3000:3000 --env-file .env.local shopify-oms
+# Set secrets (one-time)
+npx wrangler secret put SHOPIFY_ADMIN_ACCESS_TOKEN
+npx wrangler secret put GMAIL_CLIENT_ID
+npx wrangler secret put GMAIL_CLIENT_SECRET
+npx wrangler secret put GMAIL_REFRESH_TOKEN
+npx wrangler secret put GMAIL_SENDER_EMAIL
+npx wrangler secret put GMAIL_ADMIN_EMAIL
+
+# Deploy
+pnpm deploy
 ```
 
-## Environment Variables
+### Testing Email
 
-### Required
+Set `TEST_EMAIL_OVERRIDE` to redirect all emails to a test address:
 
-| Variable | Description |
-|----------|-------------|
-| `SHOPIFY_STORE_DOMAIN` | Your Shopify store domain (e.g., store.myshopify.com) |
-| `SHOPIFY_ADMIN_ACCESS_TOKEN` | Shopify Admin API access token |
+```bash
+echo "test@example.com" | npx wrangler secret put TEST_EMAIL_OVERRIDE
+```
 
-### Optional
+Remove when done:
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_ADMIN_EMAIL` | Admin contact email |
-| `NEXT_PUBLIC_ADMIN_PHONE` | Admin contact phone |
-| `NEXT_PUBLIC_ADMIN_LINE_ID` | LINE Official Account ID |
-| `NEXT_PUBLIC_ADMIN_OFFICE_HOURS` | Office hours for support |
+```bash
+npx wrangler secret delete TEST_EMAIL_OVERRIDE
+```
 
-## Contributing
+## Security
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is proprietary software. All rights reserved.
+- HMAC-signed OMS links with TTL expiry
+- Constant-time token comparison
+- Rate limiting on all API endpoints
+- CSP and security headers via middleware
+- Input sanitization
+- CORS configuration
+- Secrets stored in Cloudflare Workers (never in code)
 
 ## Support
 
-For support, please contact:
+- Email: sales@lcdtvthailand.com
+- Phone: 091-901-7000 / 091-901-8000
+- LINE: @LCDTVTHAILAND
 
-- Email: <admin@lcdtvthailand.com>
-- Phone: 02-xxx-xxxx
-- LINE: @lcdtvthailand
+## License
 
-## Troubleshooting
-
-### Common Issues
-
-1. **"ไม่พบออเดอร์ตามเลขที่ระบุ"**
-   - Verify order number is correct
-   - Check if order exists in Shopify
-   - Ensure API token has correct permissions
-
-2. **Rate Limiting**
-   - Default: 10 requests per minute per IP
-   - Implement Redis for production scaling
-
-3. **Geography Data Not Loading**
-   - Check browser console for errors
-   - Verify `/lib/geography/thailand.ts` is properly imported
-
-4. **Metafields Not Saving**
-   - Verify API token has write permissions
-   - Check Shopify API version compatibility
-   - Review error logs in browser console
-
-## Roadmap
-
-See [docs/improvement-suggestions.md](docs/improvement-suggestions.md) for planned improvements including:
-
-- Testing framework setup
-- Redis integration
-- API authentication
-- Performance monitoring
-- CI/CD pipeline
+Proprietary software. All rights reserved.
