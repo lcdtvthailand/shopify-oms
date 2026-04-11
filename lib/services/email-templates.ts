@@ -133,8 +133,9 @@ const BRAND = {
   darkSoft: '#374151',
   white: '#FFFFFF',
   contactEmail: 'sales@lcdtvthailand.com',
-  contactPhone: '091-901-7000 / 091-901-8000',
-  contactLine: '@lcdtvthailand',
+  contactPhone: '091-901-7000',
+  contactPhone2: '091-901-8000',
+  contactLine: '@LCDTVTHAILAND',
 }
 
 function baseLayout(content: string, preheader: string, t: (typeof i18n)[Lang]): string {
@@ -234,6 +235,8 @@ function baseLayout(content: string, preheader: string, t: (typeof i18n)[Lang]):
         </td>
         <td style="padding:0 12px; border-left:1px solid ${BRAND.grayBorder};">
           <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="font-size:12px; color:${BRAND.color}; font-weight:500;">&#9742; ${BRAND.contactPhone}</a>
+          <span style="font-size:12px; color:${BRAND.grayMedium};"> / </span>
+          <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="font-size:12px; color:${BRAND.color}; font-weight:500;">${BRAND.contactPhone2}</a>
         </td>
         <td style="padding:0 12px; border-left:1px solid ${BRAND.grayBorder};">
           <a href="https://lin.ee/lcdtvthailand" style="font-size:12px; color:#06C755; font-weight:500;">LINE ${BRAND.contactLine}</a>
@@ -468,7 +471,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
           <p style="margin:0; font-size:12px; color:#A16207; line-height:1.7;">
             ${t.noteDesc}<br>
             &#9993; <a href="mailto:${BRAND.contactEmail}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactEmail}</a>
-            &nbsp;&nbsp;&#9742; <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone}</a>
+            &nbsp;&nbsp;&#9742; <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone}</a> / <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone2}</a>
           </p>
         </td>
       </tr>

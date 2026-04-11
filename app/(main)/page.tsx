@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import TaxInvoiceForm from './components/forms/TaxInvoiceForm'
+import TaxInvoiceForm from '@/app/components/forms/TaxInvoiceForm'
 
 function LoadingForm() {
   return (
