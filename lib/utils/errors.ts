@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 
 export class AppError extends Error {
   constructor(
@@ -41,7 +42,7 @@ export const handleApiError = (error: unknown): NextResponse => {
       {
         error: 'Internal server error',
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        message: env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: 500 }
     )

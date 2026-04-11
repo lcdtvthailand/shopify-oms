@@ -2,6 +2,7 @@
  * Order status validation utilities for tax invoice eligibility
  */
 
+import { clientEnv } from '@/lib/env'
 import type { AdminContact } from '@/types/admin'
 import type {
   OrderFinancialStatus,
@@ -112,10 +113,10 @@ export function getOrderStatusDisplay(status: OrderStatus): {
  */
 export function getAdminContact(): AdminContact {
   return {
-    email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sales@lcdtvthailand.com',
-    phone: process.env.NEXT_PUBLIC_ADMIN_PHONE || '091-901-7000',
-    lineId: process.env.NEXT_PUBLIC_ADMIN_LINE_ID || '@lcdtvthailand',
-    officeHours: process.env.NEXT_PUBLIC_ADMIN_OFFICE_HOURS || 'จันทร์-ศุกร์ 9:00-18:00',
+    email: clientEnv.NEXT_PUBLIC_ADMIN_EMAIL || 'sales@lcdtvthailand.com',
+    phone: clientEnv.NEXT_PUBLIC_ADMIN_PHONE || '091-901-7000',
+    lineId: clientEnv.NEXT_PUBLIC_ADMIN_LINE_ID || '@lcdtvthailand',
+    officeHours: clientEnv.NEXT_PUBLIC_ADMIN_OFFICE_HOURS || 'จันทร์-ศุกร์ 9:00-18:00',
   }
 }
 

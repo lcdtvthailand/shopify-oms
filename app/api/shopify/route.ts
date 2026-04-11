@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { clientEnv } from '@/lib/env'
 import { AppError, ErrorCodes, handleApiError, logger } from '@/lib/utils/errors'
 import { env, graphqlQuerySchema } from '@/lib/utils/validation'
 import type { ShopifyGraphQLResponse } from '@/types/shopify'
 
 // CORS headers configuration - never allow wildcard origin
 function getCorsHeaders(request?: NextRequest) {
-  const allowedOrigins = env.NEXT_PUBLIC_ALLOWED_ORIGINS
+  const allowedOrigins = clientEnv.NEXT_PUBLIC_ALLOWED_ORIGINS
   const origins = allowedOrigins ? allowedOrigins.split(',').map((o) => o.trim()) : []
   const requestOrigin = request?.headers.get('origin') || ''
   const matched = origins.includes(requestOrigin) ? requestOrigin : origins[0] || ''
@@ -67,9 +68,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate environment variables at runtime
-    const storeDomain = env.SHOPIFY_STORE_DOMAIN || process.env.SHOPIFY_STORE_DOMAIN
-    const accessToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN || process.env.SHOPIFY_ADMIN_ACCESS_TOKEN
+    const storeDomain = env.SHOPIFY_STORE_DOMAIN
+    const accessToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN
 
     if (!storeDomain || !accessToken) {
       logger.error('Missing Shopify configuration', {

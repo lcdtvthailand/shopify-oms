@@ -1,10 +1,12 @@
 import { z } from 'zod'
 
+export { clientEnv, env } from '@/lib/env'
+
 // GraphQL Query validation schema
 export const graphqlQuerySchema = z.object({
   query: z.string().min(1).max(5000),
   variables: z.record(z.string(), z.any()).optional(),
-  expectedEmail: z.string().email().optional(),
+  expectedEmail: z.email().optional(),
 })
 
 // Tax Invoice form data validation
@@ -27,33 +29,6 @@ export const taxInvoiceSchema = z.object({
   postal: z.string().regex(/^\d{5}$/, 'Postal code must be 5 digits'),
 })
 
-// Environment variables validation
-export const envSchema = z.object({
-  SHOPIFY_STORE_DOMAIN: z.string().min(1),
-  SHOPIFY_ADMIN_ACCESS_TOKEN: z.string().min(1),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  NEXT_PUBLIC_ALLOWED_ORIGINS: z.string().optional(),
-})
-
-// During build, allow missing env vars. They'll be validated at runtime.
-const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
-
-// Validate environment variables - lenient during build
-export const env = isBuildTime
-  ? {
-      SHOPIFY_STORE_DOMAIN: process.env.SHOPIFY_STORE_DOMAIN || '',
-      SHOPIFY_ADMIN_ACCESS_TOKEN: process.env.SHOPIFY_ADMIN_ACCESS_TOKEN || '',
-      NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'production',
-      NEXT_PUBLIC_ALLOWED_ORIGINS: process.env.NEXT_PUBLIC_ALLOWED_ORIGINS,
-    }
-  : envSchema.parse({
-      SHOPIFY_STORE_DOMAIN: process.env.SHOPIFY_STORE_DOMAIN,
-      SHOPIFY_ADMIN_ACCESS_TOKEN: process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_ALLOWED_ORIGINS: process.env.NEXT_PUBLIC_ALLOWED_ORIGINS,
-    })
-
 // Type exports
 export type GraphQLQuery = z.infer<typeof graphqlQuerySchema>
 export type TaxInvoiceData = z.infer<typeof taxInvoiceSchema>
-export type Env = z.infer<typeof envSchema>

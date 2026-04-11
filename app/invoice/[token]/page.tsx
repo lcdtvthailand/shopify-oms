@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import type { Metadata } from 'next'
+import { env } from '@/lib/env'
 import InvoiceView from './InvoiceView'
 
 export const metadata: Metadata = {
@@ -26,8 +27,8 @@ function verifyToken(code: string): TokenPayload | null {
       .padEnd(Math.ceil(code.length / 4) * 4, '=')
     const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf8')) as TokenPayload
 
-    const key = process.env.SHOPIFY_STORE_DOMAIN || ''
-    const secret = process.env.OMS_TOKEN_SECRET || key
+    const key = env.SHOPIFY_STORE_DOMAIN
+    const secret = env.OMS_TOKEN_SECRET || key
     const expected = hmacToken(
       `invoice|${payload.order}|${payload.email}|${payload.ts}|${key}`,
       secret
@@ -70,8 +71,8 @@ interface InvoiceData {
 }
 
 async function fetchInvoiceData(orderNumber: string, email: string): Promise<InvoiceData | null> {
-  const storeDomain = process.env.SHOPIFY_STORE_DOMAIN
-  const accessToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN
+  const storeDomain = env.SHOPIFY_STORE_DOMAIN
+  const accessToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN
 
   if (!storeDomain || !accessToken) return null
 

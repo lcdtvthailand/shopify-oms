@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import { logger } from '@/lib/utils/errors'
 
 interface GmailTokenResponse {
@@ -24,9 +25,9 @@ async function getAccessToken(): Promise<string> {
     return cachedToken.token
   }
 
-  const clientId = process.env.GMAIL_CLIENT_ID
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN
+  const clientId = env.GMAIL_CLIENT_ID
+  const clientSecret = env.GMAIL_CLIENT_SECRET
+  const refreshToken = env.GMAIL_REFRESH_TOKEN
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error('Missing Gmail OAuth2 credentials')
@@ -69,9 +70,7 @@ function sanitizeHeaderValue(value: string): string {
 }
 
 function buildRawEmail(options: EmailOptions): string {
-  const senderEmail = sanitizeHeaderValue(
-    process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
-  )
+  const senderEmail = sanitizeHeaderValue(env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com')
   const senderName = 'LCDTVTHAILAND SHOP'
 
   const boundary = `boundary_${Date.now()}_${crypto.randomUUID()}`
@@ -113,7 +112,7 @@ function buildRawEmail(options: EmailOptions): string {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const accessToken = await getAccessToken()
-    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
+    const senderEmail = env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
     const raw = buildRawEmail(options)
 
     const response = await fetch(
@@ -152,7 +151,7 @@ export async function sendTaxInvoiceEmails(params: {
   adminHtml: string
   adminSubject: string
 }): Promise<{ customerSent: boolean; adminSent: boolean }> {
-  const adminEmail = process.env.GMAIL_ADMIN_EMAIL || 'sales@lcdtvthailand.com'
+  const adminEmail = env.GMAIL_ADMIN_EMAIL || 'sales@lcdtvthailand.com'
 
   const [customerSent, adminSent] = await Promise.all([
     sendEmail({

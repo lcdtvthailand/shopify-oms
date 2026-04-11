@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
+import { clientEnv, env } from '@/lib/env'
 
 function hmacToken(input: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(input, 'utf8').digest('hex')
@@ -80,7 +81,7 @@ export function GET(req: NextRequest) {
     const email = (parts[1] || '').trim().toLowerCase()
 
     // Validate token using HMAC-SHA256 with constant-time comparison
-    const secret = process.env.OMS_TOKEN_SECRET || keyDec
+    const secret = env.OMS_TOKEN_SECRET || keyDec
     const tokenSource = `${omsDec}|${tsDec}|${keyDec}`
     const expectedToken = hmacToken(tokenSource, secret)
 
@@ -96,7 +97,7 @@ export function GET(req: NextRequest) {
 
     // Check link expiration
     if (valid) {
-      const ttlHours = Number(process.env.OMS_LINK_TTL_HOURS) || 72
+      const ttlHours = env.OMS_LINK_TTL_HOURS
       const tsSeconds = Number(tsDec)
       const nowSeconds = Math.floor(Date.now() / 1000)
       const ageSeconds = nowSeconds - tsSeconds
@@ -109,7 +110,7 @@ export function GET(req: NextRequest) {
     }
 
     const allowBypass =
-      process.env.NEXT_PUBLIC_OMS_ALLOW_INVALID === 'true' || process.env.NODE_ENV !== 'production'
+      clientEnv.NEXT_PUBLIC_OMS_ALLOW_INVALID === 'true' || env.NODE_ENV !== 'production'
     if (!valid && allowBypass) {
       valid = true
     }
