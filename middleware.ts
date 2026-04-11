@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function middleware(_request: NextRequest) {
   const response = NextResponse.next()
 
   // Add security headers to the RESPONSE
@@ -18,9 +18,9 @@ export function middleware(request: NextRequest) {
   const cspHeader = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' blob: https:",
-    "font-src 'self'",
+    "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self'",
     "media-src 'self'",
     "object-src 'none'",
@@ -32,6 +32,10 @@ export function middleware(request: NextRequest) {
   ].join('; ')
 
   response.headers.set('Content-Security-Policy', cspHeader)
+
+  // Prevent Cloudflare edge from caching HTML pages for too long
+  // Static assets under _next/static are already excluded from middleware
+  response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=60, must-revalidate')
 
   return response
 }

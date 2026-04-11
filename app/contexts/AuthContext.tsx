@@ -18,12 +18,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+const defaultAuth: AuthContextType = {
+  isAuthenticated: false,
+  showAuthPopup: false,
+  email: '',
+  password: '',
+  authError: '',
+  authAttempts: 0,
+  setEmail: () => {},
+  setPassword: () => {},
+  handleAuth: async () => {},
+  handleLogout: async () => {},
+}
+
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+  return context ?? defaultAuth
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

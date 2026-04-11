@@ -469,6 +469,21 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
             minute: '2-digit',
           })
 
+          // Generate invoice view token for the email CTA button
+          const orderNumber = (orderData.name || '').replace(/^#/, '')
+          let invoiceUrl = ''
+          try {
+            const tokenResp = await fetch(
+              `/api/invoice-token?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`
+            )
+            const tokenData = (await tokenResp.json()) as { ok: boolean; token?: string }
+            if (tokenData.ok && tokenData.token) {
+              invoiceUrl = `${window.location.origin}/invoice/${encodeURIComponent(tokenData.token)}`
+            }
+          } catch {
+            // Non-critical, email will just not include the view button
+          }
+
           fetch('/api/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -490,6 +505,7 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
               fullAddress,
               customerEmail,
               submittedAt,
+              invoiceUrl,
             }),
           }).catch((emailErr) => {
             console.error('Failed to send tax invoice emails:', emailErr)

@@ -18,7 +18,14 @@ OMS_LINK_TTL_HOURS=72
 # Order Report Security
 ORDER_REPORT_PASSWORD=xxxxxxxxxx
 
-# Gmail API (for sending tax invoice confirmation emails)
+# Email Provider (Resend takes priority if both are configured)
+# Option 1: Resend (simpler setup — just an API key)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_SENDER_EMAIL=shop@lcdtvthailand.com
+RESEND_SENDER_NAME=LCDTVTHAILAND SHOP
+RESEND_ADMIN_EMAIL=shop@lcdtvthailand.com
+
+# Option 2: Gmail API (fallback if Resend is not configured)
 GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GMAIL_CLIENT_SECRET=your-client-secret
 GMAIL_REFRESH_TOKEN=your-refresh-token
