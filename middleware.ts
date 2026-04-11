@@ -33,6 +33,10 @@ export function middleware(_request: NextRequest) {
 
   response.headers.set('Content-Security-Policy', cspHeader)
 
+  // Prevent Cloudflare edge from caching HTML pages for too long
+  // Static assets under _next/static are already excluded from middleware
+  response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=60, must-revalidate')
+
   return response
 }
 

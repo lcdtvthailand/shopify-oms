@@ -93,4 +93,5 @@ const server = http.createServer(async (req, res) => {
   server.close()
 })
 
-server.listen(3001)
+const port = new URL(REDIRECT_URI).port || 3000
+server.listen(port)

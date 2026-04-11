@@ -90,40 +90,45 @@ export async function POST(request: NextRequest) {
 
     const { query, variables, expectedEmail } = validationResult.data
 
-    // GraphQL operation allowlist - only permit known safe queries
-    // Block mutations, subscriptions, and introspection
+    // GraphQL operation allowlist
     const normalizedQuery = query.replace(/\s+/g, ' ').trim().toLowerCase()
-    if (
-      normalizedQuery.startsWith('mutation') ||
-      normalizedQuery.startsWith('subscription') ||
-      normalizedQuery.includes('__schema') ||
-      normalizedQuery.includes('__type')
-    ) {
-      throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
-    }
-
-    // Only allow queries that operate on known resources
-    const allowedOperations = [
-      'orders',
-      'order',
-      'getorderbyname',
-      'getordermetafields',
-      'findordersbyemail',
-      'metafieldsset',
-    ]
     const operationMatch = query.match(/(?:query|mutation)\s+(\w+)/i)
     const operationName = operationMatch?.[1]?.toLowerCase() || ''
-    const hasAllowedResource = allowedOperations.some(
-      (op) => normalizedQuery.includes(op) || operationName.includes(op)
-    )
 
-    // Allow metafieldsSet mutations specifically (needed for saving tax invoice data)
+    // Allow metafieldsSet mutation (needed for saving tax invoice data)
     const isMetafieldMutation =
       normalizedQuery.includes('metafieldsset') && normalizedQuery.startsWith('mutation')
-    if (isMetafieldMutation) {
-      // Re-allow this specific mutation
-    } else if (!hasAllowedResource) {
-      throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
+
+    // Block all other mutations, subscriptions, and introspection
+    if (!isMetafieldMutation) {
+      if (
+        normalizedQuery.startsWith('mutation') ||
+        normalizedQuery.startsWith('subscription') ||
+        normalizedQuery.includes('__schema') ||
+        normalizedQuery.includes('__type')
+      ) {
+        logger.warn('Blocked operation', { first100: normalizedQuery.slice(0, 100) })
+        throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
+      }
+
+      // Only allow queries that operate on known resources
+      const allowedOperations = [
+        'orders',
+        'order',
+        'getorderbyname',
+        'getordermetafields',
+        'findordersbyemail',
+      ]
+      const hasAllowedResource = allowedOperations.some(
+        (op) => normalizedQuery.includes(op) || operationName.includes(op)
+      )
+      if (!hasAllowedResource) {
+        logger.warn('Blocked operation (not in allowlist)', {
+          operationName,
+          first100: normalizedQuery.slice(0, 100),
+        })
+        throw new AppError('Operation not permitted', ErrorCodes.FORBIDDEN, 403)
+      }
     }
 
     // Log the incoming request (without sensitive data)

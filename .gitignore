@@ -88,6 +88,10 @@ yarn.lock
 # Generated previews
 scripts/preview-*.html
 
+# Playwright
+test-results/
+playwright-report/
+
 # Claude
 .claude/
 .clinerules/byterover-rules.md

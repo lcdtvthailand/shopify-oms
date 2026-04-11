@@ -132,8 +132,8 @@ const BRAND = {
   dark: '#111827',
   darkSoft: '#374151',
   white: '#FFFFFF',
-  contactEmail: 'shop@lcdtvthailand.com',
-  contactPhone: '02-026-6442',
+  contactEmail: 'sales@lcdtvthailand.com',
+  contactPhone: '091-901-7000 / 091-901-8000',
   contactLine: '@lcdtvthailand',
 }
 

@@ -70,7 +70,7 @@ function sanitizeHeaderValue(value: string): string {
 
 function buildRawEmail(options: EmailOptions): string {
   const senderEmail = sanitizeHeaderValue(
-    process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+    process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
   )
   const senderName = 'LCDTVTHAILAND SHOP'
 
@@ -113,7 +113,7 @@ function buildRawEmail(options: EmailOptions): string {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const accessToken = await getAccessToken()
-    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
     const raw = buildRawEmail(options)
 
     const response = await fetch(
@@ -152,7 +152,7 @@ export async function sendTaxInvoiceEmails(params: {
   adminHtml: string
   adminSubject: string
 }): Promise<{ customerSent: boolean; adminSent: boolean }> {
-  const adminEmail = process.env.GMAIL_ADMIN_EMAIL || 'shop@lcdtvthailand.com'
+  const adminEmail = process.env.GMAIL_ADMIN_EMAIL || 'sales@lcdtvthailand.com'
 
   const [customerSent, adminSent] = await Promise.all([
     sendEmail({

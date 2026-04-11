@@ -134,12 +134,16 @@ export default function InvoiceView({ data }: { data: InvoiceData }) {
           <div className="px-8 py-5 text-center">
             <p className="text-sm font-semibold text-gray-900 mb-2">ต้องการความช่วยเหลือ?</p>
             <div className="flex items-center justify-center gap-4 text-xs">
-              <a href="mailto:shop@lcdtvthailand.com" className="text-red-600 font-medium">
-                ✉ shop@lcdtvthailand.com
+              <a href="mailto:sales@lcdtvthailand.com" className="text-red-600 font-medium">
+                ✉ sales@lcdtvthailand.com
               </a>
               <span className="text-gray-300">|</span>
-              <a href="tel:020266442" className="text-red-600 font-medium">
-                ☎ 02-026-6442
+              <a href="tel:0919017000" className="text-red-600 font-medium">
+                ☎ 091-901-7000
+              </a>
+              <span className="text-gray-300">/</span>
+              <a href="tel:0919018000" className="text-red-600 font-medium">
+                091-901-8000
               </a>
               <span className="text-gray-300">|</span>
               <a href="https://lin.ee/lcdtvthailand" className="text-green-600 font-medium">

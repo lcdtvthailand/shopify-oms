@@ -46,7 +46,7 @@ async function sendViaResend(options: EmailOptions): Promise<boolean> {
   if (!apiKey) return false
 
   const senderEmail = sanitizeHeaderValue(
-    process.env.RESEND_SENDER_EMAIL || process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+    process.env.RESEND_SENDER_EMAIL || process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
   )
   const senderName = process.env.RESEND_SENDER_NAME || 'LCDTVTHAILAND SHOP'
 
@@ -132,7 +132,7 @@ async function getGmailAccessToken(): Promise<string> {
 
 function buildRawGmailEmail(options: EmailOptions): string {
   const senderEmail = sanitizeHeaderValue(
-    process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+    process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
   )
   const senderName = 'LCDTVTHAILAND SHOP'
 
@@ -168,7 +168,7 @@ function buildRawGmailEmail(options: EmailOptions): string {
 async function sendViaGmail(options: EmailOptions): Promise<boolean> {
   try {
     const accessToken = await getGmailAccessToken()
-    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'shop@lcdtvthailand.com'
+    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
     const raw = buildRawGmailEmail(options)
 
     const response = await fetch(
@@ -235,7 +235,7 @@ export async function sendTaxInvoiceEmails(params: {
     testOverride ||
     process.env.RESEND_ADMIN_EMAIL ||
     process.env.GMAIL_ADMIN_EMAIL ||
-    'shop@lcdtvthailand.com'
+    'sales@lcdtvthailand.com'
 
   const [customerSent, adminSent] = await Promise.all([
     sendEmail({

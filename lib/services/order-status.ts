@@ -112,8 +112,8 @@ export function getOrderStatusDisplay(status: OrderStatus): {
  */
 export function getAdminContact(): AdminContact {
   return {
-    email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@lcdtvthailand.com',
-    phone: process.env.NEXT_PUBLIC_ADMIN_PHONE || '02-000-0000',
+    email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sales@lcdtvthailand.com',
+    phone: process.env.NEXT_PUBLIC_ADMIN_PHONE || '091-901-7000',
     lineId: process.env.NEXT_PUBLIC_ADMIN_LINE_ID || '@lcdtvthailand',
     officeHours: process.env.NEXT_PUBLIC_ADMIN_OFFICE_HOURS || 'จันทร์-ศุกร์ 9:00-18:00',
   }
