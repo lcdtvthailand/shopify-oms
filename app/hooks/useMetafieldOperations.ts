@@ -117,7 +117,8 @@ interface UseMetafieldOperationsReturn {
     orderData: OrderData,
     provinces: Array<{ code: number; nameTh: string }>,
     districts: Array<{ code: number; nameTh: string }>,
-    subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>
+    subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>,
+    lang?: 'th' | 'en'
   ) => Promise<boolean>
   setShowSavePopup: (show: boolean) => void
 }
@@ -261,7 +262,8 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
       orderData: OrderData,
       provinces: Array<{ code: number; nameTh: string }>,
       districts: Array<{ code: number; nameTh: string }>,
-      subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>
+      subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>,
+      lang?: 'th' | 'en'
     ): Promise<boolean> => {
       setIsSaving(true)
       setSaveMessage('')
@@ -506,6 +508,7 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
               customerEmail,
               submittedAt,
               invoiceUrl,
+              lang: lang || 'th',
             }),
           }).catch((emailErr) => {
             console.error('Failed to send tax invoice emails:', emailErr)

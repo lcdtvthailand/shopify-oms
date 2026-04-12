@@ -45,7 +45,7 @@ export default function TaxInvoiceForm() {
   // Avoid SSR/hydration flash: only render base content after client mounted
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  const { texts } = useLanguage()
+  const { language, texts } = useLanguage()
   const [orderStatus, _setOrderStatus] = useState<OrderStatus | null>(null)
   const [showAdminContact, setShowAdminContact] = useState(false)
 
@@ -190,7 +190,14 @@ export default function TaxInvoiceForm() {
     }
 
     // Save to Shopify
-    const success = await saveTaxInfo(formData, orderData, provinces, districts, subdistricts)
+    const success = await saveTaxInfo(
+      formData,
+      orderData,
+      provinces,
+      districts,
+      subdistricts,
+      language
+    )
     if (success) {
       // Keep Tax ID as digits only (no dashes) after save
       const fmtId = (raw: string) => {
