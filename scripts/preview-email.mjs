@@ -18,7 +18,6 @@ const base = {
   orderName: '#1234',
   customerEmail: 'customer@example.com',
   submittedAt: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
-  invoiceUrl: 'https://shopify-oms.lcdtv.workers.dev/invoice/sample-token',
 }
 
 const individual = {
