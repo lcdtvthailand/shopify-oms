@@ -433,29 +433,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   <!-- Data Card -->
   ${dataTable(data, t)}
 
-  <!-- View Invoice CTA -->
-  ${
-    data.invoiceUrl
-      ? `
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
-  <tr>
-    <td style="text-align:center; padding:0;">
-      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
-      <tr>
-        <td style="border-radius:12px; background-color:${BRAND.color};">
-          <a href="${data.invoiceUrl}" target="_blank" style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:700; color:${BRAND.white}; text-decoration:none; letter-spacing:0.3px;">
-            ${t.viewInvoice}
-          </a>
-        </td>
-      </tr>
-      </table>
-      <p style="margin:8px 0 0; font-size:11px; color:${BRAND.grayMedium};">${t.viewInvoiceDesc}</p>
-    </td>
-  </tr>
-  </table>
-  `
-      : ''
-  }
+  <!-- View Invoice CTA (hidden for now) -->
 
   <!-- Notice -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
