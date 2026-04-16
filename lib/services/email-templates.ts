@@ -223,46 +223,59 @@ function baseLayout(content: string, preheader: string, t: (typeof i18n)[Lang]):
 
 <!-- Contact section -->
 <tr>
-<td style="padding:24px 40px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="text-align:center;">
-      <p style="margin:0 0 12px; font-size:13px; color:${BRAND.dark}; font-weight:600;">${t.needHelp}</p>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
-      <tr>
-        <td style="padding:0 12px;">
-          <a href="mailto:${BRAND.contactEmail}" style="font-size:12px; color:${BRAND.color}; font-weight:500;">&#9993; ${BRAND.contactEmail}</a>
-        </td>
-        <td style="padding:0 12px; border-left:1px solid ${BRAND.grayBorder};">
-          <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="font-size:12px; color:${BRAND.color}; font-weight:500;">&#9742; ${BRAND.contactPhone}</a>
-          <span style="font-size:12px; color:${BRAND.grayMedium};"> / </span>
-          <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="font-size:12px; color:${BRAND.color}; font-weight:500;">${BRAND.contactPhone2}</a>
-        </td>
-        <td style="padding:0 12px; border-left:1px solid ${BRAND.grayBorder};">
-          <a href="https://lin.ee/lcdtvthailand" style="font-size:12px; color:#06C755; font-weight:500;">LINE ${BRAND.contactLine}</a>
-        </td>
-      </tr>
-      </table>
-    </td>
-  </tr>
+<td style="padding:28px 40px 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BRAND.grayBorder}; border-radius:16px; overflow:hidden;">
+    <!-- Header -->
+    <tr>
+      <td colspan="3" style="padding:14px 20px 10px; background: linear-gradient(135deg, ${BRAND.grayLight} 0%, #F3F4F6 100%); border-bottom:1px solid ${BRAND.grayBorder}; text-align:center;">
+        <p style="margin:0; font-size:13px; color:${BRAND.dark}; font-weight:700; letter-spacing:0.2px;">${t.needHelp}</p>
+      </td>
+    </tr>
+    <!-- Contact cards -->
+    <tr>
+      <!-- Email -->
+      <td style="width:33%; text-align:center; padding:20px 8px 18px; vertical-align:top;">
+        <div style="display:inline-block; width:40px; height:40px; line-height:42px; border-radius:12px; background: linear-gradient(135deg, ${BRAND.colorBg} 0%, #FEE2E2 100%); text-align:center; font-size:18px; margin-bottom:8px;">&#9993;&#65039;</div>
+        <p style="margin:0 0 4px; font-size:10px; color:${BRAND.grayMedium}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Email</p>
+        <a href="mailto:${BRAND.contactEmail}" style="font-size:11px; color:${BRAND.color}; font-weight:600; text-decoration:none; line-height:1.4;">${BRAND.contactEmail}</a>
+      </td>
+      <!-- Phone -->
+      <td style="width:34%; text-align:center; padding:20px 8px 18px; vertical-align:top; border-left:1px solid ${BRAND.grayBorder}; border-right:1px solid ${BRAND.grayBorder};">
+        <div style="display:inline-block; width:40px; height:40px; line-height:42px; border-radius:12px; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); text-align:center; font-size:18px; margin-bottom:8px;">&#128222;</div>
+        <p style="margin:0 0 4px; font-size:10px; color:${BRAND.grayMedium}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Phone</p>
+        <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="font-size:11px; color:#1D4ED8; font-weight:600; text-decoration:none;">${BRAND.contactPhone}</a>
+        <br>
+        <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="font-size:11px; color:#1D4ED8; font-weight:600; text-decoration:none;">${BRAND.contactPhone2}</a>
+      </td>
+      <!-- LINE -->
+      <td style="width:33%; text-align:center; padding:20px 8px 18px; vertical-align:top;">
+        <div style="display:inline-block; width:40px; height:40px; line-height:42px; border-radius:12px; background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); text-align:center; font-size:18px; margin-bottom:8px;">&#128172;</div>
+        <p style="margin:0 0 4px; font-size:10px; color:${BRAND.grayMedium}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">LINE</p>
+        <a href="https://lin.ee/lcdtvthailand" style="font-size:12px; color:#06C755; font-weight:700; text-decoration:none;">${BRAND.contactLine}</a>
+      </td>
+    </tr>
   </table>
 </td>
 </tr>
 
 <!-- Footer -->
 <tr>
-<td style="padding:20px 40px 24px; background-color:#F3F4F6; border-top:1px solid ${BRAND.grayBorder};">
+<td style="padding:24px 40px 28px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
   <tr>
     <td style="text-align:center;">
-      <p style="margin:0 0 6px; font-size:12px; color:${BRAND.grayMedium};">
-        &copy; ${new Date().getFullYear()} ${BRAND.name} &mdash; ${t.allRights}
-      </p>
-      <p style="margin:0 0 4px; font-size:11px; color:${BRAND.grayMedium};">
+      <p style="margin:0 0 8px; font-size:11px; color:${BRAND.grayMedium}; line-height:1.6;">
         ${t.autoEmail}
       </p>
-      <p style="margin:0; font-size:11px; color:${BRAND.grayMedium};">
-        <a href="${BRAND.website}" style="color:${BRAND.color};">lcdtvthailand.com</a>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+      <tr>
+        <td style="padding:0 8px;">
+          <a href="${BRAND.website}" style="font-size:11px; color:${BRAND.gray}; text-decoration:none; font-weight:500;">&#127760; lcdtvthailand.com</a>
+        </td>
+      </tr>
+      </table>
+      <p style="margin:10px 0 0; font-size:10px; color:#D1D5DB;">
+        &copy; ${new Date().getFullYear()} ${BRAND.name} &mdash; ${t.allRights}
       </p>
     </td>
   </tr>
