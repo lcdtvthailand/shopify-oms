@@ -120,7 +120,7 @@ async function fetchInvoiceData(orderNumber: string, email: string): Promise<Inv
   }
 
   const customerType = metaMap.customer_type || metaMap.custom_customer_type || ''
-  const isCompany = customerType === 'นิติบุคคล'
+  const isCompany = customerType === 'นิติบุคคล' || customerType === 'Corporate'
 
   return {
     orderName: order.name,

@@ -211,7 +211,8 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
           // Update form data with existing values
           // Use appropriate field based on customer type - strict separation
           let documentName = ''
-          if (customerType === 'นิติบุคคล') {
+          const isJuristic = customerType === 'นิติบุคคล' || customerType === 'Corporate'
+          if (isJuristic) {
             // For juristic person, only use custom_company_name fields
             documentName = customCompanyName
             // Fallback to legacy only if no custom_company_name exists
@@ -228,10 +229,10 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
           }
 
           return {
-            documentType: customerType === 'นิติบุคคล' ? 'receipt' : 'tax',
+            documentType: isJuristic ? 'receipt' : 'tax',
             titleName: titleName,
-            fullName: customerType === 'นิติบุคคล' ? '' : documentName,
-            companyNameText: customerType === 'นิติบุคคล' ? documentName : '',
+            fullName: isJuristic ? '' : documentName,
+            companyNameText: isJuristic ? documentName : '',
             documentNumber: '',
             branchCode: fmtId(taxId),
             companyName: phoneNumber,
@@ -277,14 +278,26 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
           subdistricts.find((s) => s.code === formData.subdistrictCode)?.nameTh || ''
 
         // แปลงค่าจาก UI เดิมให้ตรงกับฟิลด์ที่ต้องการบันทึก
-        const customerType = formData.documentType === 'receipt' ? 'นิติบุคคล' : 'บุคคลธรรมดา'
+        const isEN = lang === 'en'
+        const customerType =
+          formData.documentType === 'receipt'
+            ? isEN
+              ? 'Corporate'
+              : 'นิติบุคคล'
+            : isEN
+              ? 'Individual'
+              : 'บุคคลธรรมดา'
         const fullNameToSave = formData.fullName || ''
         const companyNameToSave = formData.companyNameText || ''
-        const branchTypeTh =
+        const branchTypeValue =
           formData.documentType === 'receipt'
             ? formData.branchType === 'branch'
-              ? 'สาขาย่อย'
-              : 'สำนักงานใหญ่'
+              ? isEN
+                ? 'Branch'
+                : 'สาขาย่อย'
+              : isEN
+                ? 'Head Office'
+                : 'สำนักงานใหญ่'
             : ''
 
         const branchCode =
@@ -340,7 +353,7 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
             value: formData.documentType === 'receipt' ? companyNameToSave : '',
             type: 'single_line_text_field',
           },
-          { key: 'branch_type', value: branchTypeTh, type: 'single_line_text_field' },
+          { key: 'branch_type', value: branchTypeValue, type: 'single_line_text_field' },
           { key: 'branch_code', value: branchCode, type: 'single_line_text_field' },
           { key: 'tax_id', value: taxIdFormatted, type: 'single_line_text_field' },
           { key: 'tax_id_formatted', value: taxIdFormatted, type: 'single_line_text_field' },
@@ -417,7 +430,7 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
           title_name: formData.titleName || '',
           full_name: formData.documentType === 'tax' ? fullNameToSave : '',
           custom_company_name: formData.documentType === 'receipt' ? companyNameToSave : '',
-          branch_type: branchTypeTh,
+          branch_type: branchTypeValue,
           branch_code: branchCode,
           tax_id: taxIdDigits,
           tax_id_formatted: taxIdFormatted,
@@ -495,7 +508,7 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
               titleName: formData.titleName || '',
               fullName: formData.documentType === 'tax' ? fullNameToSave : '',
               companyName: formData.documentType === 'receipt' ? companyNameToSave : '',
-              branchType: branchTypeTh,
+              branchType: branchTypeValue,
               branchCode,
               taxId: taxIdDigits,
               taxIdFormatted,

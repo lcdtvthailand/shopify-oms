@@ -322,7 +322,7 @@ function localize(value: string, lang: Lang): string {
 
 function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
   const lang: Lang = data.lang || 'th'
-  const isCompany = data.customerType === 'นิติบุคคล'
+  const isCompany = data.customerType === 'นิติบุคคล' || data.customerType === 'Corporate'
 
   const infoRows = isCompany
     ? [
@@ -419,7 +419,7 @@ function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
 export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string; html: string } {
   const lang: Lang = data.lang || 'th'
   const t = i18n[lang]
-  const isCompany = data.customerType === 'นิติบุคคล'
+  const isCompany = data.customerType === 'นิติบุคคล' || data.customerType === 'Corporate'
   const localTitle = localize(data.titleName, lang)
   const displayName = isCompany
     ? data.companyName
@@ -513,7 +513,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
 export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; html: string } {
   const lang: Lang = data.lang || 'th'
   const t = i18n[lang]
-  const isCompany = data.customerType === 'นิติบุคคล'
+  const isCompany = data.customerType === 'นิติบุคคล' || data.customerType === 'Corporate'
   const localTitle = localize(data.titleName, lang)
   const displayName = isCompany
     ? data.companyName

@@ -37,7 +37,7 @@ function InfoRow({ label, value, isLast }: { label: string; value: string; isLas
 }
 
 export default function InvoiceView({ data }: { data: InvoiceData }) {
-  const isCompany = data.customerType === 'นิติบุคคล'
+  const isCompany = data.customerType === 'นิติบุคคล' || data.customerType === 'Corporate'
   const _displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
 
   return (
