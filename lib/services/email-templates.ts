@@ -308,6 +308,11 @@ function infoRow(label: string, value: string, isLast = false): string {
 const thToEn: Record<string, string> = {
   สำนักงานใหญ่: 'Head Office',
   สาขาย่อย: 'Branch',
+  นาย: 'Mr.',
+  นาง: 'Mrs.',
+  นางสาว: 'Ms.',
+  บุคคลธรรมดา: 'Individual',
+  นิติบุคคล: 'Corporate',
 }
 
 function localize(value: string, lang: Lang): string {
@@ -352,7 +357,7 @@ function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
           t.type,
           `<span style="display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:600; background-color:#F0FDF4; color:#15803D;">${t.individual}</span>`
         ),
-        infoRow(t.title, data.titleName),
+        infoRow(t.title, localize(data.titleName, lang)),
         infoRow(
           t.fullName,
           data.fullName ? `<strong style="color:${BRAND.dark};">${data.fullName}</strong>` : ''
@@ -415,7 +420,10 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   const lang: Lang = data.lang || 'th'
   const t = i18n[lang]
   const isCompany = data.customerType === 'นิติบุคคล'
-  const displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
+  const localTitle = localize(data.titleName, lang)
+  const displayName = isCompany
+    ? data.companyName
+    : `${localTitle}${lang === 'en' && localTitle ? ' ' : ''}${data.fullName}`
   const subject = t.subjectCustomer(data.orderName, BRAND.name)
 
   const content = `
@@ -506,8 +514,12 @@ export function buildAdminEmail(data: TaxInvoiceEmailData): { subject: string; h
   const lang: Lang = data.lang || 'th'
   const t = i18n[lang]
   const isCompany = data.customerType === 'นิติบุคคล'
-  const displayName = isCompany ? data.companyName : `${data.titleName}${data.fullName}`
-  const subject = `[${t.taxInvoice}] ${data.orderName} | ${displayName} | ${data.customerType}`
+  const localTitle = localize(data.titleName, lang)
+  const displayName = isCompany
+    ? data.companyName
+    : `${localTitle}${lang === 'en' && localTitle ? ' ' : ''}${data.fullName}`
+  const localType = localize(data.customerType, lang)
+  const subject = `[${t.taxInvoice}] ${data.orderName} | ${displayName} | ${localType}`
 
   const content = `
   <!-- Alert banner -->
