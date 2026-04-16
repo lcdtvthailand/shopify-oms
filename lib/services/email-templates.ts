@@ -76,9 +76,9 @@ const i18n = {
     companyInfo: '🏢 Company Information',
     addressInfo: '📍 Invoice Address',
     contactInfo: '📧 Customer Contact',
-    type: 'Type (Company/Individual)',
+    type: 'Type (Individual/Corporate)',
     individual: 'Individual',
-    company: 'Juristic Person (Company)',
+    company: 'Corporate',
     title: 'Title',
     fullName: 'Full Name',
     companyName: 'Company Name',
@@ -292,7 +292,18 @@ function infoRow(label: string, value: string, isLast = false): string {
   </tr>`
 }
 
+const thToEn: Record<string, string> = {
+  สำนักงานใหญ่: 'Head Office',
+  สาขาย่อย: 'Branch',
+}
+
+function localize(value: string, lang: Lang): string {
+  if (lang === 'en' && thToEn[value]) return thToEn[value]
+  return value
+}
+
 function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
+  const lang: Lang = data.lang || 'th'
   const isCompany = data.customerType === 'นิติบุคคล'
 
   const infoRows = isCompany
@@ -307,7 +318,7 @@ function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
             ? `<strong style="color:${BRAND.dark};">${data.companyName}</strong>`
             : ''
         ),
-        infoRow(t.branch, data.branchType),
+        infoRow(t.branch, localize(data.branchType, lang)),
         infoRow(t.branchCode, data.branchCode),
         infoRow(
           t.taxId,
