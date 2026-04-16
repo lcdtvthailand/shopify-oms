@@ -115,9 +115,9 @@ interface UseMetafieldOperationsReturn {
   saveTaxInfo: (
     formData: FormData,
     orderData: OrderData,
-    provinces: Array<{ code: number; nameTh: string }>,
-    districts: Array<{ code: number; nameTh: string }>,
-    subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>,
+    provinces: Array<{ code: number; nameTh: string; nameEn: string }>,
+    districts: Array<{ code: number; nameTh: string; nameEn: string }>,
+    subdistricts: Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>,
     lang?: 'th' | 'en'
   ) => Promise<boolean>
   setShowSavePopup: (show: boolean) => void
@@ -261,9 +261,9 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
     async (
       formData: FormData,
       orderData: OrderData,
-      provinces: Array<{ code: number; nameTh: string }>,
-      districts: Array<{ code: number; nameTh: string }>,
-      subdistricts: Array<{ code: number; nameTh: string; postalCode: number }>,
+      provinces: Array<{ code: number; nameTh: string; nameEn: string }>,
+      districts: Array<{ code: number; nameTh: string; nameEn: string }>,
+      subdistricts: Array<{ code: number; nameTh: string; nameEn: string; postalCode: number }>,
       lang?: 'th' | 'en'
     ): Promise<boolean> => {
       setIsSaving(true)
@@ -272,10 +272,13 @@ export const useMetafieldOperations = (): UseMetafieldOperationsReturn => {
 
       try {
         // Map ชื่อจังหวัด/อำเภอ/ตำบลจาก code ที่เลือก
-        const provinceName = provinces.find((p) => p.code === formData.provinceCode)?.nameTh || ''
-        const districtName = districts.find((d) => d.code === formData.districtCode)?.nameTh || ''
+        const nameKey = lang === 'en' ? 'nameEn' : 'nameTh'
+        const provinceName =
+          provinces.find((p) => p.code === formData.provinceCode)?.[nameKey] || ''
+        const districtName =
+          districts.find((d) => d.code === formData.districtCode)?.[nameKey] || ''
         const subdistrictName =
-          subdistricts.find((s) => s.code === formData.subdistrictCode)?.nameTh || ''
+          subdistricts.find((s) => s.code === formData.subdistrictCode)?.[nameKey] || ''
 
         // แปลงค่าจาก UI เดิมให้ตรงกับฟิลด์ที่ต้องการบันทึก
         const isEN = lang === 'en'
