@@ -53,7 +53,7 @@ const i18n = {
     successTitle: 'ระบบบันทึกข้อมูลสำเร็จ',
     successDesc: 'เจ้าหน้าที่จะดำเนินการจัดส่งใบกำกับภาษีให้ท่านตามขั้นตอนต่อไป',
     noteTitle: 'หมายเหตุสำคัญ',
-    noteDesc: 'หากข้อมูลไม่ถูกต้อง กรุณากรอกแบบฟอร์มใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่',
+    noteDesc: 'หากข้อมูลไม่ถูกต้อง กรุณาติดต่อเจ้าหน้าที่',
     submittedAt: 'บันทึกเมื่อ',
     needHelp: 'ต้องการความช่วยเหลือ?',
     autoEmail: 'อีเมลนี้ถูกส่งอัตโนมัติจากระบบออกใบกำกับภาษี กรุณาอย่าตอบกลับอีเมลนี้โดยตรง',
@@ -98,7 +98,7 @@ const i18n = {
     successTitle: 'Information Saved Successfully',
     successDesc: 'Our team will process and issue your tax invoice accordingly.',
     noteTitle: 'Important Note',
-    noteDesc: 'If any information is incorrect, please resubmit the form or contact our staff.',
+    noteDesc: 'If any information is incorrect, please contact our staff.',
     submittedAt: 'Submitted at',
     needHelp: 'Need help?',
     autoEmail:
@@ -243,9 +243,11 @@ function baseLayout(content: string, preheader: string, t: (typeof i18n)[Lang]):
       <td style="width:34%; text-align:center; padding:20px 8px 18px; vertical-align:top; border-left:1px solid ${BRAND.grayBorder}; border-right:1px solid ${BRAND.grayBorder};">
         <div style="display:inline-block; width:40px; height:40px; line-height:42px; border-radius:12px; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); text-align:center; font-size:18px; margin-bottom:8px;">&#128222;</div>
         <p style="margin:0 0 4px; font-size:10px; color:${BRAND.grayMedium}; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Phone</p>
-        <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="font-size:11px; color:#1D4ED8; font-weight:600; text-decoration:none;">${BRAND.contactPhone}</a>
-        <br>
-        <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="font-size:11px; color:#1D4ED8; font-weight:600; text-decoration:none;">${BRAND.contactPhone2}</a>
+        <span style="white-space:nowrap; font-size:11px; color:#1D4ED8; font-weight:600;">
+          <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="color:#1D4ED8; text-decoration:none;">${BRAND.contactPhone}</a>
+          <span style="color:${BRAND.grayMedium};"> / </span>
+          <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="color:#1D4ED8; text-decoration:none;">${BRAND.contactPhone2}</a>
+        </span>
       </td>
       <!-- LINE -->
       <td style="width:33%; text-align:center; padding:20px 8px 18px; vertical-align:top;">
@@ -419,11 +421,6 @@ function dataTable(data: TaxInvoiceEmailData, t: (typeof i18n)[Lang]): string {
 export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string; html: string } {
   const lang: Lang = data.lang || 'th'
   const t = i18n[lang]
-  const isCompany = data.customerType === 'นิติบุคคล' || data.customerType === 'Corporate'
-  const localTitle = localize(data.titleName, lang)
-  const displayName = isCompany
-    ? data.companyName
-    : `${localTitle}${lang === 'en' && localTitle ? ' ' : ''}${data.fullName}`
   const subject = t.subjectCustomer(data.orderName, BRAND.name)
 
   const content = `
@@ -431,9 +428,6 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
   <tr>
     <td>
-      <p style="margin:0 0 6px; font-size:18px; color:${BRAND.dark}; font-weight:700;">
-        ${t.greetingPrefix}${displayName}
-      </p>
       <p style="margin:0; font-size:14px; color:${BRAND.darkSoft}; line-height:1.8;">
         ${t.thankYou}
         <strong style="color:${BRAND.color};">${data.orderName}</strong><br>
@@ -479,9 +473,7 @@ export function buildCustomerEmail(data: TaxInvoiceEmailData): { subject: string
         <td>
           <p style="margin:0 0 4px; font-size:13px; color:#92400E; font-weight:700;">${t.noteTitle}</p>
           <p style="margin:0; font-size:12px; color:#A16207; line-height:1.7;">
-            ${t.noteDesc}<br>
-            &#9993; <a href="mailto:${BRAND.contactEmail}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactEmail}</a>
-            &nbsp;&nbsp;&#9742; <a href="tel:${BRAND.contactPhone.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone}</a> / <a href="tel:${BRAND.contactPhone2.replace(/-/g, '')}" style="color:${BRAND.color}; font-weight:600;">${BRAND.contactPhone2}</a>
+            ${t.noteDesc}
           </p>
         </td>
       </tr>
