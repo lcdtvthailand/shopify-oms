@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import { logger } from '@/lib/utils/errors'
 
 export interface EmailOptions {
@@ -28,27 +29,22 @@ type EmailProvider = 'resend' | 'gmail' | 'none'
 
 function detectProvider(): EmailProvider {
   // Resend takes priority (simpler setup, good for interim)
-  if (process.env.RESEND_API_KEY) return 'resend'
+  if (env.RESEND_API_KEY) return 'resend'
   // Gmail as fallback
-  if (
-    process.env.GMAIL_CLIENT_ID &&
-    process.env.GMAIL_CLIENT_SECRET &&
-    process.env.GMAIL_REFRESH_TOKEN
-  )
-    return 'gmail'
+  if (env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN) return 'gmail'
   return 'none'
 }
 
 // ─── Resend provider ─────────────────────────────────────────────────
 
 async function sendViaResend(options: EmailOptions): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY
+  const apiKey = env.RESEND_API_KEY
   if (!apiKey) return false
 
   const senderEmail = sanitizeHeaderValue(
-    process.env.RESEND_SENDER_EMAIL || process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
+    env.RESEND_SENDER_EMAIL || env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
   )
-  const senderName = process.env.RESEND_SENDER_NAME || 'LCDTVTHAILAND SHOP'
+  const senderName = env.RESEND_SENDER_NAME || 'LCDTVTHAILAND SHOP'
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -95,9 +91,9 @@ async function getGmailAccessToken(): Promise<string> {
     return cachedToken.token
   }
 
-  const clientId = process.env.GMAIL_CLIENT_ID
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN
+  const clientId = env.GMAIL_CLIENT_ID
+  const clientSecret = env.GMAIL_CLIENT_SECRET
+  const refreshToken = env.GMAIL_REFRESH_TOKEN
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error('Missing Gmail OAuth2 credentials')
@@ -131,9 +127,7 @@ async function getGmailAccessToken(): Promise<string> {
 }
 
 function buildRawGmailEmail(options: EmailOptions): string {
-  const senderEmail = sanitizeHeaderValue(
-    process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
-  )
+  const senderEmail = sanitizeHeaderValue(env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com')
   const senderName = 'LCDTVTHAILAND SHOP'
 
   const boundary = `boundary_${Date.now()}_${crypto.randomUUID()}`
@@ -168,7 +162,7 @@ function buildRawGmailEmail(options: EmailOptions): string {
 async function sendViaGmail(options: EmailOptions): Promise<boolean> {
   try {
     const accessToken = await getGmailAccessToken()
-    const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
+    const senderEmail = env.GMAIL_SENDER_EMAIL || 'sales@lcdtvthailand.com'
     const raw = buildRawGmailEmail(options)
 
     const response = await fetch(
@@ -229,13 +223,10 @@ export async function sendTaxInvoiceEmails(params: {
   adminHtml: string
   adminSubject: string
 }): Promise<{ customerSent: boolean; adminSent: boolean }> {
-  const testOverride = process.env.TEST_EMAIL_OVERRIDE
+  const testOverride = env.TEST_EMAIL_OVERRIDE
   const customerTo = testOverride || params.customerEmail
   const adminEmail =
-    testOverride ||
-    process.env.RESEND_ADMIN_EMAIL ||
-    process.env.GMAIL_ADMIN_EMAIL ||
-    'sales@lcdtvthailand.com'
+    testOverride || env.RESEND_ADMIN_EMAIL || env.GMAIL_ADMIN_EMAIL || 'sales@lcdtvthailand.com'
 
   const [customerSent, adminSent] = await Promise.all([
     sendEmail({

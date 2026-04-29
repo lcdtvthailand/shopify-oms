@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 
 function hmacToken(input: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(input, 'utf8').digest('hex')
@@ -33,13 +34,13 @@ export function GET(req: NextRequest) {
     const sp = urlObj.searchParams
     const order = (sp.get('order') || '').trim()
     const email = (sp.get('email') || '').trim().toLowerCase()
-    const key = (sp.get('key') || process.env.SHOPIFY_STORE_DOMAIN || '').trim()
+    const key = (sp.get('key') || env.SHOPIFY_STORE_DOMAIN).trim()
     const tsParam = sp.get('ts')
     if (!order || !email || !key) {
       return NextResponse.json({ ok: false, reason: 'missing_params' }, { status: 400 })
     }
 
-    const secret = process.env.OMS_TOKEN_SECRET || key
+    const secret = env.OMS_TOKEN_SECRET || key
     const ts = tsParam ? parseInt(tsParam, 10) : Math.floor(Date.now() / 1000)
     const rawOms = `#${order}|${email}`
     const tokenSource = `${rawOms}|${ts}|${key}`

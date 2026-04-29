@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 
 interface UserCredentials {
   email: string
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     const password = typeof body.password === 'string' ? body.password : ''
 
     // Get the credentials from environment variable (required)
-    const credentialsJson = process.env.ORDER_REPORT_PASSWORD
+    const credentialsJson = env.ORDER_REPORT_PASSWORD
     if (!credentialsJson) {
       return NextResponse.json({ success: false, message: 'การตั้งค่าระบบไม่ถูกต้อง' }, { status: 500 })
     }
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       // Set HttpOnly cookie that expires in 24 hours
       response.cookies.set('order-report-auth', 'authenticated', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 24 * 60 * 60, // 24 hours in seconds
         path: '/',
@@ -137,7 +138,7 @@ export function DELETE() {
     // Clear the auth cookie
     response.cookies.set('order-report-auth', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 0, // Expire immediately
       path: '/',

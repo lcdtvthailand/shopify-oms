@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 
 /**
  * Generates a signed token for viewing a tax invoice.
@@ -23,8 +24,8 @@ export function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, reason: 'missing_params' }, { status: 400 })
     }
 
-    const key = process.env.SHOPIFY_STORE_DOMAIN || ''
-    const secret = process.env.OMS_TOKEN_SECRET || key
+    const key = env.SHOPIFY_STORE_DOMAIN
+    const secret = env.OMS_TOKEN_SECRET || key
     const ts = Math.floor(Date.now() / 1000)
     const payload = `invoice|${order}|${email}|${ts}|${key}`
     const token = hmacToken(payload, secret)

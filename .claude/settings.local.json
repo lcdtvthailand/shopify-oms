@@ -43,7 +43,10 @@
       "Bash(npx wrangler queues:*)",
       "Bash(npx wrangler d1 list:*)",
       "Bash(git pull:*)",
-      "Bash(open scripts/preview-customer-company.html scripts/preview-customer-individual.html scripts/preview-admin.html)"
+      "Bash(open scripts/preview-customer-company.html scripts/preview-customer-individual.html scripts/preview-admin.html)",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "mcp__plugin_context-mode_context-mode__ctx_execute"
     ],
     "deny": []
   }
